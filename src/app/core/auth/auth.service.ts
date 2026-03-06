@@ -1,7 +1,7 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { Observable, tap } from 'rxjs';
+import { Observable, tap, map } from 'rxjs';
 import { jwtDecode } from 'jwt-decode';
 import { environment } from '../../../environments/environment';
 import {
@@ -81,9 +81,10 @@ export class AuthService {
     // ─── Step 1: Login ────────────────────────────────────────────────────────
     login(email: string, password: string): Observable<LoginResponse> {
         return this.http
-            .post<LoginResponse>(`${this.base}/login`, { email, password })
+            .post<{ data: LoginResponse }>(`${this.base}/login`, { email, password })
             .pipe(
-                tap((res) => {
+                tap((envelope) => {
+                    const res = envelope.data;
                     // Store pre-token (no branchId yet)
                     this.storeToken(res.access_token);
                     this._state.update((s) => ({
@@ -93,15 +94,18 @@ export class AuthService {
                         isAuthenticated: false, // Not fully authenticated until branch selected
                     }));
                 }),
+                // Map back to LoginResponse for the component to consume
+                map((envelope) => envelope.data),
             );
     }
 
     // ─── Step 2: Select Branch ────────────────────────────────────────────────
     selectBranch(branchId: string): Observable<{ access_token: string }> {
         return this.http
-            .post<{ access_token: string }>(`${this.base}/select-branch`, { branchId })
+            .post<{ data: { access_token: string } }>(`${this.base}/select-branch`, { branchId })
             .pipe(
-                tap((res) => {
+                tap((envelope) => {
+                    const res = envelope.data;
                     this.storeToken(res.access_token);
                     const payload = jwtDecode<JwtPayload>(res.access_token);
                     this._state.update((s) => ({
@@ -112,6 +116,7 @@ export class AuthService {
                     }));
                     this.scheduleRefresh(payload.exp);
                 }),
+                map((envelope) => envelope.data),
             );
     }
 

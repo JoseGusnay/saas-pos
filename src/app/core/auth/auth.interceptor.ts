@@ -16,16 +16,15 @@ export const authInterceptor: HttpInterceptorFn = (
     const auth = inject(AuthService);
     const tenantIdentifier = inject(TenantIdentifierService);
 
-    // Skip adding token to auth login endpoints
-    const isAuthEndpoint =
-        req.url.includes('/auth/login') || req.url.includes('/auth/select-branch');
+    // Skip adding token ONLY to the initial login (user has no token yet)
+    const isLoginEndpoint = req.url.includes('/auth/login');
 
     const token = auth.getToken();
     const subdomain = tenantIdentifier.getTenantSubdomain();
 
     let headers = req.headers;
 
-    if (token && !isAuthEndpoint) {
+    if (token && !isLoginEndpoint) {
         headers = headers.set('Authorization', `Bearer ${token}`);
     }
 
@@ -37,7 +36,7 @@ export const authInterceptor: HttpInterceptorFn = (
 
     return next(authReq).pipe(
         catchError((error: HttpErrorResponse) => {
-            if (error.status === 401 && !isAuthEndpoint) {
+            if (error.status === 401 && !isLoginEndpoint) {
                 // Attempt silent refresh
                 return auth.refresh().pipe(
                     switchMap(() => {
