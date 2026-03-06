@@ -43,8 +43,6 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
     </div>
   `,
   styles: [`
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&display=swap');
-
     :host {
       display: block;
       width: 100vw;
