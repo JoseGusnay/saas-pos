@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { Branch, BranchesResponse, BranchForm } from './branch.model';
 import { environment } from '../../../environments/environment';
 
@@ -25,24 +25,33 @@ export class BranchesService {
         if (params.sortField) httpParams = httpParams.set('sortField', params.sortField);
         if (params.sortOrder) httpParams = httpParams.set('sortOrder', params.sortOrder);
 
-        return this.http.get<BranchesResponse>(this.base, { params: httpParams });
+        return this.http.get<{ data: BranchesResponse }>(this.base, { params: httpParams }).pipe(
+            map(res => res.data),
+        );
     }
 
     findOne(id: string): Observable<Branch> {
-        return this.http.get<Branch>(`${this.base}/${id}`);
+        return this.http.get<{ data: Branch }>(`${this.base}/${id}`).pipe(
+            map(res => res.data),
+        );
     }
 
     create(body: BranchForm): Observable<Branch> {
-        return this.http.post<Branch>(this.base, body);
+        return this.http.post<{ data: Branch }>(this.base, body).pipe(
+            map(res => res.data),
+        );
     }
 
     update(id: string, body: Partial<BranchForm>): Observable<Branch> {
-        return this.http.patch<Branch>(`${this.base}/${id}`, body);
+        return this.http.patch<{ data: Branch }>(`${this.base}/${id}`, body).pipe(
+            map(res => res.data),
+        );
     }
 
-    /** Patch any Branch field (e.g. isActive, isMain) — not BranchForm typed */
     patch(id: string, body: Partial<Branch>): Observable<Branch> {
-        return this.http.patch<Branch>(`${this.base}/${id}`, body);
+        return this.http.patch<{ data: Branch }>(`${this.base}/${id}`, body).pipe(
+            map(res => res.data),
+        );
     }
 
     remove(id: string): Observable<{ success: boolean; message: string }> {
