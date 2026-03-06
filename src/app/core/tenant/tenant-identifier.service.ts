@@ -39,11 +39,13 @@ export class TenantIdentifierService {
         }
 
         try {
-            const result = await firstValueFrom(
-                this.http.get<TenantValidationResult>(`${environment.apiUrl}/api/public/tenant/check/${subdomain}`)
+            const response = await firstValueFrom(
+                this.http.get<{ data: TenantValidationResult }>(`${environment.apiUrl}/api/public/tenant/check/${subdomain}`)
             );
 
-            if (result.exists && result.isOperational) {
+            const result = response.data;
+
+            if (result && result.exists && result.isOperational) {
                 this._isTenantValid.set(true);
                 this._tenantMetadata.set(result);
                 return true;
