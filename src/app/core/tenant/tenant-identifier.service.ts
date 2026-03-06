@@ -1,9 +1,63 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
+import { environment } from '../../../environments/environment';
+
+export interface TenantValidationResult {
+    exists: boolean;
+    isOperational?: boolean;
+    status?: string;
+    name?: string;
+    locale?: string;
+}
 
 @Injectable({
     providedIn: 'root'
 })
 export class TenantIdentifierService {
+    private readonly http = inject(HttpClient);
+
+    // Estado global de validación (true = dibujar app, false = dibujar 404, null = cargando)
+    private readonly _isTenantValid = signal<boolean | null>(null);
+    public readonly isTenantValid = this._isTenantValid.asReadonly();
+
+    // Metadata del tenant para personalizar la UI luego si se desea
+    private readonly _tenantMetadata = signal<TenantValidationResult | null>(null);
+    public readonly tenantMetadata = this._tenantMetadata.asReadonly();
+
+    /**
+     * Se ejecuta durante el APP_INITIALIZER de Angular para verificar directo en la base de datos maestra
+     * si el dominio pertenece a un Tenant activo.
+     */
+    public async validateTenantOnLoad(): Promise<boolean> {
+        const subdomain = this.getTenantSubdomain();
+
+        // Si no detectamos subdominio pasamos directo (Probablemente login Maestro o localhost)
+        if (!subdomain) {
+            this._isTenantValid.set(true);
+            return true;
+        }
+
+        try {
+            const result = await firstValueFrom(
+                this.http.get<TenantValidationResult>(`${environment.apiUrl}/api/public/tenant/check/${subdomain}`)
+            );
+
+            if (result.exists && result.isOperational) {
+                this._isTenantValid.set(true);
+                this._tenantMetadata.set(result);
+                return true;
+            }
+
+            this._isTenantValid.set(false);
+            return false;
+
+        } catch (error: any) {
+            // Un código 404 indicará que el espacio directamente no existe
+            this._isTenantValid.set(false);
+            return false;
+        }
+    }
     /**
      * Extrae el subdominio de la URL actual del navegador.
      * Ej: si estamos en `https://cliente1.osodreamer.lat/login`, retorna `cliente1`.
