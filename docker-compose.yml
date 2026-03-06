@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  saas_frontend_app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: saas_frontend_app
+    restart: unless-stopped
+    # Nota: No exponemos el puerto 80 hacia internet directo.
+    # Caddy (en el backend) se conectará a 'saas_frontend_app:80' en la misma red de docker.
+    # network_mode: bridge # Si caddy y frontend están en el mismo bridge (por defecto en docker-compose en una misma carpeta)
+    # Como están en carpetas distintas en el VPS, es recomendado usar 'network_mode: host' o conectarlos a una red de docker común.
+    # Para el VPS de GitHub Actions usaremos network_mode: host para que Caddy localice el puerto directamente
+    # o mapeamos a un puerto local que caddy escuche.
+    ports:
+      - "127.0.0.1:4200:80"
+      # Ahora el Nginx del frontend es accesible en el puerto 4200 local del VPS
