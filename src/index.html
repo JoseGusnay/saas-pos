@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8">
   <title>SaasPos</title>
@@ -7,7 +8,88 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 </head>
+
 <body>
-  <app-root></app-root>
+  <app-root>
+    <!-- Splash screen visible mientras Angular carga y resuelve el APP_INITIALIZER -->
+    <style>
+      .ng-splash {
+        position: fixed;
+        inset: 0;
+        background: #0f111a;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 2rem;
+        font-family: "Inter", -apple-system, sans-serif;
+        z-index: 9999;
+      }
+
+      .ng-splash__logo {
+        width: 56px;
+        height: 56px;
+        border-radius: 14px;
+        background: linear-gradient(135deg, #7f5af0, #2cb67d);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: splash-pulse 1.8s ease-in-out infinite;
+        box-shadow: 0 0 40px rgba(127, 90, 240, 0.4);
+      }
+
+      .ng-splash__logo svg {
+        color: #fff;
+      }
+
+      .ng-splash__spinner {
+        width: 32px;
+        height: 32px;
+        border: 3px solid rgba(255, 255, 255, 0.08);
+        border-top-color: #7f5af0;
+        border-radius: 50%;
+        animation: splash-spin 0.9s linear infinite;
+      }
+
+      .ng-splash__text {
+        color: #64748b;
+        font-size: 0.85rem;
+        letter-spacing: 0.05em;
+      }
+
+      @keyframes splash-spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      @keyframes splash-pulse {
+
+        0%,
+        100% {
+          transform: scale(1);
+          box-shadow: 0 0 40px rgba(127, 90, 240, 0.4);
+        }
+
+        50% {
+          transform: scale(1.08);
+          box-shadow: 0 0 60px rgba(127, 90, 240, 0.7);
+        }
+      }
+    </style>
+    <div class="ng-splash">
+      <div class="ng-splash__logo">
+        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 2 3 6l9 14 9-14-3-4Z" />
+          <path d="M3 6h18" />
+          <path d="m12 2-3 4 3 14 3-14-3-4Z" />
+        </svg>
+      </div>
+      <div class="ng-splash__spinner"></div>
+      <span class="ng-splash__text">Verificando espacio de trabajo…</span>
+    </div>
+  </app-root>
 </body>
+
 </html>
