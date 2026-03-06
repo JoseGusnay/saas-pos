@@ -1,0 +1,97 @@
+.confirm-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-modal);
+    background-color: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-4);
+    animation: backdrop-in var(--duration-fast) var(--ease-out) forwards;
+}
+
+.confirm-dialog {
+    background-color: var(--color-bg-surface);
+    border-radius: var(--radius-2xl);
+    border: var(--border-1) solid var(--color-border-subtle);
+    box-shadow: var(--shadow-xl);
+    padding: var(--space-6);
+    max-width: 22rem;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: var(--space-3);
+    animation: modal-in var(--duration-normal) var(--ease-out) forwards;
+
+    &__icon {
+        width: 3rem;
+        height: 3rem;
+        border-radius: var(--radius-full);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: var(--space-1);
+
+        svg {
+            width: 1.5rem;
+            height: 1.5rem;
+        }
+
+        &--danger {
+            background-color: var(--color-danger-subtle);
+            color: var(--color-danger-text);
+        }
+    }
+
+    &__title {
+        font-size: var(--text-base);
+        font-weight: var(--font-semibold);
+        color: var(--color-text-primary);
+        letter-spacing: -0.02em;
+        margin: 0;
+    }
+
+    &__message {
+        font-size: var(--text-sm);
+        color: var(--color-text-muted);
+        margin: 0;
+        line-height: var(--leading-relaxed);
+    }
+
+    &__actions {
+        display: flex;
+        gap: var(--space-3);
+        width: 100%;
+        margin-top: var(--space-2);
+
+        ui-button {
+            flex: 1;
+        }
+    }
+}
+
+@keyframes backdrop-in {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes modal-in {
+    from {
+        opacity: 0;
+        transform: scale(0.96);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}

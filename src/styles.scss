@@ -1,1 +1,22 @@
-/* You can add global styles to this file, and also import other style files */
+// =============================================================================
+// DESIGN SYSTEM ENTRY POINT
+// Import order matters — primitives first, then aliases, then base
+// =============================================================================
+
+// Layer 1: Primitive tokens (raw values — colors, typography, spacing, etc.)
+@use 'sass:math';
+@use 'styles/tokens/primitives.colors' as tok-colors;
+@use 'styles/tokens/primitives.typography' as tok-type;
+@use 'styles/tokens/primitives.spacing' as tok-spacing;
+@use 'styles/tokens/primitives.borders' as tok-borders;
+@use 'styles/tokens/primitives.shadows' as tok-shadows;
+@use 'styles/tokens/primitives.motion' as tok-motion;
+@use 'styles/tokens/primitives.zindex' as tok-zindex;
+
+// Layer 2: Semantic aliases (light + dark mode)
+@use 'styles/tokens/aliases.light' as tok-light;
+@use 'styles/tokens/aliases.dark' as tok-dark;
+
+// Layer 3: Base styles
+@use 'styles/base/reset' as base-reset;
+@use 'styles/base/globals' as base-globals;

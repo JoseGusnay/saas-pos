@@ -1,0 +1,66 @@
+<div class="branch-select-page">
+    <div class="branch-select-page__card">
+        <!-- Back -->
+        <button class="branch-select-page__back" type="button" (click)="goBack()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M19 12H5M12 5l-7 7 7 7" />
+            </svg>
+            Volver
+        </button>
+
+        <!-- Header -->
+        <div class="branch-select-page__header">
+            <div class="branch-select-page__icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM9 22V12h6v10" />
+                </svg>
+            </div>
+            <h1 class="branch-select-page__title">Selecciona tu Sucursal</h1>
+            <p class="branch-select-page__subtitle">Elige dónde vas a trabajar hoy</p>
+        </div>
+
+        <!-- Branch list -->
+        <div class="branch-list">
+            @for (branch of branches(); track branch.id) {
+            <button class="branch-card" [class.branch-card--selected]="selectedId() === branch.id"
+                [class.branch-card--loading]="selectedId() === branch.id && loading()" type="button"
+                (click)="select(branch.id)">
+                <div class="branch-card__icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM9 22V12h6v10" />
+                    </svg>
+                </div>
+                <div class="branch-card__info">
+                    <span class="branch-card__name">{{ branch.name }}</span>
+                    @if (branch.isMain) {
+                    <span class="branch-card__badge">Principal</span>
+                    }
+                </div>
+                <div class="branch-card__arrow">
+                    @if (selectedId() === branch.id && loading()) {
+                    <svg class="branch-card__spinner" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-dasharray="32"
+                            stroke-linecap="round" />
+                    </svg>
+                    } @else {
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 18l6-6-6-6" />
+                    </svg>
+                    }
+                </div>
+            </button>
+            }
+
+            @if (branches().length === 0) {
+            <div class="branch-select-page__empty">
+                <p>No tienes sucursales asignadas. Contacta a tu administrador.</p>
+            </div>
+            }
+        </div>
+
+        @if (error()) {
+        <div class="branch-select-page__error">{{ error() }}</div>
+        }
+    </div>
+</div>

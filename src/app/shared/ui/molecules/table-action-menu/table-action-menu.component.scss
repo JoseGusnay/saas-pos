@@ -1,0 +1,101 @@
+.action-menu {
+    position: relative;
+    display: inline-flex;
+
+    // ─── Trigger (the ⋯ button) ───────────────────────────────────────────────
+    &__trigger {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 2rem;
+        height: 2rem;
+        border: none;
+        background: transparent;
+        border-radius: var(--radius-md);
+        color: var(--color-text-muted);
+        cursor: pointer;
+        transition: background-color var(--duration-fast) var(--ease-out),
+            color var(--duration-fast) var(--ease-out);
+
+        svg {
+            width: 1rem;
+            height: 1rem;
+        }
+
+        &:hover {
+            background-color: var(--color-bg-raised);
+            color: var(--color-text-primary);
+        }
+    }
+
+    // ─── Dropdown panel ───────────────────────────────────────────────────────
+    &__dropdown {
+        position: absolute;
+        right: 0;
+        top: calc(100% + 0.25rem);
+        z-index: var(--z-dropdown);
+        min-width: 10rem;
+        background-color: var(--color-bg-overlay);
+        border: var(--border-1) solid var(--color-border-subtle);
+        border-radius: var(--radius-xl);
+        box-shadow: var(--shadow-lg);
+        padding: var(--space-1);
+        animation: menu-in var(--duration-fast) var(--ease-out) forwards;
+    }
+
+    // ─── Items ────────────────────────────────────────────────────────────────
+    &__item {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        width: 100%;
+        padding: var(--space-2) var(--space-3);
+        border: none;
+        background: transparent;
+        border-radius: var(--radius-lg);
+        font-size: var(--text-sm);
+        font-weight: var(--font-medium);
+        color: var(--color-text-secondary);
+        cursor: pointer;
+        text-align: left;
+        transition: background-color var(--duration-fast) var(--ease-out),
+            color var(--duration-fast) var(--ease-out);
+
+        &:hover:not(:disabled) {
+            background-color: var(--color-bg-raised);
+            color: var(--color-text-primary);
+        }
+
+        &:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        &--danger {
+            color: var(--color-danger-text);
+
+            &:hover:not(:disabled) {
+                background-color: var(--color-danger-subtle);
+                color: var(--color-danger-text);
+            }
+        }
+    }
+
+    &__item-icon {
+        width: 0.875rem;
+        height: 0.875rem;
+        flex-shrink: 0;
+    }
+}
+
+@keyframes menu-in {
+    from {
+        opacity: 0;
+        transform: translateY(-0.25rem) scale(0.97);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}

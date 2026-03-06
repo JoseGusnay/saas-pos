@@ -1,0 +1,130 @@
+<ui-page-header title="Sucursales" subtitle="Gestiona las sucursales de tu negocio">
+    <ui-button variant="primary" size="md" (clicked)="openCreate()">
+        <svg leading viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round" width="16" height="16">
+            <path d="M12 5v14M5 12h14" />
+        </svg>
+        Nueva Sucursal
+    </ui-button>
+</ui-page-header>
+
+<!-- Search bar -->
+<div class="branches__toolbar">
+    <div class="branches__search">
+        <svg class="branches__search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8" />
+            <path d="m21 21-4.3-4.3" />
+        </svg>
+        <input class="branches__search-input" type="search" placeholder="Buscar sucursal..." [value]="search()"
+            (input)="onSearch($any($event.target).value)" />
+    </div>
+</div>
+
+<!-- Data Table -->
+<ui-data-table [columns]="columns" [total]="total()" [page]="page()" [limit]="limit()" [loading]="loading()"
+    [sortField]="sortField()" [sortDir]="sortDir()" (sortChanged)="onSort($event)" (pageChanged)="onPageChange($event)">
+    <!-- Table rows projected via slot -->
+    <ng-container rows>
+        @for (branch of branches(); track branch.id) {
+        <tr>
+            <!-- Name -->
+            <td>
+                <div class="branches__name-cell">
+                    <span class="branches__name">{{ branch.name }}</span>
+                    @if (branch.isMain) {
+                    <ui-badge variant="primary" [dot]="true">Principal</ui-badge>
+                    }
+                </div>
+            </td>
+
+            <!-- City -->
+            <td>
+                <span class="branches__muted">{{ branch.city ?? '—' }}</span>
+            </td>
+
+            <!-- Phone -->
+            <td>
+                <span class="branches__muted">{{ branch.phone ?? '—' }}</span>
+            </td>
+
+            <!-- Active toggle -->
+            <td style="text-align: center;">
+                <ui-toggle-switch [checked]="branch.isActive" (toggled)="onToggleActive(branch, $event)" />
+            </td>
+
+            <!-- Actions -->
+            <td style="text-align: right;">
+                <ui-table-action-menu [actions]="rowActions" (actionClicked)="onRowAction($event, branch)" />
+            </td>
+        </tr>
+        }
+    </ng-container>
+
+    <!-- Empty action slot -->
+    <ng-container empty-action>
+        <ui-button variant="primary" size="md" (clicked)="openCreate()">
+            Crear primera sucursal
+        </ui-button>
+    </ng-container>
+</ui-data-table>
+
+<!-- ─── Create / Edit Modal ─────────────────────────────────────────────── -->
+<ui-modal [isOpen]="modalOpen()" [title]="modalTitle()" size="md" (closed)="closeModal()">
+    <form body class="branch-form" (ngSubmit)="saveForm()">
+        <div class="branch-form__grid">
+            <!-- Name -->
+            <div class="branch-form__field branch-form__field--full">
+                <label class="branch-form__label" for="br-name">
+                    Nombre <span class="branch-form__required">*</span>
+                </label>
+                <input id="br-name" class="branch-form__input" type="text" placeholder="Ej. Sucursal Centro"
+                    [value]="form().name" (input)="updateForm({ name: $any($event.target).value })" required />
+            </div>
+
+            <!-- City -->
+            <div class="branch-form__field">
+                <label class="branch-form__label" for="br-city">Ciudad</label>
+                <input id="br-city" class="branch-form__input" type="text" placeholder="Ej. Ciudad de México"
+                    [value]="form().city" (input)="updateForm({ city: $any($event.target).value })" />
+            </div>
+
+            <!-- Phone -->
+            <div class="branch-form__field">
+                <label class="branch-form__label" for="br-phone">Teléfono</label>
+                <input id="br-phone" class="branch-form__input" type="tel" placeholder="+52 55 0000 0000"
+                    [value]="form().phone" (input)="updateForm({ phone: $any($event.target).value })" />
+            </div>
+
+            <!-- Address -->
+            <div class="branch-form__field branch-form__field--full">
+                <label class="branch-form__label" for="br-address">Dirección</label>
+                <input id="br-address" class="branch-form__input" type="text"
+                    placeholder="Ej. Av. Principal 123, Col. Centro" [value]="form().address"
+                    (input)="updateForm({ address: $any($event.target).value })" />
+            </div>
+
+            <!-- Is Main toggle -->
+            <div class="branch-form__field branch-form__field--full branch-form__toggle-row">
+                <div class="branch-form__toggle-text">
+                    <span class="branch-form__label">Sucursal principal</span>
+                    <span class="branch-form__hint">Marca esta como la sucursal principal del negocio</span>
+                </div>
+                <ui-toggle-switch [checked]="form().isMain" (toggled)="updateForm({ isMain: $event })" />
+            </div>
+        </div>
+    </form>
+
+    <!-- Footer -->
+    <ng-container footer>
+        <ui-button variant="ghost" size="md" (clicked)="closeModal()">Cancelar</ui-button>
+        <ui-button variant="primary" size="md" [loading]="saving()" (clicked)="saveForm()">
+            {{ modalMode() === 'create' ? 'Crear Sucursal' : 'Guardar Cambios' }}
+        </ui-button>
+    </ng-container>
+</ui-modal>
+
+<!-- ─── Delete Confirm ───────────────────────────────────────────────────── -->
+<ui-confirm-dialog [isOpen]="confirmOpen()" title="Eliminar sucursal"
+    message="¿Seguro que deseas eliminar esta sucursal? Esta acción no se puede deshacer." confirmLabel="Sí, eliminar"
+    [loading]="deleting()" (confirmed)="onConfirmDelete()" (cancelled)="onCancelDelete()" />

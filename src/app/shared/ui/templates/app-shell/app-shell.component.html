@@ -1,0 +1,18 @@
+<div class="app-shell" [class.app-shell--sidebar-collapsed]="sidebarCollapsed()">
+
+    <!-- Mobile backdrop -->
+    <div class="app-shell__backdrop" [class.app-shell__backdrop--visible]="!sidebarCollapsed()"
+        (click)="toggleSidebar()" aria-hidden="true"></div>
+
+    <!-- Sidebar (fixed) -->
+    <app-sidebar [collapsed]="sidebarCollapsed()" />
+
+    <!-- Main area -->
+    <div class="app-shell__main">
+        <app-top-bar [sidebarCollapsed]="sidebarCollapsed()" (toggleSidebar)="toggleSidebar()" />
+        <main class="app-shell__content" id="main-content" role="main">
+            <router-outlet />
+        </main>
+    </div>
+
+</div>

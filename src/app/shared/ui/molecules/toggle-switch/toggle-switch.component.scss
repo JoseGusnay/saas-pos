@@ -1,0 +1,70 @@
+.toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2-5);
+    cursor: pointer;
+    user-select: none;
+
+    &--disabled {
+        cursor: not-allowed;
+        opacity: 0.5;
+    }
+
+    // Visually hide the native checkbox
+    &__input {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border-width: 0;
+    }
+
+    // The visible track
+    &__track {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        width: 2.25rem; // 36px
+        height: 1.25rem; // 20px
+        border-radius: var(--radius-full);
+        background-color: var(--color-border-default);
+        transition: background-color var(--duration-fast) var(--ease-out);
+        flex-shrink: 0;
+    }
+
+    // Thumb (the sliding circle)
+    &__thumb {
+        position: absolute;
+        left: 0.1875rem; // 3px
+        width: 0.875rem; // 14px
+        height: 0.875rem;
+        border-radius: var(--radius-full);
+        background-color: #ffffff;
+        box-shadow: var(--shadow-sm);
+        transition: transform var(--duration-fast) var(--ease-out);
+    }
+
+    // When checked
+    &__input:checked~&__track {
+        background-color: var(--color-primary);
+    }
+
+    &__input:checked~&__track &__thumb {
+        transform: translateX(1rem); // 16px
+    }
+
+    // Focus ring
+    &__input:focus-visible~&__track {
+        box-shadow: var(--shadow-focus-primary);
+    }
+
+    &__label {
+        font-size: var(--text-sm);
+        color: var(--color-text-secondary);
+        font-weight: var(--font-medium);
+    }
+}

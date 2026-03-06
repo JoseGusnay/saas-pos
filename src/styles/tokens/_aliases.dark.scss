@@ -1,0 +1,126 @@
+// =============================================================================
+// SEMANTIC ALIAS TOKENS — DARK MODE (Notion-style)
+// Applied via: [data-theme="dark"] on <html> element
+// Same variable names as light — only values change
+// Palette inspired by Notion: warm neutral grays, no blue tint
+// =============================================================================
+
+[data-theme='dark'] {
+    // ---------------------------------------------------------------------------
+    // Background
+    // ---------------------------------------------------------------------------
+    --color-bg-base: #191919; // Notion page bg — warm, almost-black neutral
+    --color-bg-subtle: #161616; // Sidebar, darker recessed areas
+    --color-bg-surface: #202020; // Cards, top-bar, surfaces above base
+    --color-bg-raised: #252525; // Elevated cards, dropdowns
+    --color-bg-overlay: #2c2c2c; // Modals, popovers
+    --color-bg-inverse: #f0f0f0; // Dark badges on dark background
+
+    // ---------------------------------------------------------------------------
+    // Border — ultra-subtle, rgba-based (Notion style: barely-there lines)
+    // ---------------------------------------------------------------------------
+    --color-border-subtle: rgba(255, 255, 255, 0.055); // barely visible dividers
+    --color-border-default: rgba(255, 255, 255, 0.10); // nav borders, separators
+    --color-border-strong: rgba(255, 255, 255, 0.18); // focus rings, strong dividers
+    --color-border-inverse: rgba(0, 0, 0, 0.20);
+
+    // ---------------------------------------------------------------------------
+    // Text — opacity scale for clean hierarchy (Notion's exact approach)
+    // ---------------------------------------------------------------------------
+    --color-text-primary: rgba(255, 255, 255, 0.87); // main content — off-white
+    --color-text-secondary: rgba(255, 255, 255, 0.60); // labels, captions
+    --color-text-muted: rgba(255, 255, 255, 0.40); // placeholders, hints
+    --color-text-disabled: rgba(255, 255, 255, 0.22); // disabled states
+    --color-text-inverse: #191919;
+    --color-text-on-primary: #ffffff;
+
+    // ---------------------------------------------------------------------------
+    // Primary (Indigo) — slightly brightened for dark bg readability
+    // ---------------------------------------------------------------------------
+    --color-primary: #7c7cf8; // Lighter indigo, readable on dark
+    --color-primary-hover: #9d9dfa;
+    --color-primary-active: #bcbcfc;
+    --color-primary-subtle: rgba(124, 124, 248, 0.10);
+    --color-primary-muted: rgba(124, 124, 248, 0.16);
+    --color-primary-border: rgba(124, 124, 248, 0.30);
+    --color-primary-text: #a5a5fb;
+
+    // ---------------------------------------------------------------------------
+    // Secondary (Violet)
+    // ---------------------------------------------------------------------------
+    --color-secondary: var(--primitive-violet-400);
+    --color-secondary-hover: var(--primitive-violet-300);
+    --color-secondary-subtle: rgb(139 92 246 / 0.10);
+    --color-secondary-muted: rgb(139 92 246 / 0.15);
+    --color-secondary-border: rgb(139 92 246 / 0.28);
+    --color-secondary-text: var(--primitive-violet-300);
+
+    // ---------------------------------------------------------------------------
+    // Success (Emerald)
+    // ---------------------------------------------------------------------------
+    --color-success: var(--primitive-emerald-400);
+    --color-success-hover: var(--primitive-emerald-300);
+    --color-success-subtle: rgb(52 211 153 / 0.10);
+    --color-success-muted: rgb(52 211 153 / 0.15);
+    --color-success-border: rgb(52 211 153 / 0.28);
+    --color-success-text: var(--primitive-emerald-400);
+
+    // ---------------------------------------------------------------------------
+    // Warning (Amber)
+    // ---------------------------------------------------------------------------
+    --color-warning: var(--primitive-amber-400);
+    --color-warning-hover: var(--primitive-amber-300);
+    --color-warning-subtle: rgb(251 191 36 / 0.10);
+    --color-warning-muted: rgb(251 191 36 / 0.15);
+    --color-warning-border: rgb(251 191 36 / 0.28);
+    --color-warning-text: var(--primitive-amber-400);
+
+    // ---------------------------------------------------------------------------
+    // Danger (Rose)
+    // ---------------------------------------------------------------------------
+    --color-danger: var(--primitive-rose-400);
+    --color-danger-hover: var(--primitive-rose-300);
+    --color-danger-subtle: rgb(251 113 133 / 0.10);
+    --color-danger-muted: rgb(251 113 133 / 0.15);
+    --color-danger-border: rgb(251 113 133 / 0.28);
+    --color-danger-text: var(--primitive-rose-400);
+
+    // ---------------------------------------------------------------------------
+    // Info (Sky)
+    // ---------------------------------------------------------------------------
+    --color-info: var(--primitive-sky-400);
+    --color-info-hover: var(--primitive-sky-300);
+    --color-info-subtle: rgb(56 189 248 / 0.10);
+    --color-info-muted: rgb(56 189 248 / 0.15);
+    --color-info-border: rgb(56 189 248 / 0.28);
+    --color-info-text: var(--primitive-sky-400);
+
+    // ---------------------------------------------------------------------------
+    // POS Accent (Orange)
+    // ---------------------------------------------------------------------------
+    --color-accent: var(--primitive-orange-400);
+    --color-accent-hover: var(--primitive-orange-300);
+    --color-accent-subtle: rgb(251 146 60 / 0.10);
+    --color-accent-muted: rgb(251 146 60 / 0.15);
+    --color-accent-border: rgb(251 146 60 / 0.28);
+    --color-accent-text: var(--primitive-orange-400);
+
+    // ---------------------------------------------------------------------------
+    // Sidebar specific
+    // ---------------------------------------------------------------------------
+    --color-sidebar-bg: #161616; // Darker than content #191919 — clear visual separation
+    --color-sidebar-border: rgba(255, 255, 255, 0.07);
+    --color-sidebar-item-active-bg: rgba(124, 124, 248, 0.15); // 15% — visible "you are here"
+    --color-sidebar-item-active-border: #7c7cf8;
+    --color-sidebar-item-active-text: #a5a5fb;
+    --color-sidebar-item-hover-bg: rgba(255, 255, 255, 0.055);
+    --color-sidebar-item-text: rgba(255, 255, 255, 0.60);
+
+    // ---------------------------------------------------------------------------
+    // Top bar specific
+    // ---------------------------------------------------------------------------
+    --color-topbar-bg: #202020; // Slight elevation above base #191919
+    // Depth via barely-visible shadow — premium look, avoids hard borders
+    --shadow-topbar: 0 1px 0 0 rgba(255, 255, 255, 0.05),
+        0 1px 4px 0 rgba(0, 0, 0, 0.25);
+}
