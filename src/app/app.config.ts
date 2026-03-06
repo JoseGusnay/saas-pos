@@ -3,7 +3,7 @@ import {
   provideBrowserGlobalErrorListeners,
   APP_INITIALIZER,
 } from '@angular/core';
-import { provideRouter } from '@angular/router';
+import { provideRouter, withPreloading, PreloadAllModules } from '@angular/router';
 import {
   provideHttpClient,
   withInterceptors,
@@ -21,7 +21,7 @@ export function initializeTenant(tenantService: TenantIdentifierService) {
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
-    provideRouter(routes),
+    provideRouter(routes, withPreloading(PreloadAllModules)),
     provideHttpClient(
       withFetch(),
       withInterceptors([authInterceptor]),
