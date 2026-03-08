@@ -1,0 +1,92 @@
+@if (isGroup) {
+<div class="qb-group" [class.qb-group--root]="isRoot">
+    <div class="qb-group__header">
+        <button class="qb-btn qb-btn--logical" (click)="toggleLogicalOperator()"
+            [ngClass]="'qb-btn--' + groupNode.logicalOperator.toLowerCase()">
+            {{ groupNode.logicalOperator }}
+        </button>
+
+        <div class="qb-group__actions">
+            <button class="qb-btn qb-btn--ghost" (click)="addRule()" title="Añadir Condición">
+                <app-icon name="lucidePlus"></app-icon> Regla
+            </button>
+            <button class="qb-btn qb-btn--ghost" (click)="addGroup()" title="Añadir Grupo Lógico">
+                <app-icon name="lucidePlus"></app-icon> Grupo
+            </button>
+            @if (!isRoot) {
+            <button class="qb-btn qb-btn--icon" (click)="removeNode.emit(node.id)" title="Eliminar Grupo Lógico">
+                <app-icon name="lucideX"></app-icon>
+            </button>
+            }
+        </div>
+    </div>
+
+    @if (groupNode.children.length > 0) {
+    <div class="qb-group__children">
+        @for (child of groupNode.children; track child.id) {
+        <app-query-node [node]="child" [availableFields]="availableFields" (nodeChange)="onChildChange($event)"
+            (removeNode)="onRemoveChild($event)"></app-query-node>
+        }
+    </div>
+    } @else {
+    <div class="qb-group__empty">No hay filtros anidados. Haz clic en "Regla" para añadir una.</div>
+    }
+</div>
+} @else {
+<div class="qb-rule">
+    <!-- 1. Field Custom Select -->
+    <div class="qb-custom-select-container">
+        <button class="qb-custom-select-trigger" (click)="toggleFieldDropdown()"
+            [class.qb-custom-select-trigger--active]="isFieldDropdownOpen()">
+            {{ currentFieldLabel }}
+            <app-icon name="lucideChevronDown"></app-icon>
+        </button>
+
+        @if (isFieldDropdownOpen()) {
+        <div class="qb-dropdown-backdrop" (click)="isFieldDropdownOpen.set(false)"></div>
+        <div class="qb-dropdown">
+            @for (field of availableFields; track field.id) {
+            <button class="qb-dropdown-item" [class.qb-dropdown-item--active]="field.id === ruleNode.field"
+                (click)="onFieldSelect(field.id)">
+                <span class="qb-dropdown-item-label">{{ field.label }}</span>
+                @if (field.id === ruleNode.field) {
+                <app-icon name="lucideCheck" class="qb-dropdown-item-check"></app-icon>
+                }
+            </button>
+            }
+        </div>
+        }
+    </div>
+
+    <!-- 2. Operator Custom Select -->
+    <div class="qb-custom-select-container">
+        <button class="qb-custom-select-trigger qb-custom-select-trigger--operator" (click)="toggleOperatorDropdown()"
+            [class.qb-custom-select-trigger--active]="isOperatorDropdownOpen()">
+            {{ getOperatorLabel(ruleNode.operator) }}
+            <app-icon name="lucideChevronDown"></app-icon>
+        </button>
+
+        @if (isOperatorDropdownOpen()) {
+        <div class="qb-dropdown-backdrop" (click)="isOperatorDropdownOpen.set(false)"></div>
+        <div class="qb-dropdown">
+            @for (op of availableOperators; track op) {
+            <button class="qb-dropdown-item" [class.qb-dropdown-item--active]="op === ruleNode.operator"
+                (click)="onOperatorSelect(op)">
+                <span class="qb-dropdown-item-label">{{ getOperatorLabel(op) }}</span>
+                @if (op === ruleNode.operator) {
+                <app-icon name="lucideCheck" class="qb-dropdown-item-check"></app-icon>
+                }
+            </button>
+            }
+        </div>
+        }
+    </div>
+
+    <input class="qb-input" [ngModel]="ruleNode.value" (ngModelChange)="onValueChange($event)"
+        [placeholder]="'Escribe un valor...'">
+
+    <button class="qb-btn qb-btn--icon" (click)="removeNode.emit(node.id)">
+        <app-icon name="lucideX"></app-icon>
+    </button>
+</div>
+}

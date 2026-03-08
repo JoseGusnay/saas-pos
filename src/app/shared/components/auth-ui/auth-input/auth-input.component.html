@@ -1,0 +1,12 @@
+<div class="auth-input-group" [class.is-focused]="isFocused" [class.has-error]="!!error"
+    [class.is-disabled]="isDisabled">
+    <label class="auth-input-group__label" *ngIf="label">{{ label }}</label>
+
+    <div class="auth-input-group__wrapper">
+        <ng-icon *ngIf="icon" [name]="icon" class="auth-input-group__icon"></ng-icon>
+        <input [type]="type" class="auth-input-group__element" [placeholder]="placeholder" [value]="value"
+            [disabled]="isDisabled" (input)="onInput($event)" (focus)="onFocus()" (blur)="onBlur()" />
+    </div>
+
+    <span class="auth-input-group__error" *ngIf="error">{{ error }}</span>
+</div>

@@ -1,22 +1,41 @@
-// =============================================================================
-// DESIGN SYSTEM ENTRY POINT
-// Import order matters — primitives first, then aliases, then base
-// =============================================================================
+/* =========================================================================
+   App Shell Premium - Global Styles
+   ========================================================================= */
 
-// Layer 1: Primitive tokens (raw values — colors, typography, spacing, etc.)
-@use 'sass:math';
-@use 'styles/tokens/primitives.colors' as tok-colors;
-@use 'styles/tokens/primitives.typography' as tok-type;
-@use 'styles/tokens/primitives.spacing' as tok-spacing;
-@use 'styles/tokens/primitives.borders' as tok-borders;
-@use 'styles/tokens/primitives.shadows' as tok-shadows;
-@use 'styles/tokens/primitives.motion' as tok-motion;
-@use 'styles/tokens/primitives.zindex' as tok-zindex;
+@use 'styles/abstracts/variables';
+@use 'styles/abstracts/mixins';
+@use 'styles/base/reset';
 
-// Layer 2: Semantic aliases (light + dark mode)
-@use 'styles/tokens/aliases.light' as tok-light;
-@use 'styles/tokens/aliases.dark' as tok-dark;
+/* 
+   Cualquier estilo que exceda el Design System debe ser justificado 
+   o preferiblemente movido al componente SCSS específico usando BEM.
+*/
 
-// Layer 3: Base styles
-@use 'styles/base/reset' as base-reset;
-@use 'styles/base/globals' as base-globals;
+/* =========================================================================
+   Global Scrollbar Customization (macOS / Vercel Aesthetic)
+   ========================================================================= */
+
+::-webkit-scrollbar {
+   width: 6px;
+   height: 6px;
+}
+
+::-webkit-scrollbar-track {
+   background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+   background: rgba(120, 120, 120, 0.3);
+   border-radius: 10px;
+   transition: background 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+   background: rgba(120, 120, 120, 0.5);
+}
+
+/* Firefox pseudo-elements (Standard) */
+* {
+   scrollbar-width: thin;
+   scrollbar-color: rgba(120, 120, 120, 0.4) transparent;
+}

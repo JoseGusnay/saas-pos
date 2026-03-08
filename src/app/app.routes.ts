@@ -1,75 +1,26 @@
 import { Routes } from '@angular/router';
-import { AppShellComponent } from './shared/ui/templates/app-shell/app-shell.component';
-import { authGuard } from './core/auth/auth.guard';
+import { AppShellComponent } from './core/layout/templates/app-shell/app-shell.component';
+import { authGuardFn } from './core/guards/auth.guard';
 
 export const routes: Routes = [
-    // ─── Public routes (no auth) ──────────────────────────────────────────────
     {
-        path: 'login',
-        loadComponent: () =>
-            import('./features/auth/login/login.component').then(m => m.LoginComponent),
+        path: 'auth',
+        loadChildren: () => import('./features/auth/auth.routes').then(m => m.AUTH_ROUTES)
     },
-    {
-        path: 'select-branch',
-        loadComponent: () =>
-            import('./features/auth/branch-select/branch-select.component').then(m => m.BranchSelectComponent),
-    },
-
-    // ─── Protected routes (auth required) ────────────────────────────────────
     {
         path: '',
         component: AppShellComponent,
-        canActivate: [authGuard],
+        canActivate: [authGuardFn],
         children: [
+            { path: '', redirectTo: 'sucursales', pathMatch: 'full' },
             {
-                path: '',
-                redirectTo: 'dashboard',
-                pathMatch: 'full',
-            },
-            {
-                path: 'dashboard',
-                loadComponent: () =>
-                    import('./features/dashboard/dashboard.component').then(m => m.DashboardComponent),
-            },
-            {
-                path: 'orders',
-                loadComponent: () =>
-                    import('./features/orders/orders.component').then(m => m.OrdersComponent),
-            },
-            {
-                path: 'products',
-                loadComponent: () =>
-                    import('./features/products/products.component').then(m => m.ProductsComponent),
-            },
-            {
-                path: 'inventory',
-                loadComponent: () =>
-                    import('./features/inventory/inventory.component').then(m => m.InventoryComponent),
-            },
-            {
-                path: 'customers',
-                loadComponent: () =>
-                    import('./features/customers/customers.component').then(m => m.CustomersComponent),
-            },
-            {
-                path: 'reports',
-                loadComponent: () =>
-                    import('./features/reports/reports.component').then(m => m.ReportsComponent),
-            },
-            {
-                path: 'settings',
-                loadComponent: () =>
-                    import('./features/settings/settings.component').then(m => m.SettingsComponent),
-            },
-            {
-                path: 'branches',
-                loadComponent: () =>
-                    import('./features/branches/branches.component').then(m => m.BranchesComponent),
-            },
-        ],
+                path: 'sucursales',
+                loadComponent: () => import('./features/branches/pages/branches-list/branches-list.component').then(m => m.BranchesListComponent)
+            }
+        ]
     },
     {
-        path: '**',
-        redirectTo: 'dashboard',
-    },
+        path: 'workspace-not-found',
+        loadComponent: () => import('./features/error/pages/workspace-not-found-page/workspace-not-found-page.component').then(m => m.WorkspaceNotFoundPageComponent)
+    }
 ];

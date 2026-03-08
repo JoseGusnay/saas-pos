@@ -1,0 +1,47 @@
+/* =========================================================================
+   SCSS Mixins de Utilidad
+   Sirven para evitar repetir código en nuestros bloques BEM
+   ========================================================================= */
+
+// Mixin para centrar contenido perfectamente (Flexbox)
+@mixin flex-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+// Mixin para centrar contenido verticalmente entre extremos (Header)
+@mixin flex-between {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+// Mixin para evitar scrollbars visibles feas en macOS/Windows
+// Ideal para el Sidebar cuando tiene muchos links
+@mixin hide-scrollbar {
+    -ms-overflow-style: none; // IE y Edge
+    scrollbar-width: none; // Firefox
+
+    &::-webkit-scrollbar {
+        display: none; // Chrome, Safari, Opera
+    }
+}
+
+// Mixin para recortar texto largo con puntos suspensivos (...)
+@mixin text-truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+// Hover interactivo limpio que cambia el color de fondo y de texto sutilmente
+@mixin interactive-hover($bg-color: var(--color-bg-hover), $text-color: var(--color-text-main)) {
+    cursor: pointer;
+    transition: all var(--transition-fast);
+
+    &:hover {
+        background-color: $bg-color;
+        color: $text-color;
+    }
+}

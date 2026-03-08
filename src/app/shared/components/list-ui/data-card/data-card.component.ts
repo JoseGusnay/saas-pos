@@ -1,0 +1,85 @@
+import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { IconComponent } from '../../../../core/layout/atoms/icon/icon.component';
+
+export interface DataCardDetail {
+    icon: string;
+    text: string;
+}
+
+export interface DataCardMetric {
+    label: string;
+    value: string;
+}
+
+export interface DataCardAvatar {
+    url: string;
+    name: string;
+}
+
+@Component({
+    selector: 'app-data-card',
+    standalone: true,
+    imports: [CommonModule, IconComponent],
+    template: `
+    <article class="data-card">
+      <header class="data-card__header">
+        <div class="data-card__title-container">
+          <h3 class="data-card__name">{{ title }}</h3>
+          @if (status) {
+            <span 
+              class="data-card__status" 
+              [class.data-card__status--inactive]="statusConfig === 'inactive'"
+              [class.data-card__status--warning]="statusConfig === 'warning'"
+            >
+              {{ status }}
+            </span>
+          }
+        </div>
+        <button class="data-card__kebab" (click)="optionsClick.emit()">
+          <app-icon name="lucideMoreVertical"></app-icon>
+        </button>
+      </header>
+
+      <div class="data-card__body">
+        @for (detail of details; track detail.text) {
+          <div class="data-card__detail">
+            <app-icon [name]="detail.icon"></app-icon>
+            <span>{{ detail.text }}</span>
+          </div>
+        }
+      </div>
+
+      <footer class="data-card__footer">
+        @if (metric) {
+          <div class="data-card__metric">
+            <span class="data-card__metric-label">{{ metric.label }}</span>
+            <span class="data-card__metric-value">{{ metric.value }}</span>
+          </div>
+        }
+        
+        @if (avatars && avatars.length > 0) {
+          <div class="data-card__avatars">
+            @for (avatar of avatars; track avatar.url) {
+              <img [src]="avatar.url" class="data-card__avatar" [alt]="avatar.name">
+            }
+          </div>
+        }
+      </footer>
+    </article>
+  `,
+    styleUrls: ['./data-card.component.scss']
+})
+export class DataCardComponent {
+    @Input({ required: true }) title!: string;
+    @Input() status: string = '';
+    // statusConfig defines the color variant: 'active' (default/success), 'inactive' (gray/closed), 'warning' (yellow)
+    @Input() statusConfig: 'active' | 'inactive' | 'warning' = 'active';
+
+    @Input() details: DataCardDetail[] = [];
+
+    @Input() metric?: DataCardMetric;
+    @Input() avatars: DataCardAvatar[] = [];
+
+    @Output() optionsClick = new EventEmitter<void>();
+}

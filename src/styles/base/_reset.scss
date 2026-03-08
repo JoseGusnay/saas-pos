@@ -1,215 +1,63 @@
-// =============================================================================
-// CSS RESET — Modern minimal reset
-// =============================================================================
+/* =========================================================================
+   SaaS Premium App Shell - CSS Reset Estricto
+   Preparando el lienzo en blanco para nuestro Layout Maestro
+   ========================================================================= */
 
+// Usamos el border-box global para que padding/borders no afecten anchos
 *,
 *::before,
 *::after {
     box-sizing: border-box;
-    margin: 0;
-    padding: 0;
 }
 
-html {
-    line-height: 1.15;
-    -webkit-text-size-adjust: 100%;
-    tab-size: 4;
-    scroll-behavior: smooth;
+// Reseteamos márgenes y paddings por defecto de los navegadores
+* {
+    margin: 0;
+    padding: 0;
 }
 
 body {
-    line-height: inherit;
+    // Aplicamos nuestra fuente base. Si no carga, cae de gracia en Sans nativa
+    font-family: var(--font-family-sans);
+
+    // Color de texto suavizado (No #000)
+    color: var(--color-text-main);
+
+    // Tamaño óptimo para SaaS denso
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-regular);
+
+    // Esto es crucial para un look "Apple/Vercel": suaviza muchísimo las fuentes
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+
+    // Fondo que usaremos para nuestro Canvas global
+    background-color: var(--color-bg-canvas);
+
+    // Evitamos que el scroll salte a nivel de Body (lo manejaremos a nivel interno del main)
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
 }
 
-hr {
-    height: 0;
-    color: inherit;
-    border-top-width: 1px;
-}
-
-abbr[title] {
-    text-decoration: underline dotted;
-}
-
-b,
-strong {
-    font-weight: bolder;
-}
-
-code,
-kbd,
-samp,
-pre {
-    font-family: var(--font-mono);
-    font-size: 1em;
-}
-
-small {
-    font-size: 80%;
-}
-
-sub,
-sup {
-    font-size: 75%;
-    line-height: 0;
-    position: relative;
-    vertical-align: baseline;
-}
-
-sub {
-    bottom: -0.25em;
-}
-
-sup {
-    top: -0.5em;
-}
-
-table {
-    text-indent: 0;
-    border-color: inherit;
-    border-collapse: collapse;
-}
-
-button,
-input,
-optgroup,
-select,
-textarea {
-    font-family: inherit;
-    font-size: 100%;
-    line-height: inherit;
-    color: inherit;
-    margin: 0;
-    padding: 0;
-}
-
-button,
-select {
-    text-transform: none;
-}
-
-button,
-[type='button'],
-[type='reset'],
-[type='submit'] {
-    -webkit-appearance: button;
-    appearance: button;
-    background-color: transparent;
-    background-image: none;
-    cursor: pointer;
-    border: none;
-}
-
-:-moz-focusring {
-    outline: auto;
-}
-
-:-moz-ui-invalid {
-    box-shadow: none;
-}
-
-progress {
-    vertical-align: baseline;
-}
-
-::-webkit-inner-spin-button,
-::-webkit-outer-spin-button {
-    height: auto;
-}
-
-[type='search'] {
-    -webkit-appearance: textfield;
-    appearance: textfield;
-    outline-offset: -2px;
-}
-
-::-webkit-search-decoration {
-    -webkit-appearance: none;
-}
-
-::-webkit-file-upload-button {
-    -webkit-appearance: button;
-    font: inherit;
-}
-
-summary {
-    display: list-item;
-}
-
-blockquote,
-dl,
-dd,
-h1,
-h2,
-h3,
-h4,
-h5,
-h6,
-figure,
-p,
-pre {
-    margin: 0;
-}
-
-fieldset {
-    margin: 0;
-    padding: 0;
-}
-
-legend {
-    padding: 0;
-}
-
-ol,
-ul,
-menu {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-}
-
-textarea {
-    resize: vertical;
-}
-
-input::placeholder,
-textarea::placeholder {
-    opacity: 1;
-    color: var(--color-text-muted);
-}
-
-button,
-[role='button'] {
-    cursor: pointer;
-}
-
-:disabled {
-    cursor: default;
-}
-
-img,
-svg,
-video,
-canvas,
-audio,
-iframe,
-embed,
-object {
-    display: block;
-    vertical-align: middle;
-}
-
-img,
-video {
-    max-width: 100%;
-    height: auto;
-}
-
-[hidden] {
-    display: none;
-}
-
+// Enlaces limpios por defecto
 a {
+    text-decoration: none;
     color: inherit;
-    text-decoration: inherit;
+}
+
+// Botones sin estilos por defecto
+button {
+    border: none;
+    background: none;
+    font-family: inherit;
+    font-size: inherit;
+    color: inherit;
+    cursor: pointer;
+}
+
+// Listas sin viñetas (para nuestro Sidebar nav)
+ul,
+ol {
+    list-style: none;
 }

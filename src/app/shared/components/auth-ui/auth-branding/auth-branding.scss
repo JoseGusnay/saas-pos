@@ -1,0 +1,431 @@
+.auth-branding {
+    display: none; // Movil oculto
+
+    @media (min-width: 1024px) {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 4rem;
+        background-color: var(--color-bg-surface);
+        border-right: 1px solid var(--color-border-light);
+        width: 100%;
+        height: 100%;
+        position: relative;
+        overflow: hidden;
+    }
+
+    &__logo {
+        font-size: 1.75rem;
+        font-weight: 700;
+        letter-spacing: -0.04em;
+        color: var(--color-text-main);
+        z-index: 10;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+
+        &::before {
+            content: '';
+            display: inline-block;
+            width: 28px;
+            height: 28px;
+            background: var(--color-text-main);
+            clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+        }
+    }
+
+    &__footer {
+        z-index: 10;
+
+        p {
+            font-size: var(--font-size-base);
+            color: var(--color-text-muted);
+            font-weight: 500;
+        }
+    }
+
+    &__center-stack {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 3rem;
+        z-index: 5;
+        width: 100%;
+        max-width: 650px;
+        margin: 0 auto; // Centro horizontal
+    }
+}
+
+// -----------------------------------------------------
+// EL GRID INTERACTIVO (Fondo Base)
+// -----------------------------------------------------
+
+.grid-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+
+    // Grid Base Sutil
+    background-image: radial-gradient(circle at 1px 1px, var(--color-border-light) 1px, transparent 0);
+    background-size: 40px 40px;
+    background-position: center;
+
+    // Máscara radial invertida: Transparente en el centro, oscuro en los bordes
+    mask-image: radial-gradient(ellipse at center, black 40%, transparent 100%);
+    -webkit-mask-image: radial-gradient(ellipse at center, black 40%, transparent 100%);
+
+    [data-theme="dark"] & {
+        opacity: 0.6;
+    }
+
+    [data-theme="light"] & {
+        opacity: 0.8;
+    }
+}
+
+// -----------------------------------------------------
+// TIPOGRAFÍA KINÉTICA Y AURA
+// -----------------------------------------------------
+
+.kinetic-container {
+    position: relative;
+    z-index: 5; // Encima del grid, debajo de las cards
+    width: 100%;
+}
+
+.kinetic-aura {
+    position: absolute;
+    top: 50%;
+    left: 20%;
+    transform: translate(-50%, -50%);
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
+    z-index: -1;
+    pointer-events: none;
+
+    [data-theme="dark"] & {
+        background: radial-gradient(circle, rgba(99, 102, 241, 0.25) 0%, transparent 70%);
+    }
+}
+
+.kinetic-text {
+    font-size: 3.5rem;
+    line-height: 1.1;
+    font-weight: 600;
+    color: var(--color-text-main);
+    letter-spacing: -0.04em;
+    margin: 0;
+    max-width: 600px;
+}
+
+// El Rotador Inteligente
+.word-rotator {
+    display: inline-grid;
+    vertical-align: top;
+    margin-left: 0.2rem;
+    color: #6366f1; // Highlight color (Indigo)
+    position: relative;
+    height: 1.1em;
+    overflow: hidden;
+
+    .word {
+        grid-area: 1 / 1;
+        animation: spin-words 10s infinite;
+        opacity: 0;
+        transform: translateY(100%);
+        filter: blur(4px);
+    }
+
+    .word:nth-child(1) {
+        animation-delay: 0s;
+    }
+
+    .word:nth-child(2) {
+        animation-delay: 2s;
+    }
+
+    .word:nth-child(3) {
+        animation-delay: 4s;
+    }
+
+    .word:nth-child(4) {
+        animation-delay: 6s;
+    }
+
+    .word:nth-child(5) {
+        animation-delay: 8s;
+    }
+}
+
+// -----------------------------------------------------
+// EL TEASER GLASSMÓRFICO (Tarjetas Flotantes 3D)
+// -----------------------------------------------------
+
+.teaser-glass {
+    position: relative;
+    width: 100%; // Toma el ancho de .auth-branding__center-stack (650px)
+    max-width: 650px;
+    height: 350px; // Altura un poco más ajustada para no generar scroll en pantallas pequeñas
+    z-index: 10;
+    pointer-events: none;
+
+    // Escala Responsiva Integrada en el contendedor stack para pantallas cortas
+    @media (max-height: 850px) {
+        transform: scale(0.85);
+        transform-origin: top left;
+    }
+
+    @media (max-height: 700px) {
+        transform: scale(0.65);
+        transform-origin: top left;
+        height: 260px;
+    }
+
+    // Efecto de Flotación General
+    animation: float-container 8s ease-in-out infinite;
+}
+
+// La Tarjeta de Cristal Base
+.glass-card {
+    position: absolute;
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    z-index: 2;
+
+    [data-theme="light"] & {
+        background: rgba(255, 255, 255, 0.85); // Fondo más sólido en claro para despegarse del grid
+        border: 1px solid rgba(0, 0, 0, 0.12); // Borde más definido y oscuro
+        box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.15); // Sombra más dramática
+    }
+}
+
+// Composición e Inclinación
+.card-bg {
+    width: 200px;
+    height: 300px;
+    top: -5%;
+    left: 10%;
+    transform: rotate(-10deg) translateY(20px);
+    opacity: 0.8;
+    z-index: 1;
+
+    [data-theme="light"] & {
+        opacity: 1;
+    }
+}
+
+.card-main {
+    width: 100%; // Ocupa el ancho máximo del stack
+    height: 250px;
+    top: 15%;
+    left: 5%;
+    transform: rotate(-2deg);
+    z-index: 3;
+    padding: 2rem;
+}
+
+.card-metric {
+    width: 140px;
+    height: 100px;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+
+    &.float-1 {
+        bottom: -5%;
+        right: 15%;
+        transform: rotate(4deg);
+        z-index: 4;
+        animation: float-individual 5s ease-in-out infinite 1s;
+    }
+}
+
+// -----------------------------------------------------
+// SKELETONS PARA SIMULAR EL UI
+// -----------------------------------------------------
+
+.skeleton-box,
+.skeleton-line,
+.skeleton-circle,
+.chart-bar {
+    background: var(--color-border-light);
+    border-radius: var(--radius-sm);
+    opacity: 0.5;
+
+    [data-theme="dark"] & {
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    [data-theme="light"] & {
+        background: rgba(0, 0, 0, 0.12);
+        opacity: 1;
+    }
+
+    // Gris más contrastado
+}
+
+.skeleton-box {
+    width: 100%;
+    height: 60px;
+    margin-bottom: 1rem;
+}
+
+.skeleton-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.skeleton-line {
+    height: 12px;
+    margin-bottom: 0.75rem;
+
+    &.mini {
+        width: 30%;
+        height: 8px;
+    }
+
+    &.short {
+        width: 40%;
+    }
+
+    &.medium {
+        width: 70%;
+    }
+
+    &.full {
+        width: 100%;
+    }
+
+    &.title {
+        height: 16px;
+        margin-bottom: 0.5rem;
+    }
+
+    &.subtitle {
+        height: 10px;
+        margin-bottom: 0px;
+    }
+}
+
+.card-header {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    margin-bottom: 2rem;
+
+    &-titles {
+        flex: 1;
+    }
+}
+
+.chart-mockup {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.75rem;
+    height: 100px;
+
+    .chart-bar {
+        flex: 1;
+        border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+
+        &.h-40 {
+            height: 40%;
+        }
+
+        &.h-50 {
+            height: 50%;
+        }
+
+        &.h-60 {
+            height: 60%;
+        }
+
+        &.h-80 {
+            height: 80%;
+        }
+
+        &.h-100 {
+            height: 100%;
+            background: var(--color-text-main);
+            opacity: 0.8;
+        }
+
+        // Highlight
+    }
+}
+
+.metric-val {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--color-text-main);
+}
+
+// -----------------------------------------------------
+// ANIMACIONES KEYFRAMES
+// -----------------------------------------------------
+
+@keyframes spin-words {
+    0% {
+        opacity: 0;
+        transform: translateY(50%);
+        filter: blur(4px);
+    }
+
+    5% {
+        opacity: 1;
+        transform: translateY(0);
+        filter: blur(0px);
+    }
+
+    15% {
+        opacity: 1;
+        transform: translateY(0);
+        filter: blur(0px);
+    }
+
+    20% {
+        opacity: 0;
+        transform: translateY(-50%);
+        filter: blur(4px);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translateY(-50%);
+        filter: blur(4px);
+    }
+}
+
+@keyframes float-container {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-15px);
+    }
+}
+
+@keyframes float-individual {
+
+    0%,
+    100% {
+        transform: rotate(4deg) translateY(0);
+    }
+
+    50% {
+        transform: rotate(4deg) translateY(-8px);
+    }
+}

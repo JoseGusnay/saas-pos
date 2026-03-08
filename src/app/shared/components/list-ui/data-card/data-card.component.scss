@@ -1,0 +1,146 @@
+@use "../../../../../styles/abstracts/mixins" as *;
+
+.data-card {
+    display: flex;
+    flex-direction: column;
+    background-color: var(--color-bg-surface);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    transition: all var(--transition-base);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+    height: 100%; // To ensure grid items stretch vertically
+
+    &:hover {
+        border-color: var(--color-border-subtle);
+        box-shadow: var(--shadow-sm);
+        transform: translateY(-2px);
+    }
+
+    &__header {
+        @include flex-between;
+        align-items: flex-start;
+        margin-bottom: 16px;
+        width: 100%;
+    }
+
+    &__title-container {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    &__name {
+        font-size: var(--font-size-base);
+        font-weight: var(--font-weight-semibold);
+        color: var(--color-text-main);
+        margin: 0;
+    }
+
+    &__status {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: var(--font-weight-medium);
+        background-color: var(--color-success-bg);
+        color: var(--color-success-text);
+        width: fit-content;
+
+        &--inactive {
+            background-color: var(--color-bg-hover);
+            color: var(--color-text-muted);
+        }
+
+        &--warning {
+            background-color: var(--color-warning-bg);
+            color: var(--color-warning-text);
+        }
+    }
+
+    &__kebab {
+        background: transparent;
+        border: none;
+        color: var(--color-icon-muted);
+        cursor: pointer;
+        padding: 4px;
+        border-radius: var(--radius-sm);
+        transition: var(--transition-base);
+
+        &:hover {
+            background-color: var(--color-bg-hover);
+            color: var(--color-text-main);
+        }
+
+        app-icon {
+            width: 16px;
+            height: 16px;
+        }
+    }
+
+    &__body {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 20px;
+        width: 100%;
+        flex: 1; // Take remaining space so footer is pushed down
+    }
+
+    &__detail {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--color-text-muted);
+        font-size: var(--font-size-sm);
+
+        app-icon {
+            width: 14px;
+            height: 14px;
+        }
+    }
+
+    &__footer {
+        width: 100%;
+        margin-top: auto;
+        padding-top: 16px;
+        border-top: 1px solid var(--color-border-light);
+        @include flex-between;
+    }
+
+    &__metric {
+        display: flex;
+        flex-direction: column;
+    }
+
+    &__metric-label {
+        font-size: 11px;
+        color: var(--color-text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    &__metric-value {
+        font-size: var(--font-size-base);
+        font-weight: var(--font-weight-semibold);
+        color: var(--color-text-main);
+    }
+
+    &__avatars {
+        display: flex;
+        align-items: center;
+
+        .data-card__avatar {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 2px solid var(--color-bg-surface);
+            margin-left: -8px;
+
+            &:first-child {
+                margin-left: 0;
+            }
+        }
+    }
+}

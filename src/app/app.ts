@@ -1,21 +1,22 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { WorkspaceNotFoundComponent } from './core/tenant/workspace-not-found.component';
-import { TenantIdentifierService } from './core/tenant/tenant-identifier.service';
+import { Modal } from './core/components/modal/modal';
+import { ToastComponent } from './shared/components/ui/toast/toast.component';
+import { LayoutService } from './core/layout/services/layout.service';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, WorkspaceNotFoundComponent],
-  template: `
-    @if (tenantService.isTenantValid()) {
+  imports: [RouterOutlet, Modal, ToastComponent],
+  template: ` 
+   
       <router-outlet />
-    } @else if (tenantService.isTenantValid() === false) {
-      <app-workspace-not-found />
-    }
+      <app-modal></app-modal>
+      <app-toast></app-toast>
+    
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class App {
-  public tenantService = inject(TenantIdentifierService);
+  private layoutService = inject(LayoutService);
 }

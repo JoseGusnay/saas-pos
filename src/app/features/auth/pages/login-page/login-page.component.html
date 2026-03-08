@@ -1,0 +1,32 @@
+<div class="auth-page-container fade-in">
+    <!-- Lado Izquierdo: Branding (Solo visible en Desktop >= 1024px) -->
+    <app-auth-branding></app-auth-branding>
+
+    <!-- Lado Derecho: Contenido interactivo (Centrado en todos los breakpoints) -->
+    <div class="auth-content">
+        <app-auth-card title="Inicia Sesión" subtitle="Ingresa a tu cuenta para continuar">
+
+            <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="auth-form">
+
+
+
+                <app-auth-input formControlName="email" label="Correo Electrónico" type="email"
+                    placeholder="ejemplo@empresa.com" icon="lucideUser" [error]="emailError">
+                </app-auth-input>
+
+                <app-auth-input formControlName="password" label="Contraseña" type="password" placeholder="••••••••"
+                    icon="lucideShield" [error]="passwordError">
+                </app-auth-input>
+
+                <div class="auth-form__actions">
+                    <a routerLink="/auth/recover-password" class="auth-form__link">¿Olvidaste tu contraseña?</a>
+                </div>
+
+                <app-auth-button type="submit" [isLoading]="authService.isLoading()" [isDisabled]="loginForm.invalid"
+                    text="Continuar">
+                </app-auth-button>
+
+            </form>
+        </app-auth-card>
+    </div>
+</div>

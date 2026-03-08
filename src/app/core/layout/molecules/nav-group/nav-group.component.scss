@@ -1,0 +1,35 @@
+@use "../../../../../styles/abstracts/mixins" as *;
+
+.nav-group {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 2px;
+    width: 100%;
+
+    &__grid-transition {
+        display: grid;
+        grid-template-rows: 0fr; // Estado Colapsado
+        transition: grid-template-rows var(--transition-base), opacity var(--transition-base);
+        opacity: 0;
+
+        &--expanded {
+            grid-template-rows: 1fr; // El grid mide el interior y transiciona fluidamente 
+            opacity: 1;
+        }
+    }
+
+    &__children {
+        min-height: 0; // CRUCIAL: Permite que el grid en 0fr aplaste el interior
+        overflow: hidden; // Esconde el contenido excedente visualmente
+
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        margin-left: 24px;
+        padding-left: 8px;
+        border-left: 1px solid var(--color-border-light);
+
+        // Espaciado interno seguro sin romper el cálculo del acordeón
+        padding-top: 4px;
+    }
+}

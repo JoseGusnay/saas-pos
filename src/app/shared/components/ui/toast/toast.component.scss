@@ -1,0 +1,79 @@
+.toast-wrapper {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    pointer-events: none; // Permite dar click "a través" de la zona vacía del contenedor
+}
+
+.toast-item {
+    display: flex;
+    align-items: center;
+    gap: 10px; // Vercel uses a slightly tighter gap
+    min-width: 350px; // A bit wider for better message display
+    max-width: 400px;
+    padding: 16px;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-dropdown); // Corrección: Usar variable de sombra existente
+    font-family: var(--font-family-sans);
+    pointer-events: auto;
+    animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+
+    // Estética Linear/Vercel (Mantiene coherencia con la superficie)
+    background-color: var(--color-bg-surface);
+    color: var(--color-text-main);
+    border: 1px solid var(--color-border-light); // Borde real para visibilidad en light theme
+
+    &[data-theme="dark"] & {
+        background-color: #1a1a1a;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5), 0 0 0 1px #333;
+    }
+
+    &__message {
+        font-size: var(--font-size-sm);
+        font-weight: 500; // Medium weight like Vercel
+        letter-spacing: -0.01em;
+        line-height: 1.4;
+    }
+
+    &__icon {
+        font-size: 1.25rem; // Slightly larger icon
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    // Variaciones (Solo cambian el color del icono, no tienen border-left invasivo)
+    &--success {
+        .toast-item__icon {
+            color: var(--color-success-text);
+        }
+    }
+
+    &--error {
+        .toast-item__icon {
+            color: var(--color-danger-text);
+        }
+    }
+
+    &--info {
+        .toast-item__icon {
+            color: var(--color-text-main); // Info uses main text color in Vercel
+        }
+    }
+}
+
+@keyframes slideUp {
+    0% {
+        opacity: 0;
+        transform: translateY(20px) scale(0.95);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}

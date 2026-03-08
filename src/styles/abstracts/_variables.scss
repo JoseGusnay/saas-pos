@@ -1,0 +1,86 @@
+/* =========================================================================
+   SaaS Premium App Shell - Design Tokens
+   Estética neo-minimalista (Inspiración Vercel/Linear)
+   ========================================================================= */
+
+:root {
+    /* 1. Colores de Fondo (Espacios y Contraste) */
+    --color-bg-canvas: #FAFAFA; // Área de trabajo principal (Gris muy suave)
+    --color-bg-surface: #FFFFFF; // Sidebar, Header, Tarjetas (Blanco puro)
+    --color-bg-hover: #F5F5F5; // Hover sutil para enlaces y botones fantasma
+
+    /* 2. Colores Primarios (Marcas y Acentos) */
+    --color-accent-primary: #111111; // Principalmente botones CTA, iconos activos
+    --color-accent-hover: #000000; // Oscurecimiento sutil en hover
+
+    /* 3. Colores de Texto (Jerarquía Tópica) */
+    --color-text-main: #111111; // Texto principal (Casi negro, más suave para la vista)
+    --color-text-muted: #888888; // Texto secundario, subtítulos, placeholders
+
+    /* 4. Colores de Separación y Bordes */
+    --color-border-light: #EAEAEA; // Líneas divisorias de 1px (Header, Sidebar)
+    --color-border-subtle: #F3F4F6; // Bordes internos más sutiles aún
+
+    /* 5. Feedback y Estado (Colores pálidos para badges/alertas) */
+    --color-success-bg: #ECFDF5;
+    --color-success-text: #059669;
+    --color-danger-bg: #FEF2F2;
+    --color-danger-text: #DC2626;
+
+    /* 6. Tipografía (Valores Base) */
+    --font-family-sans: 'Inter', system-ui, -apple-system, sans-serif;
+    --font-size-xs: 0.75rem; // 12px
+    --font-size-sm: 0.8125rem; // 13px (Excelente para densidad tipo Notion)
+    --font-size-base: 0.875rem; // 14px (Tamaño estándar de texto SaaS)
+    --font-size-lg: 1rem; // 16px
+
+    --font-weight-regular: 400;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+
+    /* 7. Sombras (Difuminadas y multinivel - No usar #000 puro) */
+    --shadow-sm: 0 1px 2px rgba(17, 17, 17, 0.04);
+    --shadow-md: 0 4px 6px -1px rgba(17, 17, 17, 0.05), 0 2px 4px -1px rgba(17, 17, 17, 0.03);
+    --shadow-dropdown: 0 10px 15px -3px rgba(17, 17, 17, 0.05), 0 4px 6px -2px rgba(17, 17, 17, 0.02), 0 0 0 1px var(--color-border-light);
+
+    /* 8. Estructura y Transiciones */
+    --radius-sm: 4px;
+    --radius-md: 6px;
+    --radius-lg: 8px;
+    --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-base: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* =========================================================================
+   SaaS Premium App Shell - Modo Oscuro (Linear/Vercel)
+   ========================================================================= */
+[data-theme="dark"] {
+    /* Fondo y Superficies Oscuras */
+    --color-bg-canvas: #0A0A0A; // Fondo absoluto
+    --color-bg-surface: #141414; // Paneles, Sidebar, Header
+    --color-bg-hover: rgba(255, 255, 255, 0.05); // Hover táctil
+    --color-bg-active: rgba(255, 255, 255, 0.08);
+
+    /* Acentos */
+    --color-accent-primary: #FFFFFF;
+    --color-accent-hover: #EAEAEA;
+
+    /* Textos */
+    --color-text-main: #EDEDED;
+    --color-text-muted: #A1A1AA;
+
+    /* Bordes */
+    --color-border-light: rgba(255, 255, 255, 0.1);
+    --color-border-subtle: rgba(255, 255, 255, 0.05);
+
+    /* Feedback */
+    --color-success-bg: rgba(5, 150, 105, 0.15);
+    --color-success-text: #34D399;
+    --color-danger-bg: rgba(220, 38, 38, 0.15);
+    --color-danger-text: #F87171;
+
+    /* Elevaciones de Sombras (Menos halo, más profundidad neutra) */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+    --shadow-dropdown: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--color-border-light);
+}

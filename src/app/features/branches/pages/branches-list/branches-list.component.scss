@@ -1,0 +1,303 @@
+@use "../../../../../styles/abstracts/mixins" as *;
+
+.branches-page {
+    display: flex;
+    flex-direction: column;
+    min-height: 100%; // <-- Clave: min-height permite que crezca, heredando el padding padre
+    width: 100%;
+
+
+
+    // El contenido interno del Query Builder (Inyectado en Modal)
+    &__query-body {
+        padding: 16px 16px 24px;
+        min-height: 240px; // Espacio inicial reservado para que floten los custom dropdowns sin activar el scroll
+        max-height: 60vh;
+        overflow-y: auto;
+    }
+
+    &__query-footer {
+        @include flex-between;
+        padding: 12px 16px;
+        border-top: 1px solid var(--color-border-subtle);
+        background-color: var(--color-bg-hover);
+        border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+    }
+
+    &__query-hint {
+        font-size: 11px;
+        color: var(--color-text-muted);
+    }
+
+    &__query-apply {
+        background-color: var(--color-text-main);
+        color: var(--color-bg-surface);
+        border: none;
+        border-radius: var(--radius-sm);
+        padding: 6px 14px;
+        font-size: 12px;
+        font-weight: var(--font-weight-medium);
+        cursor: pointer;
+        transition: opacity var(--transition-fast);
+
+        &:hover {
+            opacity: 0.9;
+        }
+    }
+
+    // Estilos del Generador de Consultas (Linear Style)
+    // Se inserta dentro de __utility-bar en SCSS global
+}
+
+.query-builder {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    flex: 1;
+
+    &__logical-toggle {
+        @include flex-center;
+        height: 28px;
+        padding: 0 8px;
+        background-color: var(--color-bg-surface);
+        border: 1px solid var(--color-border-subtle);
+        border-radius: var(--radius-sm);
+        font-size: 11px;
+        font-weight: var(--font-weight-semibold);
+        color: var(--color-text-main);
+        cursor: pointer;
+        transition: var(--transition-base);
+
+        &:hover {
+            border-color: var(--color-text-muted);
+            box-shadow: var(--shadow-sm);
+        }
+    }
+
+    &__add-container {
+        position: relative;
+    }
+}
+
+.query-chip {
+    display: inline-flex;
+    align-items: center;
+    height: 28px;
+    border-radius: 999px;
+    background-color: var(--color-bg-hover);
+    border: 1px dashed var(--color-border-light);
+    padding: 0 6px 0 12px;
+    gap: 6px;
+    font-size: 12px;
+    transition: var(--transition-base);
+
+    &:hover {
+        border-style: solid;
+        border-color: var(--color-border-subtle);
+    }
+
+    &__field {
+        font-weight: var(--font-weight-medium);
+        color: var(--color-text-main);
+    }
+
+    &__operator {
+        color: var(--color-text-muted);
+        cursor: pointer;
+        background: transparent;
+        border: none;
+        padding: 0;
+        font-size: inherit;
+        font-family: inherit;
+
+        &:hover {
+            text-decoration: underline;
+            color: var(--color-text-main);
+        }
+    }
+
+    &__value-input {
+        background: transparent;
+        border: none;
+        outline: none;
+        width: 60px;
+        font-size: inherit;
+        font-family: inherit;
+        color: var(--color-text-main);
+        border-bottom: 1px solid transparent;
+        transition: var(--transition-fast);
+
+        &::placeholder {
+            color: var(--color-text-muted);
+            font-style: italic;
+        }
+
+        &:focus {
+            border-bottom-color: var(--color-text-muted);
+            width: 80px;
+        }
+    }
+
+    &__close {
+        @include flex-center;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: transparent;
+        border: none;
+        color: var(--color-text-muted);
+        cursor: pointer;
+        padding: 0;
+        transition: var(--transition-fast);
+
+        app-icon {
+            width: 12px;
+            height: 12px;
+        }
+
+        &:hover {
+            background-color: var(--color-bg-surface);
+            color: var(--color-text-main);
+        }
+    }
+}
+
+
+
+.branches-page {
+
+    // 3. Área de Contenido: Grid View
+    &__grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 24px;
+        width: 100%;
+
+        // Tarjetas al 100% de la pantalla para legibilidad móvil
+        @media (max-width: 768px) {
+            grid-template-columns: 1fr;
+            gap: 16px; // Menos espacio muerto
+        }
+    }
+
+    // Área de Contenido: List View (Alternativa tabular)
+    &__list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        width: 100%;
+
+        // Cuando el contenedor es lista, modificamos agresivamente el layout de los hijos
+        ::ng-deep app-data-card {
+            display: block; // Ensures the component wrapper behaves like a block relative to flex
+            width: 100%;
+        }
+
+        ::ng-deep app-data-card .data-card {
+            display: grid;
+            grid-template-columns: minmax(260px, 1.5fr) 2fr minmax(200px, auto); // Grid Dinámico Vercel
+            align-items: center;
+            padding: 16px 24px;
+            gap: 24px;
+            min-height: 72px; // Fluid Height, adiós al atasco
+            height: auto;
+
+            // TABLET LIMBO (< 1100px) - Reducción Grácil antes del Mobile Estricto
+            @media (max-width: 1100px) {
+                grid-template-columns: minmax(220px, 1fr) 1.5fr minmax(160px, auto);
+                gap: 16px;
+                padding: 16px;
+            }
+
+            // MOBILE STRICT (< 768px) - Apilamiento a 1 Columna
+            @media (max-width: 768px) {
+                grid-template-columns: 1fr;
+                gap: 16px;
+                align-items: stretch;
+            }
+
+            &__header {
+                width: 100%; // Toma el ancho de su celda de Grid
+                margin-bottom: 0;
+
+                @media (max-width: 768px) {
+                    margin-bottom: 8px;
+                }
+            }
+
+            &__body {
+                width: 100%; // Toma el ancho de su celda
+                flex-direction: row;
+                flex-wrap: wrap; // SALVAVIDAS: Permite que Dirección y Teléfono salten de línea si es angosto
+                margin-bottom: 0;
+                justify-content: flex-start;
+                gap: 20px;
+                padding-right: 24px;
+                border-right: 1px solid var(--color-border-light);
+
+                @media (max-width: 1100px) {
+                    gap: 12px;
+                    padding-right: 16px;
+                }
+
+                @media (max-width: 768px) {
+                    flex-direction: column;
+                    padding-right: 0;
+                    border-right: none;
+                    gap: 8px;
+                }
+            }
+
+            &__detail {
+                flex: 0 1 auto; // Crece sutilmente pero puede apretarse
+            }
+
+            &__footer {
+                width: 100%; // Toma el ancho de su celda (minmax 160px asegurados)
+                margin-top: 0;
+                padding-top: 0;
+                padding-left: 24px;
+                border-top: none;
+                justify-content: space-between;
+
+                @media (max-width: 1100px) {
+                    padding-left: 16px;
+                }
+
+                @media (max-width: 768px) {
+                    padding-left: 0;
+                    margin-top: 12px;
+                    padding-top: 12px;
+                    border-top: 1px solid var(--color-border-light);
+                }
+            }
+
+            &__kebab {
+                margin-left: auto; // Se pega a la derecha
+                margin-right: -12px; // Compensación estética
+
+                @media (max-width: 768px) {
+                    position: absolute;
+                    top: 16px;
+                    right: 8px;
+                    margin: 0;
+                }
+            }
+        }
+    }
+}
+
+// 4. Tarjeta de Sucursal (Branch Card)
+
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

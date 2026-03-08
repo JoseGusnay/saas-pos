@@ -1,0 +1,42 @@
+@if (modalService.isOpen()) {
+<div class="modal-backdrop" [class.modal-backdrop--closing]="modalService.isClosing()" (click)="close()">
+    <div class="modal-dialog" [class.modal-dialog--closing]="modalService.isClosing()"
+        (click)="$event.stopPropagation()">
+        <!-- Cabecera Dinámica -->
+        <header class="modal-dialog__header">
+            <h3 class="modal-dialog__title">{{ modalService.modalConfig()?.title }}</h3>
+            <button class="modal-dialog__close" (click)="close()">
+                <app-icon name="lucideX"></app-icon>
+            </button>
+        </header>
+
+        <!-- Cuerpo del Portal (Inyecta el Componente Pasado por TS) -->
+        <div class="modal-dialog__content">
+            <ng-container *ngComponentOutlet="
+        modalService.modalConfig()?.component || null; 
+        inputs: modalService.modalConfig()?.inputs || {}
+      "></ng-container>
+        </div>
+
+        <!-- Footer Estático Nativo -->
+        @if (modalService.modalConfig()?.footerActions?.length || modalService.modalConfig()?.footerHint) {
+        <footer class="modal-dialog__footer">
+            @if (modalService.modalConfig()?.footerHint) {
+            <span class="modal-dialog__footer-hint">{{ modalService.modalConfig()?.footerHint }}</span>
+            }
+
+            <div class="modal-dialog__footer-actions">
+                @for (action of modalService.modalConfig()?.footerActions; track action.label) {
+                <button class="modal-action-btn"
+                    [class.modal-action-btn--primary]="action.variant === 'primary' || !action.variant"
+                    [class.modal-action-btn--secondary]="action.variant === 'secondary'"
+                    [class.modal-action-btn--danger]="action.variant === 'danger'" (click)="action.action()">
+                    {{ action.label }}
+                </button>
+                }
+            </div>
+        </footer>
+        }
+    </div>
+</div>
+}

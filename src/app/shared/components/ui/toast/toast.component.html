@@ -1,0 +1,8 @@
+<div class="toast-wrapper">
+    <div class="toast-item" *ngFor="let toast of toastService.toasts()" [ngClass]="'toast-item--' + toast.type">
+
+        <ng-icon [name]="getIconName(toast.type)" class="toast-item__icon"></ng-icon>
+        <span class="toast-item__message">{{ toast.message }}</span>
+
+    </div>
+</div>

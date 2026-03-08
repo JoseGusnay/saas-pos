@@ -1,0 +1,146 @@
+@use "../../../../../styles/abstracts/mixins" as *;
+
+.list-toolbar {
+    @include flex-between;
+    margin-bottom: 16px;
+    align-items: center;
+    position: relative;
+    flex-wrap: wrap;
+    gap: 16px;
+
+    app-icon {
+        width: 16px;
+        height: 16px;
+    }
+
+    &__search {
+        @include flex-center;
+        background-color: var(--color-bg-surface);
+        border: 1px solid var(--color-border-light);
+        border-radius: var(--radius-md);
+        padding: 6px 12px;
+        gap: 8px;
+        width: 300px;
+        transition: var(--transition-base);
+
+        &:focus-within {
+            border-color: var(--color-text-muted);
+        }
+
+        @media (max-width: 768px) {
+            width: 100%;
+            padding: 10px 12px;
+        }
+    }
+
+    &__search-icon {
+        width: 16px;
+        height: 16px;
+        color: var(--color-text-muted);
+    }
+
+    &__search-input {
+        flex: 1;
+        background: none;
+        border: none;
+        outline: none;
+        font-family: inherit;
+        font-size: var(--font-size-sm);
+        color: var(--color-text-main);
+
+        &::placeholder {
+            color: var(--color-text-muted);
+        }
+    }
+
+    &__actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        @media (max-width: 768px) {
+            width: 100%;
+            justify-content: space-between;
+        }
+    }
+
+    &__filter-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    &__ghost-btn {
+        @include flex-center;
+        gap: 6px;
+        background: transparent;
+        border: 1px dashed transparent;
+        border-radius: var(--radius-sm);
+        padding: 6px 10px;
+        color: var(--color-text-muted);
+        font-size: var(--font-size-sm);
+        cursor: pointer;
+        transition: var(--transition-base);
+
+        &:hover,
+        &--active {
+            background-color: var(--color-bg-hover);
+            color: var(--color-text-main);
+        }
+
+        &--danger {
+            color: var(--color-text-muted);
+            border-color: transparent;
+
+            &:hover {
+                background-color: var(--color-danger-bg);
+                color: var(--color-danger-text);
+            }
+        }
+
+        app-icon {
+            width: 16px;
+            height: 16px;
+        }
+    }
+
+    &__view-toggle {
+        display: flex;
+        align-items: center;
+        background-color: var(--color-bg-surface);
+        border: 1px solid var(--color-border-light);
+        border-radius: var(--radius-sm);
+        padding: 2px;
+
+        @media (max-width: 768px) {
+            display: none;
+        }
+    }
+
+    &__segmented-btn {
+        @include flex-center;
+        width: 28px;
+        height: 28px;
+        background: transparent;
+        border: none;
+        border-radius: 4px;
+        color: var(--color-text-muted);
+        cursor: pointer;
+        transition: var(--transition-fast);
+
+        app-icon {
+            width: 16px;
+            height: 16px;
+        }
+
+        &:hover {
+            color: var(--color-text-main);
+        }
+
+        &--active {
+            background-color: var(--color-bg-hover);
+            color: var(--color-text-main);
+            box-shadow: var(--shadow-sm);
+        }
+    }
+}

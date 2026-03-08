@@ -1,0 +1,74 @@
+@use "../../../../../styles/abstracts/mixins" as *;
+
+.user-profile {
+    @include flex-between;
+    @include interactive-hover;
+
+    width: 100%;
+    padding: 8px 12px;
+    border-radius: var(--radius-md);
+    margin-top: auto; // Se pega abajo usando flexbox del padre
+    border-top: 1px solid var(--color-border-subtle);
+    padding-top: 16px; // Espacio extra visual por el borde
+
+    &__content {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    &__avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background-color: var(--color-bg-hover);
+        border: 1px solid var(--color-border-light);
+        object-fit: cover;
+    }
+
+    &__details {
+        display: flex;
+        flex-direction: column;
+        text-align: left;
+    }
+
+    &__name {
+        font-size: var(--font-size-sm);
+        font-weight: var(--font-weight-semibold);
+        color: var(--color-text-main);
+    }
+
+    &__plan {
+        font-size: var(--font-size-xs);
+        color: var(--color-text-muted);
+    }
+
+    &__actions {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        color: var(--color-icon-muted);
+    }
+
+    &__action-btn {
+        @include flex-center;
+        width: 28px;
+        height: 28px;
+        border-radius: var(--radius-sm);
+        border: none;
+        background: transparent;
+        color: var(--color-text-muted);
+        cursor: pointer;
+        transition: var(--transition-base);
+
+        &:hover {
+            color: var(--color-text-main);
+            background-color: var(--color-bg-hover);
+        }
+
+        app-icon {
+            width: 16px;
+            height: 16px;
+        }
+    }
+}

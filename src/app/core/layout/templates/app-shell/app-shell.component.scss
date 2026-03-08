@@ -1,0 +1,96 @@
+@use "../../../../../styles/abstracts/mixins" as *;
+
+.app-shell {
+    display: flex;
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden; // Previene scroll del body
+
+    &__sidebar {
+        height: 100%;
+        z-index: 20; // Asegura que esté por encima visualmente
+
+        // En móvil el sidebar sale del flujo, así que le decimos al Flexbox
+        // padre que este item mide 0px, para que el wrapper central ocupe todo
+        @media (max-width: 768px) {
+            position: fixed;
+            z-index: 1000;
+        }
+
+        &--mobile-open {
+            @media (max-width: 768px) {
+                // El SidebarComponent hijo gestiona la transicion translateX
+            }
+        }
+    }
+
+    &__wrapper {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-width: 0; // Previene desbordamiento oculto del flex
+    }
+
+    &__header {
+        width: 100%;
+        z-index: 10;
+    }
+
+    &__main {
+        flex: 1;
+        overflow-y: auto; // Esta es la UNICA capa que escrollea
+        background-color: var(--color-bg-canvas);
+        padding: 32px 40px 40px 40px; // Padding inferior ajustado a la mitad (40px)
+        position: relative;
+
+        // Mobile Canvas Density Vercel-style (Maximiza espacio útil)
+        @media (max-width: 768px) {
+            padding: 24px 16px 32px 16px; // Mitad del colchón inferior móvil (32px)
+        }
+    }
+
+    // Estilo temporal para la fase de construcción solicitada
+    &__construction-state {
+        @include flex-center;
+        flex-direction: column;
+        gap: 16px;
+        height: 100%;
+        color: var(--color-text-muted);
+        text-align: center;
+        border: 2px dashed var(--color-border-light);
+        border-radius: var(--radius-lg);
+
+        app-icon {
+            width: 48px;
+            height: 48px;
+            color: var(--color-border-light);
+        }
+
+        h2 {
+            font-size: var(--font-size-lg);
+            font-weight: var(--font-weight-medium);
+            color: var(--color-text-main);
+        }
+
+        p {
+            font-size: var(--font-size-sm);
+        }
+    }
+}
+
+// Mobile Backdrop Blur Vercel
+.sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px);
+    z-index: 999;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1); // Vercel easing
+
+    &--visible {
+        opacity: 1;
+        pointer-events: auto;
+    }
+}

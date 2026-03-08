@@ -1,0 +1,29 @@
+<div class="auth-page-container fade-in">
+    <!-- Lado Izquierdo: Branding (Solo visible en Desktop >= 1024px) -->
+    <app-auth-branding></app-auth-branding>
+
+    <!-- Lado Derecho: Contenido interactivo -->
+    <div class="auth-content">
+        <app-auth-card title="Selecciona tu Sucursal" subtitle="Elige el entorno de trabajo para continuar">
+
+            <!-- Lista de Sucursales Estilo Vercel Project Cards -->
+            <ul class="branch-list">
+                <li *ngFor="let branch of authService.availableBranches()" class="branch-item"
+                    (click)="selectBranch(branch)" [class.is-loading]="authService.isLoading()">
+
+                    <div class="branch-item__icon-wrapper">
+                        <ng-icon name="lucideMapPin" class="branch-item__icon"></ng-icon>
+                    </div>
+
+                    <div class="branch-item__details">
+                        <span class="branch-item__name">{{ branch.name }}</span>
+                        <span class="branch-item__badge" *ngIf="branch.isMain">Principal</span>
+                    </div>
+
+                    <ng-icon name="lucideChevronRight" class="branch-item__arrow"></ng-icon>
+                </li>
+            </ul>
+
+        </app-auth-card>
+    </div>
+</div>

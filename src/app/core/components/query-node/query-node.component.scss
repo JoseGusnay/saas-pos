@@ -1,0 +1,289 @@
+.qb-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px 0 10px 14px;
+    transition: var(--transition-base);
+
+    &--root {
+        padding: 0;
+    }
+
+    &__header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    &__actions {
+        display: flex;
+        align-items: center;
+        gap: 2px;
+        opacity: 0.6;
+        transition: opacity var(--transition-fast);
+        border-left: 1px solid var(--color-border-subtle);
+        padding-left: 8px;
+        margin-left: 4px;
+    }
+
+    &:hover>&__header>&__actions {
+        opacity: 1;
+    }
+
+    &__children {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        position: relative;
+        padding-left: 20px;
+        margin-top: 4px;
+
+        // La Magia Estética: Las líneas que conectan los nudos hijos "Linear Style"
+        &::before {
+            content: '';
+            position: absolute;
+            left: 5px;
+            top: 0;
+            bottom: 0px;
+            width: 1px;
+            background-color: var(--color-border-subtle, var(--color-border-light));
+            border-radius: 2px;
+        }
+    }
+
+    &__empty {
+        font-size: 11px;
+        color: var(--color-text-muted);
+        font-style: italic;
+        padding-left: 20px;
+        margin-top: 4px;
+    }
+}
+
+.qb-rule {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background-color: var(--color-bg-hover);
+    padding: 3px 6px;
+    border-radius: var(--radius-sm);
+    border: 1px dashed var(--color-border-light);
+    width: fit-content;
+    position: relative;
+
+    // Conector horizontal sutil para la regla
+    &::before {
+        content: '';
+        position: absolute;
+        left: -15px;
+        top: 50%;
+        width: 14px;
+        height: 1px;
+        background-color: var(--color-border-subtle);
+    }
+
+    &:hover {
+        border-style: solid;
+        border-color: var(--color-border-subtle);
+    }
+}
+
+.qb-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 24px;
+    padding: 0 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: var(--transition-fast);
+    background: transparent;
+    color: var(--color-text-main);
+    font-family: inherit;
+
+    &--logical {
+        font-weight: 600;
+        font-size: 11px;
+        letter-spacing: 0.05em;
+
+        &.qb-btn--and {
+            background-color: rgba(69, 137, 255, 0.05); // Azul Vercel
+            color: #4589ff;
+            border-color: rgba(69, 137, 255, 0.15);
+        }
+
+        &.qb-btn--or {
+            background-color: rgba(255, 107, 107, 0.05); // Rosa Suave
+            color: #ff6b6b;
+            border-color: rgba(255, 107, 107, 0.15);
+        }
+
+        &:hover {
+            box-shadow: var(--shadow-sm);
+        }
+    }
+
+    &--ghost {
+        color: var(--color-text-muted);
+
+        &:hover {
+            background-color: var(--color-bg-surface);
+            border-color: var(--color-border-light);
+            color: var(--color-text-main);
+        }
+    }
+
+    &--icon {
+        width: 24px;
+        padding: 0;
+        color: var(--color-text-muted);
+        opacity: 0.5;
+
+        &:hover {
+            opacity: 1;
+            color: var(--color-text-main);
+            background-color: var(--color-bg-hover);
+        }
+
+        app-icon {
+            width: 12px;
+            height: 12px;
+        }
+    }
+}
+
+// ---------------------------------
+// Estilos del Custom Select "Vercel"
+// ---------------------------------
+.qb-custom-select-container {
+    position: relative;
+}
+
+.qb-custom-select-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background-color: var(--color-bg-surface);
+    border: 1px solid var(--color-border-light);
+    color: var(--color-text-main);
+    border-radius: 4px;
+    height: 24px;
+    padding: 0 4px 0 8px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+    transition: var(--transition-fast);
+    white-space: nowrap;
+
+    &:hover,
+    &--active {
+        background-color: var(--color-bg-hover);
+        border-color: var(--color-border-subtle);
+    }
+
+    &--operator {
+        background-color: transparent;
+        border-color: transparent;
+        color: var(--color-text-muted);
+        padding: 0 4px;
+
+        &:hover,
+        &--active {
+            color: var(--color-text-main);
+            background-color: var(--color-bg-surface);
+            border-color: var(--color-border-light);
+            text-decoration: underline;
+        }
+    }
+
+    app-icon {
+        width: 14px;
+        height: 14px;
+        opacity: 0.6;
+    }
+}
+
+.qb-dropdown-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+}
+
+.qb-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    z-index: 1010;
+    background-color: var(--color-bg-surface);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-md);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    min-width: 140px;
+    padding: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    animation: fadeInDown 0.15s ease-out forwards;
+}
+
+.qb-dropdown-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 6px 8px;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    color: var(--color-text-main);
+    font-size: 12px;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color var(--transition-fast);
+
+    &:hover {
+        background-color: var(--color-bg-hover);
+    }
+
+    &--active {
+        background-color: rgba(255, 255, 255, 0.05);
+        font-weight: 500;
+        color: var(--color-text-main);
+    }
+
+    &-check {
+        width: 14px;
+        height: 14px;
+        color: var(--color-text-main);
+    }
+}
+
+.qb-input {
+    background-color: transparent;
+    border: none;
+    border-bottom: 1px solid transparent;
+    color: var(--color-text-main);
+    border-radius: 0;
+    height: 24px;
+    padding: 0 4px;
+    font-size: 12px;
+    outline: none;
+    width: 100px;
+    font-family: inherit;
+    transition: var(--transition-fast);
+
+    &::placeholder {
+        color: var(--color-text-muted);
+        font-style: italic;
+    }
+
+    &:focus {
+        border-bottom-color: var(--color-text-muted);
+        width: 140px;
+    }
+}

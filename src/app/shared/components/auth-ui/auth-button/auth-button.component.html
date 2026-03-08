@@ -1,0 +1,22 @@
+<button [type]="type" class="auth-button" [class.auth-button--primary]="variant === 'primary'"
+    [class.auth-button--secondary]="variant === 'secondary'" [class.auth-button--loading]="isLoading"
+    [disabled]="isDisabled || isLoading" (click)="handleClick($event)">
+
+    <span class="auth-button__content">
+        <div class="geist-spinner" *ngIf="isLoading">
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+        </div>
+        <ng-content>{{ text }}</ng-content>
+    </span>
+</button>

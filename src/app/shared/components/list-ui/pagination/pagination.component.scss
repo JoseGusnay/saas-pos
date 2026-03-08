@@ -1,0 +1,64 @@
+@use "../../../../../styles/abstracts/mixins" as *;
+
+.pagination {
+    @include flex-between;
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid var(--color-border-light);
+
+    @media (max-width: 768px) {
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    &__info {
+        font-size: var(--font-size-sm);
+        color: var(--color-text-muted);
+    }
+
+    &__controls {
+        display: flex;
+        gap: 8px;
+
+        @media (max-width: 768px) {
+            width: 100%;
+            justify-content: space-between;
+        }
+    }
+
+    &__btn {
+        @include flex-center;
+        gap: 4px;
+        background-color: var(--color-bg-surface);
+        border: 1px solid var(--color-border-subtle);
+        border-radius: var(--radius-sm);
+        padding: 6px 12px;
+        font-size: var(--font-size-sm);
+        font-weight: var(--font-weight-medium);
+        color: var(--color-text-main);
+        cursor: pointer;
+        transition: var(--transition-base);
+
+        app-icon {
+            width: 14px;
+            height: 14px;
+            color: var(--color-icon-muted);
+            transition: color var(--transition-fast);
+        }
+
+        &:hover:not(:disabled) {
+            border-color: var(--color-text-muted);
+            background-color: var(--color-bg-hover);
+
+            app-icon {
+                color: var(--color-text-main);
+            }
+        }
+
+        &:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            background-color: var(--color-bg-canvas);
+        }
+    }
+}

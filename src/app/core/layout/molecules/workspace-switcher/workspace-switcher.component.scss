@@ -1,0 +1,100 @@
+@use "../../../../../styles/abstracts/mixins" as *;
+
+.workspace-switcher {
+    @include flex-center;
+    justify-content: flex-start;
+    gap: 12px;
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 24px;
+    border: none;
+    background: transparent;
+    border-radius: var(--radius-md);
+    color: var(--color-text-main);
+    cursor: pointer;
+    transition: var(--transition-base);
+
+    @include interactive-hover;
+
+    // ESTADO COLAPSADO
+    &--collapsed {
+        justify-content: center; // Centramos el logo
+        position: relative;
+
+        .workspace-switcher__name,
+        .workspace-switcher__chevron {
+            display: none; // Desaparecemos nombre y chevron de cuenta
+        }
+
+        // Activador del Tooltip
+        &:hover {
+            .workspace-switcher__tooltip {
+                opacity: 1;
+                transform: translateY(-50%) translateX(0);
+            }
+        }
+    }
+
+    // Estilos del Tooltip Custom
+    &__tooltip {
+        position: absolute;
+        top: 50%;
+        left: 100%;
+        transform: translateY(-50%) translateX(4px);
+        margin-left: 14px;
+        background-color: var(--color-bg-surface);
+        color: var(--color-text-main);
+        border: 1px solid var(--color-border-subtle);
+        padding: 4px 8px;
+        border-radius: var(--radius-sm);
+        font-size: 12px;
+        font-weight: var(--font-weight-medium);
+        white-space: nowrap;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity var(--transition-fast), transform var(--transition-fast);
+        z-index: 100;
+        box-shadow: var(--shadow-dropdown);
+
+        &::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            right: 100%;
+            transform: translateY(-50%);
+            border-width: 4px;
+            border-style: solid;
+            border-color: transparent var(--color-border-subtle) transparent transparent;
+        }
+    }
+
+    &__logo {
+        @include flex-center;
+        width: 32px;
+        height: 32px;
+        background-color: var(--color-bg-hover); // Simulamos el logo tipo Vercel/Linear
+        border-radius: var(--radius-sm);
+        flex-shrink: 0;
+
+        app-icon {
+            width: 18px;
+            height: 18px;
+        }
+    }
+
+    &__name {
+        font-size: var(--font-size-sm);
+        font-weight: var(--font-weight-medium);
+        flex: 1;
+        text-align: left;
+        @include text-truncate;
+        max-width: 140px; // Evita que un nombre muy largo rompa el sidebar
+    }
+
+    &__chevron {
+        color: var(--color-icon-muted);
+        width: 14px;
+        height: 14px;
+        flex-shrink: 0;
+    }
+}

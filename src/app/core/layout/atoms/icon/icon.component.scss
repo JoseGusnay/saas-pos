@@ -1,0 +1,13 @@
+// icon.component.scss
+:host {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    color: inherit;
+    --ng-icon__stroke-width: 2px !important; // Fuerza el renderizado
+}
+
+.icon {
+    font-size: 1.25em; // Tamaño óptimo basado en Vercel/Linear
+}
