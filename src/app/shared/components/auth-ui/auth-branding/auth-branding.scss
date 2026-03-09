@@ -24,13 +24,28 @@
         align-items: center;
         gap: 0.75rem;
 
-        &::before {
-            content: '';
-            display: inline-block;
-            width: 28px;
-            height: 28px;
-            background: var(--color-text-main);
-            clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+        .logo-icon-premium {
+            width: 42px;
+            height: 42px;
+            color: var(--color-text-main);
+            filter: drop-shadow(0 0 12px rgba(99, 102, 241, 0.4));
+
+            .ear {
+                transform-origin: center;
+                animation: earWiggle 4s ease-in-out infinite;
+
+                &.ear-r {
+                    animation-delay: 0.2s;
+                }
+            }
+
+            .face {
+                animation: breathing 6s ease-in-out infinite;
+            }
+
+            .eye {
+                animation: blink 5s step-end infinite;
+            }
         }
     }
 
@@ -373,6 +388,55 @@
 // -----------------------------------------------------
 // ANIMACIONES KEYFRAMES
 // -----------------------------------------------------
+
+// -----------------------------------------------------
+// ANIMACIONES PREMIUM LOGO
+// -----------------------------------------------------
+
+@keyframes earWiggle {
+
+    0%,
+    100% {
+        transform: rotate(0deg);
+    }
+
+    5% {
+        transform: rotate(10deg);
+    }
+
+    10% {
+        transform: rotate(-5deg);
+    }
+
+    15% {
+        transform: rotate(0deg);
+    }
+}
+
+@keyframes breathing {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.05);
+    }
+}
+
+@keyframes blink {
+
+    0%,
+    90%,
+    100% {
+        transform: scaleY(1);
+    }
+
+    95% {
+        transform: scaleY(0.1);
+    }
+}
 
 @keyframes spin-words {
     0% {

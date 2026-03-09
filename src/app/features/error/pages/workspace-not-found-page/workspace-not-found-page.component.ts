@@ -13,8 +13,21 @@ import { AuthService } from '../../../../core/services/auth.service';
             
             <div class="content">
                 <div class="logo">
-                    <div class="logo-icon"></div>
-                    <span>Antigravity</span>
+                    <div class="logo-icon-premium">
+                        <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <!-- Orejas con movimiento -->
+                            <circle class="ear ear-l" cx="25" cy="30" r="13" fill="currentColor"/>
+                            <circle class="ear ear-r" cx="75" cy="30" r="13" fill="currentColor"/>
+                            <!-- Cara Principal -->
+                            <path class="face" d="M15 55C15 35 30 25 50 25C70 25 85 35 85 55C85 75 70 88 50 88C30 88 15 75 15 55Z" fill="currentColor"/>
+                            <!-- Ojos con parpadeo -->
+                            <circle class="eye" cx="35" cy="52" r="4.5" fill="white" />
+                            <circle class="eye" cx="65" cy="52" r="4.5" fill="white" />
+                            <!-- Nariz / Botón de Acción -->
+                            <path d="M45 70C45 67 47 65 50 65C53 65 55 67 55 70C55 73 53 75 50 75C47 75 45 73 45 70Z" fill="white"/>
+                        </svg>
+                    </div>
+                    <span>BearOS</span>
                 </div>
 
                 <div class="status-code">404</div>
@@ -32,7 +45,7 @@ import { AuthService } from '../../../../core/services/auth.service';
             </div>
 
             <footer class="footer">
-                <p>&copy; 2026 Antigravity POS. Todos los derechos reservados.</p>
+                <p>&copy; 2026 BearOS. Todos los derechos reservados.</p>
             </footer>
         </div>
     `,
@@ -79,11 +92,25 @@ import { AuthService } from '../../../../core/services/auth.service';
             font-size: 1.25rem;
             letter-spacing: -0.02em;
 
-            .logo-icon {
-                width: 24px;
-                height: 24px;
-                background: var(--color-text-main);
-                clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+            .logo-icon-premium {
+                width: 48px;
+                height: 48px;
+                color: var(--color-text-main);
+                filter: drop-shadow(0 0 8px rgba(99, 102, 241, 0.3));
+
+                .ear {
+                    transform-origin: center;
+                    animation: earWiggle 4s ease-in-out infinite;
+                    &.ear-r { animation-delay: 0.2s; }
+                }
+
+                .face {
+                    animation: breathing 6s ease-in-out infinite;
+                }
+
+                .eye {
+                    animation: blink 5s step-end infinite;
+                }
             }
         }
 
@@ -167,6 +194,23 @@ import { AuthService } from '../../../../core/services/auth.service';
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes earWiggle {
+            0%, 100% { transform: rotate(0deg); }
+            5% { transform: rotate(10deg); }
+            10% { transform: rotate(-5deg); }
+            15% { transform: rotate(0deg); }
+        }
+
+        @keyframes breathing {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+        @keyframes blink {
+            0%, 90%, 100% { transform: scaleY(1); }
+            95% { transform: scaleY(0.1); }
         }
     `]
 })
