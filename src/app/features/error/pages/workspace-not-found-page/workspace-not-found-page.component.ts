@@ -110,6 +110,7 @@ import { AuthService } from '../../../../core/services/auth.service';
 
                 .eye {
                     animation: blink 5s step-end infinite;
+                    fill: var(--color-bg-surface);
                 }
             }
         }

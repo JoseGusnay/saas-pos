@@ -45,6 +45,7 @@
 
             .eye {
                 animation: blink 5s step-end infinite;
+                fill: var(--color-bg-surface);
             }
         }
     }
