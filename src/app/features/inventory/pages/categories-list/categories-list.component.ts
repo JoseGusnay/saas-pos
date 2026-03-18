@@ -25,7 +25,12 @@ import {
   lucideChevronRight,
   lucideFolder,
   lucideInfo,
-  lucideTag
+  lucideTag,
+  lucidePlusCircle,
+  lucideRefreshCw,
+  lucideTrash,
+  lucideCloudDownload,
+  lucideDownload
 } from '@ng-icons/lucide';
 
 // UI Components
@@ -56,6 +61,7 @@ import { FilterNode, FilterGroup, FilterField, FilterRule } from '../../../../co
 import { CategoriesAdvancedFilters } from '../../components/categories-advanced-filters/categories-advanced-filters';
 import { CategoryFormComponent } from '../../components/category-form/category-form.component';
 import { CategoryDetailComponent } from '../../components/category-detail/category-detail.component';
+import { CategoryImportModalComponent } from '../../components/category-import-modal/category-import-modal';
 
 @Component({
   selector: 'app-categories-list',
@@ -77,14 +83,15 @@ import { CategoryDetailComponent } from '../../components/category-detail/catego
     SpinnerComponent,
     DatelineComponent,
     FormButtonComponent,
-    CategoryDetailComponent
+    CategoryDetailComponent,
+    CategoryImportModalComponent
   ],
   providers: [
     provideIcons({ 
       lucidePlus, lucideSearch, lucideLayoutGrid, lucideList, 
       lucideFilter, lucideMoreVertical, lucidePencil, lucideTrash2, 
-      lucideHistory, lucideInbox, lucideSave, lucideX,
-      lucideChevronRight, lucideFolder, lucideInfo, lucideTag
+      lucideChevronRight, lucideFolder, lucideInfo, lucideTag,
+      lucidePlusCircle, lucideRefreshCw, lucideTrash, lucideCloudDownload, lucideDownload
     })
   ],
   template: `
@@ -95,8 +102,11 @@ import { CategoryDetailComponent } from '../../components/category-detail/catego
         [activeTab]="activeTab()"
         ctaText="Nueva Categoría"
         ctaIcon="lucidePlus"
+        secondaryCtaText="Importar"
+        secondaryCtaIcon="lucideDownload"
         (tabChange)="onTabChange($event)"
         (ctaClick)="onAddCategory()"
+        (secondaryCtaClick)="importModal.open()"
       ></app-page-header>
 
       <app-list-toolbar
@@ -349,6 +359,11 @@ import { CategoryDetailComponent } from '../../components/category-detail/catego
            ></app-form-button>
         </div>
       </app-modal>
+
+      <app-category-import-modal 
+        #importModal
+        (imported)="refreshTrigger.update(v => v + 1)"
+      ></app-category-import-modal>
     </div>
   `,
   styleUrl: './categories-list.component.scss'
@@ -388,6 +403,7 @@ export class CategoriesListComponent {
   isConfirmationModalOpen = signal(false);
 
   @ViewChild('catForm') categoryFormRef?: CategoryFormComponent;
+  @ViewChild('importModal') importModal!: CategoryImportModalComponent;
 
   private readonly response = toSignal(
     toObservable(computed(() => ({
@@ -443,12 +459,34 @@ export class CategoriesListComponent {
       id: log.id,
       date: log.createdAt,
       action: log.action,
-      actionLabel: log.action === 'CREATE' ? 'Creación' : log.action === 'UPDATE' ? 'Edición' : 'Borrado',
+      actionLabel: this.getLogActionLabel(log.action),
       user: log.userName || 'Sistema',
-      icon: log.action === 'CREATE' ? 'lucideFolder' : 'lucidePencil',
-      changes: log.action === 'UPDATE' ? this.getChanges(log.details) : undefined
+      icon: this.getLogIcon(log.action),
+      message: log.action === 'IMPORT' ? `Importación masiva de ${log.details?.count} categorías.` : undefined,
+      changes: log.action === 'UPDATE' && log.details?.oldData ? 
+               this.getChanges(log.details.oldData, log.details.newData) : undefined
     }));
   });
+
+  getLogIcon(action: string): string {
+    switch (action) {
+      case 'CREATE': return 'lucidePlusCircle';
+      case 'UPDATE': return 'lucideRefreshCw';
+      case 'DELETE': return 'lucideTrash';
+      case 'IMPORT': return 'lucideCloudDownload';
+      default: return 'lucideHistory';
+    }
+  }
+
+  getLogActionLabel(action: string): string {
+    switch (action) {
+      case 'CREATE': return 'Creación';
+      case 'UPDATE': return 'Actualización';
+      case 'DELETE': return 'Eliminación';
+      case 'IMPORT': return 'Importación';
+      default: return action;
+    }
+  }
 
   onTabChange(tab: string) {
     this.activeTab.set(tab);
@@ -584,8 +622,34 @@ export class CategoriesListComponent {
     this.filterTree.set({ type: 'group', id: 'root', logicalOperator: 'AND', children: [] });
   }
 
-  private getChanges(details: any) {
-    // Basic change set calculation logic
-    return [];
+  constructor() {
+    if (typeof window !== 'undefined') {
+      const mobileQuery = window.matchMedia('(max-width: 768px)');
+      this.isMobile.set(mobileQuery.matches);
+      mobileQuery.addEventListener('change', (e) => this.isMobile.set(e.matches));
+    }
+  }
+
+  private getChanges(oldData: any, newData: any) {
+    if (!oldData || !newData) return [];
+    const fields = [
+      { field: 'name', label: 'Nombre' },
+      { field: 'description', label: 'Descripción' },
+      { field: 'status', label: 'Estado' }
+    ];
+
+    return fields
+      .filter(f => JSON.stringify(oldData[f.field]) !== JSON.stringify(newData[f.field]))
+      .map(f => ({
+        ...f,
+        oldValue: this.formatValue(oldData[f.field]),
+        newValue: this.formatValue(newData[f.field])
+      }));
+  }
+
+  private formatValue(val: any): string {
+    if (val === 'ACTIVE') return 'Activa';
+    if (val === 'INACTIVE') return 'Inactiva';
+    return String(val || '');
   }
 }

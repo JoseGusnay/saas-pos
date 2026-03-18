@@ -47,7 +47,11 @@ import {
   lucideMenu,
   lucideBell,
   lucideLogOut,
-  lucideSave
+  lucideSave,
+  lucideShieldCheck,
+  lucideLayers,
+  lucideTag,
+  lucideBox
 } from '@ng-icons/lucide';
 
 export const appConfig: ApplicationConfig = {
@@ -111,7 +115,11 @@ export const appConfig: ApplicationConfig = {
       lucideMenu,
       lucideBell,
       lucideLogOut,
-      lucideSave
+      lucideSave,
+      lucideShieldCheck,
+      lucideLayers,
+      lucideTag,
+      lucideBox
     })
   ],
 };

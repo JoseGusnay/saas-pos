@@ -38,7 +38,7 @@ import { EmptyStateComponent } from '../../../../shared/components/ui/empty-stat
 import { UserFormComponent } from '../../components/user-form/user-form.component';
 import { UserDetailComponent } from '../../components/user-detail/user-detail.component';
 import { DatelineComponent, DatelineItem, DatelineChange } from '../../../../shared/components/ui/dateline/dateline.component';
-import { UserImportWizardComponent } from '../../components/user-import-wizard/user-import-wizard.component';
+import { UserImportModalComponent } from '../../components/user-import-modal/user-import-modal';
 import { SpinnerComponent } from '../../../../shared/components/ui/spinner/spinner';
 import { UserAdvancedFilters } from './components/user-advanced-filters/user-advanced-filters';
 import { SelectOption } from '../../../../shared/components/ui/custom-select/custom-select.component';
@@ -62,7 +62,7 @@ import { FormButtonComponent } from '../../../../shared/components/ui/form-butto
     ModalComponent,
     UserFormComponent,
     UserDetailComponent,
-    UserImportWizardComponent,
+    UserImportModalComponent,
     SpinnerComponent,
     ActionsMenuComponent,
     DatelineComponent,
@@ -335,20 +335,11 @@ import { FormButtonComponent } from '../../../../shared/components/ui/form-butto
         </div>
       </app-drawer>
 
-      <!-- Import Modal -->
-      <app-modal
-        [isOpen]="isImportModalOpen()"
-        [title]="'Importación Masiva de Usuarios'"
-        (close)="onCloseImport()"
-      >
-        <div modalBody>
-          <app-user-import-wizard
-            #importWizard
-            (imported)="onImportCompleted()"
-            (closed)="onCloseImport()"
-          ></app-user-import-wizard>
-        </div>
-      </app-modal>
+      <app-user-import-modal
+        #importModal
+        (imported)="onImportCompleted()"
+        (closed)="isImportModalOpen.set(false)"
+      ></app-user-import-modal>
 
       <!-- Drawer de Historial -->
       <app-drawer 
@@ -384,7 +375,7 @@ export class UsersListComponent implements OnInit {
   private toastService = inject(ToastService);
 
   @ViewChild('userForm') userFormRef?: UserFormComponent;
-  @ViewChild('importWizard') importWizardRef?: UserImportWizardComponent;
+  @ViewChild('importModal') importModalRef?: UserImportModalComponent;
 
 
   // State Signals
@@ -654,8 +645,7 @@ export class UsersListComponent implements OnInit {
 
 
   onOpenImport() {
-    this.importWizardRef?.reset();
-    this.isImportModalOpen.set(true);
+    this.importModalRef?.open();
   }
 
 

@@ -24,8 +24,8 @@ import { FormButtonComponent } from '../../../../shared/components/ui/form-butto
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import { ActionItem, ActionsMenuComponent } from '../../../../shared/components/ui/actions-menu/actions-menu';
 import { BrandDetailComponent } from '../../components/brand-detail/brand-detail.component';
-
-import { lucidePlus, lucideSave, lucidePencil, lucideTrash2, lucideDownload, lucideHistory, lucidePlusCircle, lucideRefreshCw, lucideTrash, lucideGlobe, lucideSearch, lucideCheckCircle2, lucideXCircle } from '@ng-icons/lucide';
+import { BrandImportModalComponent } from '../../components/brand-import-modal/brand-import-modal';
+import { lucidePlus, lucideSave, lucidePencil, lucideTrash2, lucideDownload, lucideHistory, lucidePlusCircle, lucideRefreshCw, lucideTrash, lucideGlobe, lucideSearch, lucideCheckCircle2, lucideXCircle, lucideCloudDownload } from '@ng-icons/lucide';
 import { ToastService } from '../../../../core/services/toast.service';
 import { SkeletonComponent } from '../../../../shared/components/ui/skeleton/skeleton';
 import { EmptyStateComponent } from '../../../../shared/components/ui/empty-state/empty-state';
@@ -51,10 +51,11 @@ import { SpinnerComponent } from '../../../../shared/components/ui/spinner/spinn
     ActionsMenuComponent,
     FormButtonComponent,
     BrandDetailComponent,
+    BrandImportModalComponent,
     NgIconComponent
   ],
   providers: [
-    provideIcons({ lucidePlus, lucideSave, lucidePencil, lucideTrash2, lucideDownload, lucideHistory, lucidePlusCircle, lucideRefreshCw, lucideTrash, lucideGlobe, lucideSearch, lucideCheckCircle2, lucideXCircle })
+    provideIcons({ lucidePlus, lucideSave, lucidePencil, lucideTrash2, lucideDownload, lucideHistory, lucidePlusCircle, lucideRefreshCw, lucideTrash, lucideGlobe, lucideSearch, lucideCheckCircle2, lucideXCircle, lucideCloudDownload })
   ],
   template: `
     <div class="brands-page">
@@ -64,8 +65,11 @@ import { SpinnerComponent } from '../../../../shared/components/ui/spinner/spinn
         [activeTab]="activeTab()"
         ctaText="Nueva Marca"
         ctaIcon="lucidePlus"
+        secondaryCtaText="Importar"
+        secondaryCtaIcon="lucideDownload"
         (tabChange)="onTabChange($event)"
         (ctaClick)="onAddBrand()"
+        (secondaryCtaClick)="importModal.open()"
       ></app-page-header>
 
       <app-list-toolbar
@@ -283,12 +287,17 @@ import { SpinnerComponent } from '../../../../shared/components/ui/spinner/spinn
           ></app-form-button>
         </div>
       </app-modal>
+
+      <app-brand-import-modal 
+        #importModal
+        (imported)="refreshTrigger.update(v => v + 1)"
+      ></app-brand-import-modal>
     </div>
   `,
   styles: [`
-    .brands-page { padding: 2rem; background: var(--color-bg-canvas); min-height: 100vh; }
-    .brands-page__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; margin-top: 1.5rem; }
-    .brands-page__list { display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1.5rem; }
+    .brands-page { display: flex; flex-direction: column; min-height: 100%; width: 100%; }
+    .brands-page__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; }
+    .brands-page__list { display: flex; flex-direction: column; gap: 0.75rem; }
     
     .data-card { background: var(--color-bg-surface); border-radius: var(--radius-lg); border: 1px solid var(--color-border-light); padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; box-shadow: var(--shadow-sm); }
     .skeleton-card { height: 180px; pointer-events: none; }
@@ -342,7 +351,8 @@ export class BrandsListComponent {
 
   searchQuery = signal('');
   viewModePreference = signal<'grid' | 'list'>('grid');
-  viewMode = computed(() => this.viewModePreference());
+  isMobile = signal(false);
+  viewMode = computed(() => this.isMobile() ? 'grid' : this.viewModePreference());
   isDrawerOpen = signal(false);
   isConfirmationModalOpen = signal(false);
   sortField = signal('createdAt');
@@ -363,6 +373,7 @@ export class BrandsListComponent {
   brandTabs = [{ label: 'Todas', value: 'Todas' }, { label: 'Activas', value: 'Activas' }, { label: 'Inactivas', value: 'Inactivas' }];
   
   @ViewChild('brandForm') brandFormRef?: BrandFormComponent;
+  @ViewChild('importModal') importModal!: BrandImportModalComponent;
 
   filterTree = signal<FilterGroup>({ type: 'group', id: 'root', logicalOperator: 'AND', children: [] });
   availableFields: FilterField[] = [
@@ -400,10 +411,33 @@ export class BrandsListComponent {
     id: log.id, 
     date: log.createdAt, 
     action: log.action,
-    actionLabel: log.action === 'CREATE' ? 'Creación' : (log.action === 'UPDATE' ? 'Edición' : 'Borrado'), 
+    actionLabel: this.getLogActionLabel(log.action), 
     user: log.userName || 'Sistema', 
-    icon: 'lucideHistory'
+    icon: this.getLogIcon(log.action),
+    message: log.action === 'IMPORT' ? `Importación masiva de ${log.details?.count} marcas.` : undefined,
+    changes: log.action === 'UPDATE' && log.details?.oldData ? 
+             this.getChanges(log.details.oldData, log.details.newData) : undefined
   })));
+
+  getLogIcon(action: string): string {
+    switch (action) {
+      case 'CREATE': return 'lucidePlusCircle';
+      case 'UPDATE': return 'lucideRefreshCw';
+      case 'DELETE': return 'lucideTrash';
+      case 'IMPORT': return 'lucideCloudDownload';
+      default: return 'lucideHistory';
+    }
+  }
+
+  getLogActionLabel(action: string): string {
+    switch (action) {
+      case 'CREATE': return 'Creación';
+      case 'UPDATE': return 'Actualización';
+      case 'DELETE': return 'Eliminación';
+      case 'IMPORT': return 'Importación';
+      default: return action;
+    }
+  }
 
   onTabChange(tab: string) { this.activeTab.set(tab); this.currentPage.set(1); }
   onSearch(q: string) { this.searchQuery.set(q); this.currentPage.set(1); }
@@ -487,4 +521,36 @@ export class BrandsListComponent {
     const count = (node: any): number => node.type === 'group' ? node.children.reduce((a: any, c: any) => a + count(c), 0) : (node.value ? 1 : 0);
     return count(this.filterTree());
   });
+
+  constructor() {
+    if (typeof window !== 'undefined') {
+      const mobileQuery = window.matchMedia('(max-width: 768px)');
+      this.isMobile.set(mobileQuery.matches);
+      mobileQuery.addEventListener('change', (e) => this.isMobile.set(e.matches));
+    }
+  }
+
+  private getChanges(oldData: any, newData: any) {
+    if (!oldData || !newData) return [];
+    const fields = [
+      { field: 'name', label: 'Nombre' },
+      { field: 'country', label: 'País' },
+      { field: 'description', label: 'Descripción' },
+      { field: 'status', label: 'Estado' }
+    ];
+
+    return fields
+      .filter(f => JSON.stringify(oldData[f.field]) !== JSON.stringify(newData[f.field]))
+      .map(f => ({
+        ...f,
+        oldValue: this.formatValue(oldData[f.field]),
+        newValue: this.formatValue(newData[f.field])
+      }));
+  }
+
+  private formatValue(val: any): string {
+    if (val === 'ACTIVE') return 'Activa';
+    if (val === 'INACTIVE') return 'Inactiva';
+    return String(val || '');
+  }
 }

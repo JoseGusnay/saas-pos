@@ -55,4 +55,9 @@ export class CategoryService {
         return this.http.get<ApiResponse<any[]>>(`${this.baseUrl}/${id}/logs`, { withCredentials: true })
             .pipe(map(res => res.data));
     }
+
+    bulkImport(categories: Partial<Category>[]): Observable<{ count: number }> {
+        return this.http.post<ApiResponse<{ count: number }>>(`${this.baseUrl}/bulk`, categories, { withCredentials: true })
+            .pipe(map(res => res.data));
+    }
 }

@@ -58,4 +58,9 @@ export class BrandService {
     return this.http.get<ApiResponse<any[]>>(`${this.baseUrl}/${id}/logs`, { withCredentials: true })
       .pipe(map(res => res.data));
   }
+
+  bulkImport(brands: Partial<Brand>[]): Observable<{ count: number }> {
+    return this.http.post<ApiResponse<{ count: number }>>(`${this.baseUrl}/bulk`, brands, { withCredentials: true })
+      .pipe(map(res => res.data));
+  }
 }
