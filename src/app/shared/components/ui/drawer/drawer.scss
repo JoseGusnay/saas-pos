@@ -1,0 +1,129 @@
+@use '../../../../../styles/abstracts/variables';
+@use '../../../../../styles/abstracts/mixins';
+
+.drawer-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  cursor: pointer;
+}
+
+.drawer-container {
+  position: fixed;
+  background: var(--color-bg-surface);
+  box-shadow: var(--shadow-dropdown);
+  z-index: 1001;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+
+  /* Desktop Default: Lateral de la derecha */
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: var(--drawer-width-md);
+  max-width: 100%;
+  border-left: 1px solid var(--color-border-light);
+
+  /* Size variants */
+  &.drawer--sm {
+    width: var(--drawer-width-sm);
+  }
+
+  &.drawer--md {
+    width: var(--drawer-width-md);
+  }
+
+  &.drawer--lg {
+    width: var(--drawer-width-lg);
+  }
+
+  &.drawer--xl {
+    width: var(--drawer-width-xl);
+  }
+
+  @media (max-width: 768px) {
+    /* Mobile: Estilo Sheet desde abajo */
+    top: auto;
+    right: 0;
+    left: 0;
+    bottom: 0;
+    width: 100% !important;
+    height: auto;
+    min-height: 40vh;
+    max-height: 90vh;
+    /* Requisito: Máximo 90% DVH */
+    border-left: none;
+    border-top: 1px solid var(--color-border-light);
+    border-radius: 16px 16px 0 0;
+  }
+}
+
+
+.drawer-header {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--color-border-light);
+  flex-shrink: 0;
+
+  .drawer-header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .drawer-title {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-main);
+    margin: 0;
+  }
+
+  .drawer-close-btn {
+    background: transparent;
+    border: none;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    padding: 0.5rem;
+    display: flex;
+    align-items: center;
+    border-radius: var(--radius-sm);
+    transition: var(--transition-fast);
+
+    &:hover {
+      background: var(--color-bg-hover);
+      color: var(--color-text-main);
+    }
+
+    ng-icon {
+      font-size: 1.25rem;
+    }
+  }
+}
+
+.drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.5rem;
+
+  /* Scrollbar custom */
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+}
+
+.drawer-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--color-border-light);
+  background: var(--color-bg-surface);
+  flex-shrink: 0;
+
+  @media (max-width: 768px) {
+    /* En móvil, asegurar que el footer no se tape con barras del sistema si es posible */
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0));
+  }
+}

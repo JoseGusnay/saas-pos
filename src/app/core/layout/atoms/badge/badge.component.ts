@@ -1,6 +1,6 @@
 import { Component, input } from '@angular/core';
 
-export type BadgeVariant = 'default' | 'primary' | 'success' | 'danger';
+export type BadgeVariant = 'default' | 'primary' | 'success' | 'danger' | 'warning' | 'info';
 
 @Component({
     selector: 'app-badge',

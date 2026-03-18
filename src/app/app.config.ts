@@ -1,6 +1,8 @@
 import { ApplicationConfig } from "@angular/core";
 import { provideHttpClient, withFetch, withInterceptorsFromDi, withInterceptors } from "@angular/common/http";
 import { PreloadAllModules, Router, provideRouter, withPreloading } from "@angular/router";
+import { provideAnimationsAsync } from "@angular/platform-browser/animations/async";
+
 import { routes } from "./app.routes";
 import { APP_INITIALIZER } from "@angular/core";
 import { AuthService } from "./core/services/auth.service";
@@ -42,12 +44,16 @@ import {
   lucideUser,
   lucideCheck,
   lucideX,
-  lucideMenu
+  lucideMenu,
+  lucideBell,
+  lucideLogOut,
+  lucideSave
 } from '@ng-icons/lucide';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideRouter(routes, withPreloading(PreloadAllModules)),
+    provideAnimationsAsync(),
     provideHttpClient(withFetch(), withInterceptors([tenantInterceptor]), withInterceptorsFromDi()),
     {
       provide: APP_INITIALIZER,
@@ -102,7 +108,10 @@ export const appConfig: ApplicationConfig = {
       lucideUser,
       lucideCheck,
       lucideX,
-      lucideMenu
+      lucideMenu,
+      lucideBell,
+      lucideLogOut,
+      lucideSave
     })
   ],
 };

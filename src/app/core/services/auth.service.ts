@@ -1,7 +1,7 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { catchError, map, tap } from 'rxjs/operators';
+import { catchError, finalize, map, tap } from 'rxjs/operators';
 import { Observable, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
@@ -248,5 +248,30 @@ export class AuthService {
 
     clearError() {
         this.state.update((s) => ({ ...s, error: null }));
+    }
+
+    /**
+     * Cierra la sesión del usuario.
+     * Limpia la cookie del lado del servidor y resetea el estado local.
+     */
+    logout() {
+        this.setLoading(true);
+        this.http.post(`${this.baseUrl}/logout`, {}, { withCredentials: true })
+            .pipe(
+                finalize(() => {
+                    // Reseteamos el estado SIEMPRE, incluso si falla el HTTP (ej. ya expiró)
+                    this.state.set({
+                        user: null,
+                        availableBranches: [],
+                        isAuthenticated: false,
+                        isLoading: false,
+                        error: null,
+                    });
+                    this.setLoading(false);
+                    this.router.navigate(['/auth/login']);
+                    this.toast.info('Sesión cerrada correctamente.');
+                })
+            )
+            .subscribe();
     }
 }

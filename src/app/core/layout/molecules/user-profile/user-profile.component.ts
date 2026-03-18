@@ -1,6 +1,7 @@
 import { Component, input, inject } from '@angular/core';
 import { LayoutService } from '../../services/layout.service';
 import { IconComponent } from '../../atoms/icon/icon.component';
+import { AuthService } from '../../../services/auth.service';
 
 @Component({
     selector: 'app-user-profile',
@@ -38,6 +39,11 @@ import { IconComponent } from '../../atoms/icon/icon.component';
           <button class="user-profile__action-btn">
             <app-icon name="lucideSettings"></app-icon>
           </button>
+
+          <!-- Cerrar Sesión -->
+          <button class="user-profile__action-btn user-profile__action-btn--danger" (click)="auth.logout(); $event.stopPropagation()">
+            <app-icon name="lucideLogOut"></app-icon>
+          </button>
           
         </div>
       }
@@ -47,6 +53,7 @@ import { IconComponent } from '../../atoms/icon/icon.component';
 })
 export class UserProfileComponent {
     layout = inject(LayoutService);
+    auth = inject(AuthService);
 
     name = input.required<string>();
     plan = input.required<string>();

@@ -1,0 +1,279 @@
+<div class="roles-page">
+  <app-page-header
+    title="Gestión de Roles y Permisos"
+    [tabs]="roleTabs"
+    [activeTab]="activeTab()"
+    ctaText="Nuevo Rol"
+    ctaIcon="lucidePlus"
+    (tabChange)="onTabChange($event)"
+    (ctaClick)="onOpenCreateForm()"
+  ></app-page-header>
+
+  <app-list-toolbar
+    searchPlaceholder="Buscar roles..."
+    [searchQuery]="searchQuery()"
+    [viewMode]="viewModePreference()"
+    [sortOptions]="roleSortOptions"
+    [selectedSort]="sortField() + ':' + sortOrder().toLowerCase()"
+    [activeFiltersCount]="activeFiltersCount()"
+    (openFilters)="openAdvancedFilters()"
+    (clearFilters)="clearAllFilters()"
+    (searchChange)="onSearchChange($event)"
+    (viewModeChange)="viewModePreference.set($event)"
+    (sortChange)="onSortChange($event)"
+  ></app-list-toolbar>
+
+  <div [class]="viewMode() === 'grid' ? 'roles-grid' : 'roles-list-layout'">
+    @if (isLoading()) {
+      @for (n of [1,2,3,4,5,6]; track n) {
+        @if (viewMode() === 'grid') {
+          <!-- Role Grid Skeleton -->
+          <div class="data-card skeleton-card">
+            <header class="data-card__header">
+              <div class="data-card__title-container">
+                <app-skeleton width="150px" height="1.25rem"></app-skeleton>
+                <div style="margin-top: 4px">
+                  <app-skeleton width="60px" height="18px" radius="999px"></app-skeleton>
+                </div>
+              </div>
+              <div class="data-card__kebab">
+                <app-skeleton width="32px" height="32px" shape="circle"></app-skeleton>
+              </div>
+            </header>
+            <div class="data-card__body">
+              <div class="data-card__detail">
+                <app-skeleton width="14px" height="14px" shape="circle"></app-skeleton>
+                <app-skeleton width="110px" height="0.875rem"></app-skeleton>
+              </div>
+            </div>
+          </div>
+        } @else {
+          <!-- Role List Skeleton -->
+          <div class="role-row-item skeleton-row">
+             <div class="row-main">
+                <app-skeleton width="48px" height="48px" radius="8px"></app-skeleton>
+                <div class="role-info">
+                   <app-skeleton width="140px" height="1rem"></app-skeleton>
+                   <app-skeleton width="100px" height="0.875rem" style="margin-top: 6px"></app-skeleton>
+                </div>
+             </div>
+             <div class="row-status">
+                <app-skeleton width="70px" height="24px" radius="99px"></app-skeleton>
+             </div>
+             <div class="row-actions">
+                <app-skeleton width="32px" height="32px" shape="circle"></app-skeleton>
+             </div>
+          </div>
+        }
+      }
+    } @else if (roles().length === 0) {
+      <div class="roles-page__empty">
+        <app-empty-state
+          [icon]="activeFiltersCount() > 0 || searchQuery() ? 'lucideSearch' : 'lucideShield'"
+          [title]="activeFiltersCount() > 0 || searchQuery() ? 'No encontramos roles' : 'No hay roles registrados'"
+          [description]="activeFiltersCount() > 0 || searchQuery() ? 'Intenta con otros términos o ajusta tus filtros.' : 'Comienza definiendo los permisos de tu equipo.'"
+          [actionLabel]="activeFiltersCount() > 0 || searchQuery() ? 'Limpiar Filtros' : 'Nuevo Rol'"
+          (action)="activeFiltersCount() > 0 || searchQuery() ? clearAllFilters() : onOpenCreateForm()"
+        ></app-empty-state>
+      </div>
+    } @else {
+      @for (role of roles(); track role.id) {
+        @if (viewMode() === 'grid') {
+          <app-data-card
+            class="cursor-pointer"
+            (click)="onShowDetail(role)"
+            [title]="role.name"
+            [status]="role.name === 'SUPER_ADMIN' ? 'Sistema' : 'Personalizado'"
+            [statusConfig]="role.name === 'SUPER_ADMIN' ? 'warning' : 'active'"
+            [actions]="roleActions"
+            (actionClick)="handleActionClick($event, role)"
+          >
+            <!-- Detalle Personalizado en Body -->
+            <div body>
+              <div class="data-card__detail">
+                <ng-icon name="lucideShield"></ng-icon>
+                <span>{{ role.permissions?.length || 0 }} permisos asignados</span>
+              </div>
+            </div>
+          </app-data-card>
+        } @else {
+          <!-- List View -->
+          <div class="role-row-item shadow-sm" (click)="onShowDetail(role)">
+            <div class="row-main">
+               <div class="role-icon-box">
+                 <ng-icon name="lucideShield" size="24"></ng-icon>
+               </div>
+               <div class="role-info">
+                 <h4 class="role-name">{{ role.name }}</h4>
+                 <span class="role-desc">{{ role.permissions?.length || 0 }} permisos asignados</span>
+               </div>
+            </div>
+            <div class="row-status">
+              <app-badge
+                [variant]="role.name === 'SUPER_ADMIN' ? 'primary' : 'success'"
+                [text]="role.name === 'SUPER_ADMIN' ? 'Sistema' : 'Personalizado'">
+              </app-badge>
+            </div>
+            <div class="row-actions">
+               <app-actions-menu
+                 [actions]="roleActions"
+                 (actionClick)="handleActionClick($event, role)">
+               </app-actions-menu>
+            </div>
+          </div>
+        }
+      }
+    }
+  </div>
+
+  @if (meta()?.pageCount && meta()!.pageCount > 1) {
+    <div class="pagination-wrapper mt-4">
+      <app-pagination
+        [currentPage]="meta()!.page"
+        [totalItems]="meta()!.itemCount"
+        [pageSize]="meta()!.take"
+        (pageChange)="onPageChange($event)"
+      ></app-pagination>
+    </div>
+  }
+</div>
+
+<!-- Drawer de Creación / Edición -->
+<app-drawer
+    [isOpen]="isFormOpen()"
+    [title]="selectedRole() ? 'Editar Rol' : 'Nuevo Rol'"
+    [allowClose]="!!(roleFormRef?.isSubmitting?.()) === false"
+    (close)="onDrawerClose()"
+    size="md">
+    <div drawerBody>
+      @if (isFormOpen()) {
+        <app-role-form
+            #roleFormRef
+            [roleId]="selectedRole()?.id"
+            (saved)="onFormSaved()"
+            (cancelled)="onCloseForm()">
+        </app-role-form>
+      }
+    </div>
+
+    @if (isFormOpen()) {
+      <div drawerFooter class="drawer-footer-actions">
+        <app-form-button
+          label="Cancelar"
+          variant="secondary"
+          (click)="onCloseForm()"
+          [disabled]="!!(roleFormRef?.isSubmitting?.())"
+        ></app-form-button>
+        <app-form-button
+          [label]="selectedRole() ? 'Actualizar Rol' : 'Guardar Rol'"
+          loadingLabel="Guardando..."
+          icon="lucideSave"
+          [loading]="!!(roleFormRef?.isSubmitting?.())"
+          [disabled]="(roleFormRef?.roleForm?.invalid === true) || (roleFormRef?.selectedPermissions?.()?.size === 0)"
+          (click)="roleFormRef?.onSubmit()"
+        ></app-form-button>
+      </div>
+    }
+</app-drawer>
+
+<!-- Drawer de Detalle -->
+<app-drawer
+    [isOpen]="isDetailOpen()"
+    [title]="'Detalle de Rol'"
+    (close)="onCloseDetail()"
+    size="lg">
+    <div drawerBody>
+      @if (isDetailOpen() && selectedRole()) {
+        <app-role-detail
+            [role]="selectedRole()!">
+        </app-role-detail>
+      }
+    </div>
+
+    <div drawerFooter class="drawer-footer-actions">
+      <app-form-button
+        label="Ver Historial"
+        variant="secondary"
+        icon="lucideHistory"
+        (click)="onShowHistory(selectedRole()!)"
+      ></app-form-button>
+      <app-form-button
+        label="Editar Rol"
+        icon="lucidePencil"
+        (click)="handleActionClick({id: 'edit', label: '', icon: ''}, selectedRole()!)"
+      ></app-form-button>
+    </div>
+</app-drawer>
+
+<!-- Drawer de Historial -->
+<app-drawer
+    [isOpen]="isHistoryOpen()"
+    [title]="selectedRole() ? 'Historial: ' + selectedRole()?.name : 'Historial de Cambios'"
+    (close)="onCloseHistory()"
+    size="md">
+    
+    <div drawerBody class="history-container">
+      @if (isHistoryLoading()) {
+        <div class="history-loading">
+          <app-spinner></app-spinner>
+          <span>Cargando historial...</span>
+        </div>
+      } @else {
+        <app-dateline [items]="mappedLogs()"></app-dateline>
+        @if (mappedLogs().length === 0) {
+          <div class="empty-logs">No hay registros de actividad para este rol.</div>
+        }
+      }
+    </div>
+</app-drawer>
+
+<!-- Modal de Confirmación de Salida -->
+<app-modal 
+  [isOpen]="isConfirmationModalOpen()" 
+  [title]="'Cambios sin guardar'"
+  (close)="onCancelExit()">
+  
+  <div modalBody>
+    Tienes cambios en el formulario que no has guardado. ¿Estás seguro de que quieres salir? Se perderán todos los datos ingresados.
+  </div>
+
+  <div modalFooter class="modal-footer-actions">
+    <app-form-button
+      label="Continuar Editando"
+      variant="secondary"
+      (click)="onCancelExit()"
+    ></app-form-button>
+    <app-form-button
+      label="Salir sin Guardar"
+      variant="danger"
+      (click)="onConfirmExit()"
+    ></app-form-button>
+  </div>
+</app-modal>
+
+<!-- Modal de Confirmación de Eliminación -->
+<app-modal 
+  [isOpen]="isDeleteModalOpen()" 
+  [title]="'Confirmar Eliminación'"
+  (close)="onCancelDelete()">
+  
+  <div modalBody>
+    ¿Estás seguro de que deseas eliminar el rol <strong>"{{ roleToDelete()?.name }}"</strong>? Esta acción no se puede deshacer.
+  </div>
+
+  <div modalFooter class="modal-footer-actions">
+    <app-form-button
+      label="Cancelar"
+      variant="secondary"
+      (click)="onCancelDelete()"
+    ></app-form-button>
+    <app-form-button
+      label="Eliminar Rol"
+      variant="danger"
+      icon="lucideTrash2"
+      [loading]="isDeleting()"
+      [disabled]="isDeleting()"
+      (click)="confirmDelete()"
+    ></app-form-button>
+  </div>
+</app-modal>

@@ -1,0 +1,114 @@
+@use '../abstracts/variables';
+
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  z-index: 2000;
+  cursor: pointer;
+}
+
+.modal-container {
+  position: fixed;
+  background: var(--color-bg-surface);
+  box-shadow: var(--shadow-lg);
+  z-index: 2001;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+
+  /* Desktop Default: Centrado */
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 400px;
+  max-width: 90vw;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border-light);
+
+  @media (max-width: 768px) {
+    /* Mobile: Estilo Bottom Sheet (Desde Abajo) */
+    top: auto;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100% !important;
+    transform: none !important;
+    max-width: 100%;
+    border-radius: 16px 16px 0 0;
+    border: none;
+    border-top: 1px solid var(--color-border-light);
+  }
+}
+
+.modal-header {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--color-border-light);
+  flex-shrink: 0;
+
+  .modal-header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .modal-title {
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-main);
+    margin: 0;
+  }
+
+  .modal-close-btn {
+    background: transparent;
+    border: none;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    padding: 0.25rem;
+    display: flex;
+    align-items: center;
+    border-radius: var(--radius-sm);
+    transition: var(--transition-fast);
+
+    &:hover {
+      background: var(--color-bg-hover);
+      color: var(--color-text-main);
+    }
+
+    ng-icon {
+      font-size: 1.15rem;
+    }
+  }
+}
+
+.modal-body {
+  padding: 1.25rem;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  line-height: 1.5;
+}
+
+.modal-footer {
+  padding: 1rem 1.25rem;
+  border-top: 1px solid var(--color-border-light);
+  background: var(--color-bg-subtle);
+  flex-shrink: 0;
+
+  /* Acciones del footer, soporta proyección */
+  .modal-footer-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    width: 100%;
+
+    @media (max-width: 480px) {
+      flex-direction: column-reverse;
+      gap: 0.5rem;
+      .btn { width: 100%; }
+    }
+  }
+}

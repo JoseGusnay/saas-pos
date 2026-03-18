@@ -70,40 +70,6 @@
         gap: 8px;
     }
 
-    &__ghost-btn {
-        @include flex-center;
-        gap: 6px;
-        background: transparent;
-        border: 1px dashed transparent;
-        border-radius: var(--radius-sm);
-        padding: 6px 10px;
-        color: var(--color-text-muted);
-        font-size: var(--font-size-sm);
-        cursor: pointer;
-        transition: var(--transition-base);
-
-        &:hover,
-        &--active {
-            background-color: var(--color-bg-hover);
-            color: var(--color-text-main);
-        }
-
-        &--danger {
-            color: var(--color-text-muted);
-            border-color: transparent;
-
-            &:hover {
-                background-color: var(--color-danger-bg);
-                color: var(--color-danger-text);
-            }
-        }
-
-        app-icon {
-            width: 16px;
-            height: 16px;
-        }
-    }
-
     &__view-toggle {
         display: flex;
         align-items: center;

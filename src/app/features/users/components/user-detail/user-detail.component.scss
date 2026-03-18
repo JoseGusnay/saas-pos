@@ -1,0 +1,150 @@
+.user-detail-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 4px;
+}
+
+.user-summary-card {
+  background: var(--color-bg-surface);
+  border-radius: 20px;
+  padding: 24px;
+  border: 1px solid var(--color-border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+
+  .user-main-info {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+
+    .avatar-large {
+      width: 80px;
+      height: 80px;
+      border-radius: 24px;
+      background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+      color: white;
+      font-size: 32px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 10px 20px rgba(var(--color-primary-rgb), 0.2);
+    }
+
+    .info-text {
+      .user-name {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--color-text-main);
+        margin: 0;
+        letter-spacing: -0.02em;
+      }
+      .user-email {
+        font-size: 14px;
+        color: var(--color-text-muted);
+        margin: 4px 0 12px 0;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+    }
+  }
+}
+
+.user-stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  border-top: 1px solid var(--color-border-subtle);
+  padding-top: 20px;
+
+  .stat-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    .stat-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      color: var(--color-text-soft);
+      letter-spacing: 0.05em;
+      font-weight: 600;
+    }
+
+    .stat-value {
+      font-size: 14px;
+      color: var(--color-text-main);
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+
+      ng-icon { color: var(--color-primary); }
+    }
+  }
+}
+
+.detail-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+
+.side-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.info-section {
+   background: var(--color-bg-surface);
+   border-radius: 16px;
+   padding: 20px;
+   border: 1px solid var(--color-border-subtle);
+
+   .section-title {
+     font-size: 13px;
+     font-weight: 700;
+     color: var(--color-text-main);
+     margin-bottom: 16px;
+     display: flex;
+     align-items: center;
+     gap: 8px;
+
+     ng-icon { color: var(--color-primary); }
+   }
+}
+
+.roles-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+
+  .role-chip {
+    padding: 6px 12px;
+    background: var(--color-bg-overlay);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: 8px;
+    font-size: 12px;
+    color: var(--color-text-soft);
+    font-weight: 500;
+  }
+}
+
+.branch-item {
+   padding: 8px 12px;
+   border-bottom: 1px solid var(--color-border-subtle);
+   font-size: 13px;
+   color: var(--color-text-soft);
+
+   &:last-child { border-bottom: none; }
+}
+
+.empty-hint {
+   font-size: 13px;
+   color: var(--color-text-muted);
+   font-style: italic;
+}

@@ -14,14 +14,31 @@
     &--closing {
         animation: fadeOut 0.2s ease-in forwards;
     }
+
+    @media (max-width: 768px) {
+        align-items: flex-end;
+    }
+}
+
+.modal-sheet-handle {
+    display: none;
+    width: 36px;
+    height: 4px;
+    background-color: var(--color-border-light);
+    border-radius: 2px;
+    margin: 8px auto 0;
+    flex-shrink: 0;
+
+    @media (max-width: 768px) {
+        display: block;
+    }
 }
 
 .modal-dialog {
     background-color: var(--color-bg-surface);
-    // Vercel-style: Ultra thin border & deep diffused shadow layer stack
     border: 1px solid var(--color-border-subtle, rgba(0, 0, 0, 0.1));
     border-radius: 12px;
-    overflow: hidden;
+    overflow: visible; // Cambiado de hidden para permitir que los dropdowns sobresalgan
     box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.02), 0 30px 60px -12px rgba(0, 0, 0, 0.25);
     width: 650px;
     max-width: 90vw;
@@ -29,8 +46,24 @@
     flex-direction: column;
     animation: slideUpFade 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 
+    @media (max-width: 768px) {
+        width: 100%;
+        max-width: 100%;
+        border-radius: 20px 20px 0 0;
+        max-height: 92vh;
+        animation: slideUpSheet 0.35s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+    }
+
+    &--entered {
+        transform: none !important;
+    }
+
     &--closing {
         animation: slideDownFade 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+
+        @media (max-width: 768px) {
+            animation: slideDownSheet 0.25s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+        }
     }
 
     // Opcional: Asegurarnos de que el contenido dinámico enorme haga scroll por dentro, no por fuera
@@ -40,6 +73,7 @@
         @include flex-between;
         padding: 16px 20px;
         border-bottom: 1px solid var(--color-border-subtle);
+        border-radius: 12px 12px 0 0; // Mantener redondeado superior
     }
 
     &__title {
@@ -73,7 +107,25 @@
     &__content {
         padding: 20px;
         overflow-y: auto;
-        flex: 1; // Crece para ocupar el espacio si hay limite max-height
+        flex: 1;
+
+        // Custom Scrollbar Premium
+        &::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        &::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        &::-webkit-scrollbar-thumb {
+            background: var(--color-border-subtle);
+            border-radius: 10px;
+        }
+
+        &::-webkit-scrollbar-thumb:hover {
+            background: var(--color-text-muted);
+        }
     }
 
     &__footer {
@@ -82,6 +134,7 @@
         border-top: 1px solid var(--color-border-subtle);
         background-color: transparent;
         flex-shrink: 0; // Evita que se colapse al hacer scroll en __content
+        border-radius: 0 0 12px 12px; // Mantener redondeado inferior
     }
 
     &__footer-hint {
@@ -167,5 +220,23 @@
     to {
         opacity: 0;
         transform: translateY(8px) scale(0.98);
+    }
+}
+
+@keyframes slideUpSheet {
+    from {
+        transform: translateY(100%);
+    }
+    to {
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideDownSheet {
+    from {
+        transform: translateY(0);
+    }
+    to {
+        transform: translateY(100%);
     }
 }

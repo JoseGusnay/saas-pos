@@ -28,6 +28,7 @@ export const tenantInterceptor: HttpInterceptorFn = (req, next) => {
             setHeaders: {
                 'x-tenant-id': tenantId,
             },
+            withCredentials: true,
         });
         return next(clonedReq);
     }

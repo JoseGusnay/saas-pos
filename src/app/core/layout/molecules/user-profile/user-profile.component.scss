@@ -66,6 +66,13 @@
             background-color: var(--color-bg-hover);
         }
 
+        &--danger {
+            &:hover {
+                color: var(--color-danger);
+                background-color: rgba(var(--color-danger-rgb), 0.1);
+            }
+        }
+
         app-icon {
             width: 16px;
             height: 16px;

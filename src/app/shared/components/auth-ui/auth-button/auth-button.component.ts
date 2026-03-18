@@ -1,10 +1,11 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { SpinnerComponent } from '../../ui/spinner/spinner';
 
 @Component({
     selector: 'app-auth-button',
     standalone: true,
-    imports: [CommonModule],
+    imports: [CommonModule, SpinnerComponent],
     templateUrl: './auth-button.component.html',
     styleUrls: ['./auth-button.component.scss']
 })

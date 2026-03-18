@@ -26,6 +26,7 @@ export class QueryNodeComponent {
     // Custom Select Local State Signals
     isFieldDropdownOpen = signal(false);
     isOperatorDropdownOpen = signal(false);
+    dropdownPosition = signal<{ top: number | null, left: number, bottom: number | null, isFlipped: boolean } | null>(null);
 
     // Getters for Select Display Values
     get currentFieldLabel(): string {
@@ -36,20 +37,86 @@ export class QueryNodeComponent {
 
     get availableOperators(): FilterOperator[] {
         if (this.isGroup) return [];
-        return this.ruleNode.field === 'revenue'
-            ? ['greaterThan', 'lessThan', 'equals']
-            : ['contains', 'equals'];
+        const field = this.availableFields.find(f => f.id === this.ruleNode.field);
+        if (!field) return ['contains', 'equals'];
+
+        switch (field.type) {
+            case 'number':
+                return ['equals', 'notEqual', 'greaterThan', 'lessThan', 'inRange', 'blank', 'notBlank'];
+            case 'text':
+                return ['contains', 'notContains', 'equals', 'notEqual', 'startsWith', 'endsWith', 'blank', 'notBlank'];
+            case 'status':
+            case 'select':
+                return ['equals', 'notEqual', 'blank', 'notBlank'];
+            default:
+                return ['equals', 'notEqual', 'contains', 'blank', 'notBlank'];
+        }
     }
 
-    // Toggle Methods ensuring mutually exclusive dropdowns
-    toggleFieldDropdown() {
-        this.isFieldDropdownOpen.update(v => !v);
-        if (this.isFieldDropdownOpen()) this.isOperatorDropdownOpen.set(false);
+    // Detects the coordinate system for position: fixed elements relative to any containing block
+    getFixedContext(trigger: HTMLElement) {
+        const dummy = document.createElement('div');
+        Object.assign(dummy.style, {
+            position: 'fixed',
+            inset: '0',
+            visibility: 'hidden',
+            pointerEvents: 'none'
+        });
+
+        trigger.appendChild(dummy);
+        const rect = dummy.getBoundingClientRect();
+        trigger.removeChild(dummy);
+
+        return {
+            top: rect.top,
+            left: rect.left,
+            bottom: rect.bottom,
+            right: rect.right
+        };
     }
 
-    toggleOperatorDropdown() {
-        this.isOperatorDropdownOpen.update(v => !v);
-        if (this.isOperatorDropdownOpen()) this.isFieldDropdownOpen.set(false);
+    toggleFieldDropdown(trigger: HTMLElement) {
+        if (this.isFieldDropdownOpen()) {
+            this.isFieldDropdownOpen.set(false);
+            this.dropdownPosition.set(null);
+        } else {
+            const rect = trigger.getBoundingClientRect();
+            const context = this.getFixedContext(trigger);
+            const viewportHeight = window.innerHeight;
+            const spaceBelow = viewportHeight - rect.bottom;
+            const isFlipped = spaceBelow < 250;
+
+            this.dropdownPosition.set({
+                top: isFlipped ? null : rect.bottom - context.top + 4,
+                bottom: isFlipped ? (context.bottom - rect.top) + 4 : null,
+                left: rect.left - context.left,
+                isFlipped
+            });
+            this.isFieldDropdownOpen.set(true);
+            this.isOperatorDropdownOpen.set(false);
+        }
+    }
+
+    toggleOperatorDropdown(trigger: HTMLElement) {
+        if (this.isOperatorDropdownOpen()) {
+            this.isOperatorDropdownOpen.set(false);
+            this.dropdownPosition.set(null);
+        } else {
+            const rect = trigger.getBoundingClientRect();
+            const context = this.getFixedContext(trigger);
+            const viewportHeight = window.innerHeight;
+            const spaceBelow = viewportHeight - rect.bottom;
+            const isFlipped = spaceBelow < 250;
+
+            this.dropdownPosition.set({
+                top: isFlipped ? null : rect.bottom - context.top + 4,
+                bottom: isFlipped ? (context.bottom - rect.top) + 4 : null,
+                left: rect.left - context.left,
+                isFlipped
+            });
+            this.isOperatorDropdownOpen.set(true);
+            this.isFieldDropdownOpen.set(false);
+        }
     }
 
     toggleLogicalOperator() {
@@ -114,6 +181,7 @@ export class QueryNodeComponent {
             const defaultOp = newFieldId === 'revenue' ? 'greaterThan' : 'contains';
             this.nodeChange.emit({ ...this.ruleNode, field: newFieldId, operator: defaultOp });
             this.isFieldDropdownOpen.set(false);
+            this.dropdownPosition.set(null);
         }
     }
 
@@ -121,6 +189,7 @@ export class QueryNodeComponent {
         if (!this.isGroup) {
             this.nodeChange.emit({ ...this.ruleNode, operator: op });
             this.isOperatorDropdownOpen.set(false);
+            this.dropdownPosition.set(null);
         }
     }
 
@@ -134,10 +203,17 @@ export class QueryNodeComponent {
 
     getOperatorLabel(operator: FilterOperator): string {
         const labels: Record<FilterOperator, string> = {
-            equals: 'es idéntico a',
-            contains: 'contiene',
-            greaterThan: 'es mayor a',
-            lessThan: 'es menor a'
+            equals: 'Es igual a',
+            notEqual: 'No es igual a',
+            contains: 'Contiene',
+            notContains: 'No contiene',
+            startsWith: 'Empieza con',
+            endsWith: 'Termina con',
+            blank: 'Está vacío',
+            notBlank: 'No está vacío',
+            greaterThan: 'Mayor que',
+            lessThan: 'Menor que',
+            inRange: 'En rango'
         };
         return labels[operator] || operator;
     }

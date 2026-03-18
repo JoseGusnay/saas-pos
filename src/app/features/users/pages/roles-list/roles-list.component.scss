@@ -1,0 +1,315 @@
+@use 'abstracts/variables' as *;
+@use 'abstracts/mixins' as *;
+
+.roles-page {
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+    width: 100%;
+
+    &__empty {
+        grid-column: 1 / -1;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        padding: 40px 0;
+    }
+}
+
+// Skeleton Grid Styles
+.skeleton-card {
+    pointer-events: none;
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-lg);
+    background: var(--color-bg-surface);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    box-sizing: border-box;
+    padding: 20px;
+
+    .data-card__header {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 16px;
+    }
+
+    .data-card__title-container {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .data-card__body {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 20px;
+        flex: 1;
+    }
+
+    .data-card__detail {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .data-card__footer {
+        padding-top: 16px;
+        border-top: 1px solid var(--color-border-light);
+        display: flex;
+        justify-content: flex-end;
+        align-items: flex-end;
+    }
+
+    .data-card__avatars {
+        display: flex;
+        align-items: center;
+    }
+}
+
+// Roles Grid Layout
+.roles-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 24px;
+    width: 100%;
+
+    @media (max-width: 768px) {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+}
+
+// Roles List Layout (Row style)
+.roles-list-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+
+    ::ng-deep app-data-card,
+    ::ng-deep app-data-card-skeleton {
+        display: block;
+        width: 100%;
+    }
+
+    ::ng-deep app-data-card .data-card,
+    ::ng-deep app-data-card-skeleton .data-card {
+        display: grid !important;
+        grid-template-columns: minmax(260px, 1.5fr) 2fr minmax(200px, auto);
+        align-items: center;
+        padding: 16px 24px !important;
+        gap: 24px;
+        min-height: 72px;
+        height: auto;
+        border-radius: var(--radius-lg) !important;
+
+        @media (max-width: 1100px) {
+            grid-template-columns: minmax(220px, 1fr) 1.5fr minmax(160px, auto);
+            gap: 16px;
+            padding: 16px !important;
+        }
+
+        @media (max-width: 768px) {
+            grid-template-columns: 1fr;
+            gap: 16px;
+            align-items: stretch;
+        }
+
+        &__header {
+            width: 100%;
+            margin-bottom: 0 !important;
+
+            @media (max-width: 768px) {
+                margin-bottom: 8px !important;
+            }
+        }
+
+        &__body {
+            width: 100%;
+            flex-direction: row;
+            flex-wrap: wrap;
+            margin-bottom: 0 !important;
+            justify-content: flex-start;
+            gap: 20px;
+            padding-right: 24px;
+            border-right: 1px solid var(--color-border-light);
+
+            @media (max-width: 1100px) {
+                gap: 12px;
+                padding-right: 16px;
+            }
+
+            @media (max-width: 768px) {
+                flex-direction: column;
+                padding-right: 0;
+                border-right: none;
+                gap: 8px;
+            }
+        }
+
+        &__footer {
+            width: 100%;
+            margin-top: 0 !important;
+            padding-top: 0 !important;
+            padding-left: 24px;
+            border-top: none;
+            justify-content: space-between;
+
+            @media (max-width: 1100px) {
+                padding-left: 16px;
+            }
+
+            @media (max-width: 768px) {
+                padding-left: 0;
+                margin-top: 12px;
+                padding-top: 12px;
+                border-top: 1px solid var(--color-border-light);
+            }
+        }
+
+        &__kebab {
+            margin-left: auto;
+            margin-right: -12px;
+
+            @media (max-width: 768px) {
+                position: absolute;
+                top: 16px;
+                right: 8px;
+                margin: 0;
+            }
+        }
+    }
+}
+
+.role-row-item {
+    background: var(--color-bg-surface);
+    border-radius: 12px;
+    padding: 12px 20px;
+    display: grid;
+    grid-template-columns: 2fr 1fr 0.5fr;
+    align-items: center;
+    border: 1px solid var(--color-border-subtle);
+    transition: all 0.2s ease;
+    cursor: pointer;
+    position: relative;
+    z-index: 1;
+
+    &:hover {
+        border-color: var(--color-primary-light);
+        background: var(--color-bg-hover);
+        transform: scale(1.005);
+        z-index: 10;
+    }
+
+    &:has(.actions-menu-open) {
+        z-index: 50;
+    }
+
+    .row-main {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+
+        .role-icon-box {
+            width: 48px;
+            height: 48px;
+            border-radius: 8px;
+            @include flex-center;
+            background: var(--color-primary-soft);
+            color: var(--color-primary-main);
+            border: 1px solid var(--color-border-light);
+            &.skeleton-box {
+                background: transparent;
+                border: none;
+                padding: 0;
+            }
+        }
+
+        .role-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+
+            .role-name {
+                font-weight: 600;
+                color: var(--color-text-main);
+                font-size: 15px;
+                margin: 0;
+            }
+
+            .role-desc {
+                font-size: 13px;
+                color: var(--color-text-muted);
+            }
+        }
+    }
+
+    .row-status {
+        display: flex;
+        justify-content: flex-start;
+    }
+
+    .row-actions {
+        display: flex;
+        justify-content: flex-end;
+    }
+}
+
+// Footer Actions for Drawer
+.drawer-footer-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  width: 100%;
+
+  @media (max-width: 768px) {
+    flex-direction: column-reverse;
+    ::ng-deep .btn { width: 100%; }
+  }
+}
+
+.spinner-small {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.history-container {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.history-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px;
+    gap: 12px;
+    color: var(--color-text-muted);
+
+    app-spinner {
+        --spinner-size: 32px;
+    }
+}
+
+.empty-logs {
+    text-align: center;
+    padding: 48px;
+    color: var(--color-text-muted);
+    font-style: italic;
+    background: var(--color-bg-light);
+    border-radius: var(--radius-md);
+    border: 1px dashed var(--color-border-subtle);
+}

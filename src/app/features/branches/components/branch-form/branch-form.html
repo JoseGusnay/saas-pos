@@ -1,0 +1,43 @@
+<form [formGroup]="branchForm" (ngSubmit)="onSubmit()" class="branch-form">
+  <fieldset [disabled]="isSubmitting" style="border: none; padding: 0; margin: 0; display: contents;">
+    <div class="form-group">
+      <label for="name">Nombre de la sucursal</label>
+      <input id="name" type="text" formControlName="name" placeholder="Ej. Sucursal Central">
+      <small *ngIf="branchForm.get('name')?.invalid && branchForm.get('name')?.touched" class="error-msg">
+        El nombre es requerido (mín. 3 caracteres)
+      </small>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="city">Ciudad</label>
+        <input id="city" type="text" formControlName="city" placeholder="Ej. Guayaquil">
+      </div>
+      <div class="form-group">
+        <label for="phone">Teléfono</label>
+        <input id="phone" type="text" formControlName="phone" placeholder="Ej. +593 9 999 9999">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="address">Dirección</label>
+      <textarea id="address" formControlName="address" rows="2" placeholder="Ej. Av. Principal 123"></textarea>
+    </div>
+
+    <div class="form-group">
+      <label for="manager">Encargado / Gerente</label>
+      <input id="manager" type="text" formControlName="manager" placeholder="Nombre del responsable">
+    </div>
+
+    <div class="form-switches">
+      <div class="form-check">
+        <input id="isActive" type="checkbox" formControlName="isActive">
+        <label for="isActive">Sucursal activa</label>
+      </div>
+      <div class="form-check">
+        <input id="isMain" type="checkbox" formControlName="isMain">
+        <label for="isMain">Sucursal principal</label>
+      </div>
+    </div>
+  </fieldset>
+</form>

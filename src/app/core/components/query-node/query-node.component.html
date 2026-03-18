@@ -36,15 +36,19 @@
 <div class="qb-rule">
     <!-- 1. Field Custom Select -->
     <div class="qb-custom-select-container">
-        <button class="qb-custom-select-trigger" (click)="toggleFieldDropdown()"
+        <button #fieldTrigger class="qb-custom-select-trigger" (click)="toggleFieldDropdown(fieldTrigger)"
             [class.qb-custom-select-trigger--active]="isFieldDropdownOpen()">
             {{ currentFieldLabel }}
             <app-icon name="lucideChevronDown"></app-icon>
         </button>
 
         @if (isFieldDropdownOpen()) {
-        <div class="qb-dropdown-backdrop" (click)="isFieldDropdownOpen.set(false)"></div>
-        <div class="qb-dropdown">
+        <div class="qb-dropdown-backdrop" (click)="isFieldDropdownOpen.set(false); dropdownPosition.set(null)"></div>
+        <div class="qb-dropdown" 
+             [class.qb-dropdown--flipped]="dropdownPosition()?.isFlipped"
+             [style.top.px]="dropdownPosition()?.top" 
+             [style.bottom.px]="dropdownPosition()?.bottom"
+             [style.left.px]="dropdownPosition()?.left">
             @for (field of availableFields; track field.id) {
             <button class="qb-dropdown-item" [class.qb-dropdown-item--active]="field.id === ruleNode.field"
                 (click)="onFieldSelect(field.id)">
@@ -60,15 +64,20 @@
 
     <!-- 2. Operator Custom Select -->
     <div class="qb-custom-select-container">
-        <button class="qb-custom-select-trigger qb-custom-select-trigger--operator" (click)="toggleOperatorDropdown()"
+        <button #opTrigger class="qb-custom-select-trigger qb-custom-select-trigger--operator"
+            (click)="toggleOperatorDropdown(opTrigger)"
             [class.qb-custom-select-trigger--active]="isOperatorDropdownOpen()">
             {{ getOperatorLabel(ruleNode.operator) }}
             <app-icon name="lucideChevronDown"></app-icon>
         </button>
 
         @if (isOperatorDropdownOpen()) {
-        <div class="qb-dropdown-backdrop" (click)="isOperatorDropdownOpen.set(false)"></div>
-        <div class="qb-dropdown">
+        <div class="qb-dropdown-backdrop" (click)="isOperatorDropdownOpen.set(false); dropdownPosition.set(null)"></div>
+        <div class="qb-dropdown" 
+             [class.qb-dropdown--flipped]="dropdownPosition()?.isFlipped"
+             [style.top.px]="dropdownPosition()?.top" 
+             [style.bottom.px]="dropdownPosition()?.bottom"
+             [style.left.px]="dropdownPosition()?.left">
             @for (op of availableOperators; track op) {
             <button class="qb-dropdown-item" [class.qb-dropdown-item--active]="op === ruleNode.operator"
                 (click)="onOperatorSelect(op)">

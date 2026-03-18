@@ -72,28 +72,17 @@
         }
     }
 
+    &__actions {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+
+        @media (max-width: 768px) {
+            gap: 8px;
+        }
+    }
+
     &__cta {
-        @include flex-center;
-        gap: 8px;
-        background-color: var(--color-text-main);
-        color: var(--color-bg-surface);
-        border: none;
-        border-radius: var(--radius-md);
-        padding: 8px 16px;
-        font-size: var(--font-size-sm);
-        font-weight: var(--font-weight-medium);
-        cursor: pointer;
-        transition: opacity var(--transition-base);
-
-        &:hover {
-            opacity: 0.9;
-        }
-
-        app-icon {
-            width: 16px;
-            height: 16px;
-        }
-
         @media (max-width: 768px) {
             padding: 8px;
 

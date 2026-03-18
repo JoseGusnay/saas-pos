@@ -1,7 +1,12 @@
 @if (modalService.isOpen()) {
 <div class="modal-backdrop" [class.modal-backdrop--closing]="modalService.isClosing()" (click)="close()">
     <div class="modal-dialog" [class.modal-dialog--closing]="modalService.isClosing()"
+        [class.modal-dialog--entered]="hasEntered()" (animationend)="onAnimationEnd($event)"
         (click)="$event.stopPropagation()">
+        
+        <!-- Handle para Mobile Bottom Sheet -->
+        <div class="modal-sheet-handle"></div>
+
         <!-- Cabecera Dinámica -->
         <header class="modal-dialog__header">
             <h3 class="modal-dialog__title">{{ modalService.modalConfig()?.title }}</h3>

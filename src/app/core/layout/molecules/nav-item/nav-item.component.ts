@@ -74,7 +74,7 @@ export class NavItemComponent {
 
   // Soporte para Badges Opcionales
   badge = input<string>();
-  badgeVariant = input<'default' | 'success' | 'danger'>('default');
+  badgeVariant = input<'default' | 'primary' | 'success' | 'danger' | 'warning' | 'info'>('default');
 
   // Soporte para Acordeones (NavGroup usa NavItem como Trigger)
   isActive = input<boolean>(false);     // Activa el resaltado si un hijo está activo

@@ -5,6 +5,8 @@
 @use 'styles/abstracts/variables';
 @use 'styles/abstracts/mixins';
 @use 'styles/base/reset';
+@use 'styles/components/buttons';
+@use 'styles/components/modals';
 
 /* 
    Cualquier estilo que exceda el Design System debe ser justificado 

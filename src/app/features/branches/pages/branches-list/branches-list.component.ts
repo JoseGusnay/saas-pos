@@ -1,60 +1,282 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { switchMap, debounceTime, tap } from 'rxjs';
+
 import { FilterNode, FilterGroup, FilterField, FilterRule } from '../../../../core/models/query-builder.models';
 import { ModalService } from '../../../../core/components/modal/modal.service';
+import { ModalComponent } from '../../../../shared/components/ui/modal/modal';
 import { BranchesAdvancedFilters } from './components/branches-advanced-filters/branches-advanced-filters';
 import { PageHeaderComponent } from '../../../../shared/components/list-ui/page-header/page-header.component';
 import { ListToolbarComponent } from '../../../../shared/components/list-ui/list-toolbar/list-toolbar.component';
 import { PaginationComponent } from '../../../../shared/components/list-ui/pagination/pagination.component';
 import { DataCardComponent } from '../../../../shared/components/list-ui/data-card/data-card.component';
+import { BranchService } from '../../../../core/services/branch.service';
+import { Branch } from '../../../../core/models/branch.models';
+import { QueryMapper } from '../../../../core/utils/query-mapper.util';
+
+import { DrawerComponent } from '../../../../shared/components/ui/drawer/drawer';
+import { BranchFormComponent } from '../../components/branch-form/branch-form';
+import { BranchImportModalComponent } from '../../components/branch-import-modal/branch-import-modal';
+import { DatelineComponent, DatelineItem } from '../../../../shared/components/ui/dateline/dateline.component';
+import { BranchDetailComponent } from '../../components/branch-detail/branch-detail.component';
+import { FormButtonComponent } from '../../../../shared/components/ui/form-button/form-button';
+
+import { NgIconComponent, provideIcons } from '@ng-icons/core';
+import { ActionItem, ActionsMenuComponent } from '../../../../shared/components/ui/actions-menu/actions-menu';
+
+import { lucidePlus, lucideSave, lucidePencil, lucideTrash2, lucideDownload, lucideHistory, lucidePlusCircle, lucideRefreshCw, lucideTrash, lucideCloudDownload } from '@ng-icons/lucide';
+import { ToastService } from '../../../../core/services/toast.service';
+
+import { SkeletonComponent } from '../../../../shared/components/ui/skeleton/skeleton';
+
+import { EmptyStateComponent } from '../../../../shared/components/ui/empty-state/empty-state';
+import { SpinnerComponent } from '../../../../shared/components/ui/spinner/spinner';
 
 @Component({
   selector: 'app-branches-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, PageHeaderComponent, ListToolbarComponent, PaginationComponent, DataCardComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    PageHeaderComponent,
+    ListToolbarComponent,
+    PaginationComponent,
+    DataCardComponent,
+    SkeletonComponent,
+
+    EmptyStateComponent,
+    DrawerComponent,
+    BranchFormComponent,
+    BranchImportModalComponent,
+    BranchDetailComponent,
+    DatelineComponent,
+    ModalComponent,
+    NgIconComponent,
+    SpinnerComponent,
+    ActionsMenuComponent,
+    FormButtonComponent
+  ],
+
+  providers: [
+    provideIcons({ lucidePlus, lucideSave, lucidePencil, lucideTrash2, lucideDownload, lucideHistory, lucidePlusCircle, lucideRefreshCw, lucideTrash, lucideCloudDownload })
+  ],
   template: `
     <div class="branches-page">
       <app-page-header
         title="Sucursales"
         [tabs]="branchTabs"
         [activeTab]="activeTab()"
-        ctaText="Añadir Sucursal"
+        ctaText="Nueva Sucursal"
         ctaIcon="lucidePlus"
+        secondaryCtaText="Importar"
+        secondaryCtaIcon="lucideDownload"
         (tabChange)="onTabChange($event)"
         (ctaClick)="onAddBranch()"
+        (secondaryCtaClick)="onImportClick()"
       ></app-page-header>
 
       <app-list-toolbar
-        searchPlaceholder="Buscar sucursal..."
+        searchPlaceholder="Buscar sucursales..."
         [searchQuery]="searchQuery()"
         [activeFiltersCount]="activeFiltersCount()"
         [viewMode]="viewModePreference()"
-        (searchChange)="onSearch($event)"
         (openFilters)="openAdvancedFilters()"
         (clearFilters)="clearAllFilters()"
+        (searchChange)="onSearch($event)"
         (viewModeChange)="viewModePreference.set($event)"
+        (sortChange)="onSortChange($event)"
       ></app-list-toolbar>
 
       <div [ngClass]="viewMode() === 'grid' ? 'branches-page__grid' : 'branches-page__list'">
-        @for (branch of paginatedBranches(); track branch.id) {
-          <app-data-card
-            [title]="branch.name"
-            [status]="branch.status"
-            [statusConfig]="branch.status === 'Operativa' ? 'active' : (branch.status === 'Cerrada' ? 'inactive' : 'warning')"
-            [details]="[
-              { icon: 'lucideMapPin', text: branch.address },
-              { icon: 'lucidePhone', text: branch.phone },
-              { icon: 'lucideUser', text: branch.manager }
-            ]"
-            [metric]="{ label: 'Ingresos Hoy', value: branch.revenue }"
-            [avatars]="[
-              { url: 'https://ui-avatars.com/api/?name=C+D&background=random', name: 'User 1' },
-              { url: 'https://ui-avatars.com/api/?name=A+B&background=random', name: 'User 2' }
-            ]"
-          ></app-data-card>
+        @if (isLoading()) {
+          @for (n of [1,2,3,4,5,6]; track n) {
+            @if (viewMode() === 'grid') {
+              <!-- Branch Grid Skeleton -->
+              <div class="data-card skeleton-card">
+                <header class="data-card__header">
+                  <div class="data-card__title-container">
+                    <app-skeleton width="160px" height="1.25rem"></app-skeleton>
+                    <div style="margin-top: 4px">
+                      <app-skeleton width="60px" height="18px" radius="999px"></app-skeleton>
+                    </div>
+                  </div>
+                  <div class="data-card__kebab">
+                    <app-skeleton width="32px" height="32px" shape="circle"></app-skeleton>
+                  </div>
+                </header>
+                <div class="data-card__body">
+                  <div class="data-card__detail">
+                    <app-skeleton width="14px" height="14px" shape="circle"></app-skeleton>
+                    <app-skeleton width="190px" height="0.875rem"></app-skeleton>
+                  </div>
+                  <div class="data-card__detail">
+                    <app-skeleton width="14px" height="14px" shape="circle"></app-skeleton>
+                    <app-skeleton width="130px" height="0.875rem"></app-skeleton>
+                  </div>
+                  <div class="data-card__detail">
+                    <app-skeleton width="14px" height="14px" shape="circle"></app-skeleton>
+                    <app-skeleton width="150px" height="0.875rem"></app-skeleton>
+                  </div>
+                </div>
+                <footer class="data-card__footer">
+                   <div style="display: flex; flex-direction: column; gap: 4px;">
+                      <app-skeleton width="70px" height="11px"></app-skeleton>
+                      <app-skeleton width="50px" height="1.25rem"></app-skeleton>
+                   </div>
+                   <div style="display: flex; margin-left: auto;">
+                      <app-skeleton width="24px" height="24px" shape="circle"></app-skeleton>
+                      <app-skeleton width="24px" height="24px" shape="circle" style="margin-left: -8px;"></app-skeleton>
+                   </div>
+                </footer>
+              </div>
+            } @else {
+              <!-- Branch List Skeleton -->
+              <div class="branch-row-item skeleton-row">
+                 <div class="row-main">
+                    <app-skeleton width="48px" height="48px" radius="8px"></app-skeleton>
+                    <div class="branch-info">
+                       <app-skeleton width="140px" height="1rem"></app-skeleton>
+                       <app-skeleton width="180px" height="0.875rem" style="margin-top: 6px"></app-skeleton>
+                    </div>
+                 </div>
+                 <div class="row-manager">
+                    <app-skeleton width="60px" height="10px" style="margin-bottom: 4px"></app-skeleton>
+                    <app-skeleton width="120px" height="13px"></app-skeleton>
+                 </div>
+                 <div class="row-status">
+                    <app-skeleton width="70px" height="24px" radius="99px"></app-skeleton>
+                 </div>
+                 <div class="row-actions">
+                    <app-skeleton width="32px" height="32px" shape="circle"></app-skeleton>
+                 </div>
+              </div>
+            }
+          }
+        } @else if (branches().length > 0) {
+
+          @for (branch of branches(); track branch.id) {
+            @if (viewMode() === 'grid') {
+              <app-data-card
+                [title]="branch.name"
+                [status]="branch.isActive ? 'Operativa' : 'Cerrada'"
+                [statusConfig]="branch.isActive ? 'active' : 'inactive'"
+                [details]="[
+                  { icon: 'lucideMapPin', text: branch.address || 'Sin dirección' },
+                  { icon: 'lucidePhone', text: branch.phone || 'Sin teléfono' },
+                  { icon: 'lucideUser', text: branch.manager || 'Sin encargado' }
+                ]"
+                [metric]="{ label: 'Ingresos Hoy', value: branch.revenue || '$0' }"
+                [avatars]="[
+                  { url: 'https://ui-avatars.com/api/?name=C+D&background=random', name: 'User 1' },
+                  { url: 'https://ui-avatars.com/api/?name=A+B&background=random', name: 'User 2' }
+                ]"
+                [actions]="branchActions"
+                (actionClick)="handleActionClick($event, branch)"
+                (click)="onShowDetail(branch)"
+                class="clickable-card"
+              ></app-data-card>
+            } @else {
+              <!-- Row View Mode -->
+              <div class="branch-row-item shadow-sm" (click)="onShowDetail(branch)">
+                 <div class="row-main">
+                    <div class="branch-avatar" [style.background]="'linear-gradient(135deg, var(--color-primary), var(--color-primary-dark))'">
+                      <ng-icon name="lucideCloudDownload" *ngIf="branch.isMain"></ng-icon>
+                      <span *ngIf="!branch.isMain">{{ branch.name[0].toUpperCase() }}</span>
+                    </div>
+                    <div class="branch-info">
+                      <span class="branch-name">
+                        {{ branch.name }}
+                        @if (branch.isMain) {
+                          <span class="badge-main">Principal</span>
+                        }
+                      </span>
+                      <span class="branch-sub">
+                        <ng-icon name="lucideMapPin"></ng-icon>
+                        {{ branch.address || 'Sin dirección' }}
+                      </span>
+                    </div>
+                 </div>
+                 <div class="row-manager">
+                    <span class="row-label">Encargado</span>
+                    <span class="row-value">{{ branch.manager || 'No asignado' }}</span>
+                 </div>
+                 <div class="row-status">
+                    <span [class]="'badge-status ' + (branch.isActive ? 'active' : 'inactive')">
+                      {{ branch.isActive ? 'Operativa' : 'Cerrada' }}
+                    </span>
+                 </div>
+                 <div class="row-actions" (click)="$event.stopPropagation()">
+                    <app-actions-menu
+                      [actions]="branchActions"
+                      (actionClick)="handleActionClick($event, branch)"
+                    ></app-actions-menu>
+                 </div>
+              </div>
+            }
+          }
+
+        } @else {
+          <div class="branches-page__empty">
+            <app-empty-state
+              [icon]="activeFiltersCount() > 0 || searchQuery() ? 'lucideSearch' : 'lucideInbox'"
+              [image]="activeFiltersCount() > 0 || searchQuery() ? 'assets/images/empty_search.png' : ''"
+              [title]="activeFiltersCount() > 0 || searchQuery() ? 'No encontramos lo que buscas' : 'No hay sucursales registradas'"
+              [description]="activeFiltersCount() > 0 || searchQuery() ? 'Intenta con otros términos o ajusta tus filtros para encontrar la sucursal que necesitas.' : 'Parece que aún no has creado ninguna sucursal. ¡Comienza añadiendo la primera!'"
+              [actionLabel]="activeFiltersCount() > 0 || searchQuery() ? 'Limpiar Filtros' : 'Añadir Sucursal'"
+              (action)="activeFiltersCount() > 0 || searchQuery() ? clearAllFilters() : onAddBranch()"
+            ></app-empty-state>
+          </div>
         }
       </div>
+
+      <!-- Drawer de Historial -->
+      <app-drawer 
+        [isOpen]="isHistoryOpen()" 
+        title="Historial de Cambios"
+        (close)="isHistoryOpen.set(false)">
+        
+        <div drawerBody class="history-container">
+          @if (isHistoryLoading()) {
+            <div class="history-loading">
+              <app-spinner></app-spinner>
+              <span>Cargando historial...</span>
+            </div>
+          } @else {
+            <app-dateline [items]="mappedLogs()"></app-dateline>
+            @if (mappedLogs().length === 0) {
+              <div class="empty-logs">No hay registros de actividad para esta sucursal.</div>
+            }
+          }
+        </div>
+      </app-drawer>
+
+      <app-drawer
+        [isOpen]="isDetailOpen()"
+        title="Detalle de Sucursal"
+        (close)="isDetailOpen.set(false)"
+        size="md"
+      >
+        <div drawerBody>
+          @if (selectedBranchDetail()) {
+            <app-branch-detail
+              [branch]="selectedBranchDetail()!"
+            ></app-branch-detail>
+          }
+        </div>
+
+        <div drawerFooter class="drawer-footer-actions">
+           <button class="btn btn-secondary" (click)="onShowHistory(selectedBranchDetail()!.id)">
+              <ng-icon name="lucideHistory"></ng-icon>
+              Ver Historial
+            </button>
+            <button class="btn btn-primary" (click)="onEditBranch(selectedBranchDetail()!)">
+              <ng-icon name="lucidePencil"></ng-icon>
+              Editar Sucursal
+            </button>
+        </div>
+      </app-drawer>
 
       <app-pagination
         [totalItems]="totalItems()"
@@ -62,35 +284,366 @@ import { DataCardComponent } from '../../../../shared/components/list-ui/data-ca
         [currentPage]="currentPage()"
         (pageChange)="currentPage.set($event)"
       ></app-pagination>
+
+      <!-- Drawer para Nueva/Editar Sucursal -->
+      <app-drawer 
+        [isOpen]="isDrawerOpen()" 
+        [title]="isEditing() ? 'Editar Sucursal' : 'Registrar Nueva Sucursal'"
+        [allowClose]="!(branchForm?.isSubmitting)"
+        (close)="onDrawerClose()"
+        size="md">
+        
+        <div drawerBody>
+          <app-branch-form 
+            #branchForm
+            (saved)="onBranchSaved()" 
+            (cancelled)="onDrawerClose()">
+          </app-branch-form>
+        </div>
+
+        <div drawerFooter class="drawer-footer-actions">
+          <app-form-button
+            label="Cancelar"
+            variant="secondary"
+            [disabled]="!!(branchForm?.isSubmitting)"
+            (click)="onDrawerClose()"
+          ></app-form-button>
+          <app-form-button
+            [label]="isEditing() ? 'Actualizar Sucursal' : 'Guardar Sucursal'"
+            loadingLabel="Guardando..."
+            icon="lucideSave"
+            [loading]="!!(branchForm?.isSubmitting)"
+            [disabled]="branchForm?.branchForm?.invalid ?? false"
+            (click)="branchForm?.onSubmit()"
+          ></app-form-button>
+        </div>
+      </app-drawer>
+
+      <!-- Modal de Confirmación de Salida -->
+      <app-modal 
+        [isOpen]="isConfirmationModalOpen()" 
+        [title]="'Cambios sin guardar'"
+        (close)="onCancelExit()">
+        
+        <div modalBody>
+          Tienes cambios en el formulario que no has guardado. ¿Estás seguro de que quieres salir? Se perderán todos los datos ingresados.
+        </div>
+
+        <div modalFooter class="modal-footer-actions">
+          <button type="button" class="btn btn-ghost" (click)="onCancelExit()">
+            Continuar Editando
+          </button>
+          <button type="button" class="btn btn-danger" (click)="onConfirmExit()">
+            Salir sin Guardar
+          </button>
+        </div>
+      </app-modal>
+
+      <!-- Modal de Confirmación de Eliminación (PREMIUM) -->
+      <app-modal 
+        [isOpen]="isDeleteModalOpen()" 
+        [title]="'Confirmar Eliminación'"
+        [allowClose]="!isDeleting()"
+        (close)="onCancelDelete()">
+        
+        <div modalBody>
+          <div class="delete-confirmation">
+            ¿Estás seguro de que deseas eliminar la sucursal <strong>"{{ branchToDelete()?.name }}"</strong>? 
+            Esta acción desactivará el acceso a esta sucursal de forma inmediata.
+          </div>
+        </div>
+
+        <div modalFooter class="modal-footer-actions">
+          <button type="button" 
+                  class="btn btn-ghost" 
+                  [disabled]="isDeleting()"
+                  (click)="onCancelDelete()">
+            Cerrar
+          </button>
+          <button type="button" 
+                  class="btn btn-danger" 
+                  [disabled]="isDeleting()"
+                  (click)="confirmDelete()">
+            
+            <app-spinner *ngIf="isDeleting()"></app-spinner>
+
+            <span>{{ isDeleting() ? 'Eliminando...' : 'Eliminar Definitivamente' }}</span>
+          </button>
+        </div>
+      </app-modal>
+
+      <app-branch-import-modal
+        #importModal
+        (imported)="refreshTrigger.set(refreshTrigger() + 1)"
+      ></app-branch-import-modal>
     </div>
   `,
   styleUrl: './branches-list.component.scss'
 })
 export class BranchesListComponent {
-  // 1. Estado Reactivo (Mock Data Extendida para probar Paginación)
-  private readonly branchesData = signal([
-    { id: 1, name: 'Sede Central - Manhattan', status: 'Operativa', address: '120 Broadway, piso 23', phone: '+1 212-555-0192', manager: 'Sarah Connor', revenue: '$14,520' },
-    { id: 2, name: 'Sucursal Brooklyn', status: 'Operativa', address: '450 Flatbush Ave', phone: '+1 718-555-0100', manager: 'John Smith', revenue: '$8,210' },
-    { id: 3, name: 'Bodega Queens', status: 'Cerrada', address: '12-34 Queens Blvd', phone: '+1 718-555-0199', manager: 'Alicia Keys', revenue: '$0' },
-    { id: 4, name: 'Sucursal Soho', status: 'Operativa', address: '89 Spring St', phone: '+1 212-555-0222', manager: 'Marcus O.', revenue: '$11,400' },
-    { id: 5, name: 'Oficina Central LA', status: 'Operativa', address: '1200 Wilshire Blvd', phone: '+1 213-555-0909', manager: 'Elena Vance', revenue: '$9,200' },
-    { id: 6, name: 'Kiosko Santa Monica', status: 'Operativa', address: 'Plaza del Sol 400', phone: '+1 310-555-5544', manager: 'David Kim', revenue: '$3,800' },
-    { id: 7, name: 'Almacén Chicago', status: 'Operativa', address: 'La Salle 333', phone: '+1 312-555-0012', manager: 'Robert T.', revenue: '$22,100' },
-    { id: 8, name: 'Sucursal Miami', status: 'En Mantenimiento', address: 'Ocean Drive 45', phone: '+1 305-555-7788', manager: 'Carlos D.', revenue: '$0' },
-    { id: 9, name: 'Sucursal Seattle', status: 'Operativa', address: 'Pike Place 110', phone: '+1 206-555-4567', manager: 'Jenny R.', revenue: '$15,600' },
-    { id: 10, name: 'Bodega Austin', status: 'Operativa', address: '6th Street 800', phone: '+1 512-555-1234', manager: 'Tommy L.', revenue: '$6,400' },
-    { id: 11, name: 'Oficina Denver', status: 'Cerrada', address: 'Colfax Ave 900', phone: '+1 303-555-9876', manager: 'Sam W.', revenue: '$0' },
-    { id: 12, name: 'Pop-up San Francisco', status: 'Operativa', address: 'Market St 10', phone: '+1 415-555-3456', manager: 'Lisa M.', revenue: '$4,100' },
-  ]);
-
+  private branchService = inject(BranchService);
+  private toastService = inject(ToastService);
   modalService = inject(ModalService);
+
+  // Acciones reutilizables para las tarjetas
+  branchActions: ActionItem[] = [
+    { id: 'edit', label: 'Editar', icon: 'lucidePencil' },
+    { id: 'history', label: 'Historial', icon: 'lucideHistory' },
+    { id: 'delete', label: 'Eliminar', icon: 'lucideTrash2', variant: 'danger' }
+  ];
+
+  // 2. Signals Mutables y Reactivos para UI State
+  searchQuery = signal('');
+  viewModePreference = signal<'grid' | 'list'>('grid');
+  isMobile = signal<boolean>(false);
+  viewMode = computed(() => this.isMobile() ? 'grid' : this.viewModePreference());
+  isDrawerOpen = signal(false);
+  isConfirmationModalOpen = signal(false);
+
+  // SORTING STATE
+  sortField = signal<string>('createdAt');
+  sortOrder = signal<'ASC' | 'DESC'>('DESC');
+ 
+  // PREMIUM DELETE STATE
+  isDeleteModalOpen = signal(false);
+  isDeleting = signal(false);
+  branchToDelete = signal<Branch | null>(null);
+
+  // AUDIT LOGS STATE
+  isHistoryOpen = signal(false);
+  isHistoryLoading = signal(false);
+  branchLogs = signal<any[]>([]);
+
+  isDetailOpen = signal(false);
+  selectedBranchDetail = signal<Branch | null>(null);
+
+  mappedLogs = computed<DatelineItem[]>(() => {
+    return this.branchLogs().map(log => ({
+      id: log.id,
+      date: log.createdAt,
+      action: log.action,
+      actionLabel: this.getLogActionLabel(log.action),
+      user: log.userName || 'Sistema',
+      icon: this.getLogIcon(log.action),
+      message: log.action === 'IMPORT' ? `Importación masiva de ${log.details?.count} sucursales.` : 
+               log.action === 'CREATE' ? 'Configuración inicial y registro manual.' : undefined,
+      changes: log.action === 'UPDATE' && log.details?.oldData ? 
+               this.getChangedFields(log.details.oldData, log.details.newData) : undefined
+    }));
+  });
+
+  refreshTrigger = signal(0);
+  isLoading = signal(true);
+
+  @ViewChild('branchForm') branchFormRef!: BranchFormComponent;
+  @ViewChild('importModal') importModalRef!: BranchImportModalComponent;
+
+  // 1. Estado Reactivo del Servidor
+  private readonly branchesResponse = toSignal(
+    toObservable(computed(() => ({
+      page: this.currentPage(),
+      limit: this.pageSize(),
+      search: this.searchQuery(),
+      filterModel: QueryMapper.toAgGridFilterModel(this.filterTree()),
+      tab: this.activeTab(),
+      sortField: this.sortField(),
+      sortOrder: this.sortOrder(),
+      refresh: this.refreshTrigger()
+    }))).pipe(
+      debounceTime(300),
+      tap(() => this.isLoading.set(true)),
+      switchMap(params => {
+        const { tab, ...filters } = params;
+        // Aplicar tab filter si no es "Todas"
+        if (tab === 'Activas') {
+          filters.filterModel['isActive'] = { filterType: 'text', type: 'equals', filter: 'true' };
+        } else if (tab === 'Inactivas') {
+          filters.filterModel['isActive'] = { filterType: 'text', type: 'equals', filter: 'false' };
+        }
+        return this.branchService.findAll(filters).pipe(
+          tap(() => this.isLoading.set(false))
+        );
+      })
+    )
+  );
+
+  branches = computed(() => this.branchesResponse()?.data || []);
+  totalItems = computed(() => this.branchesResponse()?.total || 0);
+
+  branchTabs = [
+    { label: 'Todas', value: 'Todas' },
+    { label: 'Activas', value: 'Activas' },
+    { label: 'Inactivas', value: 'Inactivas' },
+  ];
+
+  activeTab = signal('Todas');
+  isEditing = signal(false);
+
+  availableFields: FilterField[] = [
+    { id: 'name', label: 'Nombre de Sucursal', type: 'text' },
+    { id: 'city', label: 'Ciudad', type: 'text' },
+    { id: 'address', label: 'Dirección', type: 'text' },
+    { id: 'phone', label: 'Teléfono', type: 'text' },
+    { id: 'manager', label: 'Encargado', type: 'text' },
+    { id: 'revenue', label: 'Ingresos', type: 'number' },
+    { id: 'isActive', label: 'Estado Operativo', type: 'status' },
+    { id: 'isMain', label: 'Sucursal Principal', type: 'status' },
+    { id: 'createdAt', label: 'Fecha de Creación', type: 'text' }
+  ];
+
+  filterTree = signal<FilterGroup>({
+    type: 'group',
+    id: 'root',
+    logicalOperator: 'AND',
+    children: []
+  });
+
+  onTabChange(tab: string) {
+    this.activeTab.set(tab);
+    this.resetPagination();
+  }
+
+  onSearch(query: string) {
+    this.searchQuery.set(query);
+    this.resetPagination();
+  }
+
+  onSortChange(event: { field: string, order: string }) {
+    this.sortField.set(event.field);
+    this.sortOrder.set(event.order.toUpperCase() as 'ASC' | 'DESC');
+    this.resetPagination();
+  }
+ 
+  onShowHistory(branchId: string) {
+    // Si el detalle está abierto, lo cerramos para mostrar el historial
+    this.isDetailOpen.set(false);
+    
+    this.isHistoryOpen.set(true);
+    this.isHistoryLoading.set(true);
+    this.branchService.getLogs(branchId).subscribe({
+      next: (logs) => {
+        this.branchLogs.set(logs);
+        this.isHistoryLoading.set(false);
+      },
+      error: () => {
+        this.toastService.error('No se pudo cargar el historial');
+        this.isHistoryLoading.set(false);
+        this.isHistoryOpen.set(false);
+      }
+    });
+  }
+
+  onShowDetail(branch: Branch) {
+    this.selectedBranchDetail.set(branch);
+    this.isDetailOpen.set(true);
+  }
+
+  onImportClick() {
+    this.importModalRef.open();
+  }
+
+  onAddBranch() {
+    this.isEditing.set(false);
+    this.isDrawerOpen.set(true);
+    // Shortcut: reset form if ref available
+    setTimeout(() => {
+      this.branchFormRef?.resetForm();
+    }, 0);
+  }
+
+  handleActionClick(action: ActionItem, branch: Branch) {
+    if (action.id === 'edit') {
+      this.onEditBranch(branch);
+    } else if (action.id === 'history') {
+      this.onShowHistory(branch.id);
+    } else if (action.id === 'delete') {
+      this.onDeleteBranch(branch);
+    }
+  }
+
+  onEditBranch(branch: Branch) {
+    this.isDetailOpen.set(false);
+    this.isEditing.set(true);
+    this.isDrawerOpen.set(true);
+    // Timeout para asegurar que el componente está renderizado
+    setTimeout(() => {
+      this.branchFormRef?.setBranch(branch);
+    }, 0);
+  }
+
+  onDeleteBranch(branch: Branch) {
+    this.branchToDelete.set(branch);
+    this.isDeleteModalOpen.set(true);
+  }
+
+  onCancelDelete() {
+    if (this.isDeleting()) return;
+    this.isDeleteModalOpen.set(false);
+    this.branchToDelete.set(null);
+  }
+
+  confirmDelete() {
+    const branch = this.branchToDelete();
+    if (!branch || this.isDeleting()) return;
+
+    this.isDeleting.set(true);
+    this.branchService.remove(branch.id).subscribe({
+      next: () => {
+        this.toastService.success('Sucursal eliminada correctamente');
+        this.refreshTrigger.update(v => v + 1);
+        this.isDeleting.set(false);
+        this.onCancelDelete();
+      },
+      error: (err) => {
+        console.error('Error deleting branch:', err);
+        this.toastService.error('No se pudo eliminar la sucursal');
+        this.isDeleting.set(false);
+      }
+    });
+  }
+
+  onDrawerClose() {
+    // Si hay cambios sin guardar, mostrar modal de confirmación
+    if (this.branchFormRef?.hasUnsavedChanges()) {
+      this.isConfirmationModalOpen.set(true);
+    } else {
+      this.closeDrawer();
+    }
+  }
+
+  onConfirmExit() {
+    this.isConfirmationModalOpen.set(false);
+    this.closeDrawer();
+  }
+
+  onCancelExit() {
+    this.isConfirmationModalOpen.set(false);
+  }
+
+  private closeDrawer() {
+    this.isDrawerOpen.set(false);
+    this.branchFormRef?.resetForm();
+  }
+
+  onBranchSaved(branch?: Branch) {
+    const wasEditing = this.isEditing();
+    this.isDrawerOpen.set(false);
+    this.refreshTrigger.update(v => v + 1);
+    this.resetPagination();
+    this.toastService.success(
+      wasEditing
+        ? `✅ Sucursal actualizada correctamente`
+        : `✅ Sucursal creada correctamente`
+    );
+  }
+
 
   openAdvancedFilters() {
     this.modalService.open(
       BranchesAdvancedFilters,
       'Filtros Avanzados',
       {
-        filterTree: this.filterTree, // signal binding function read reference
+        filterTree: this.filterTree,
         availableFields: this.availableFields,
         onFilterTreeChange: this.onFilterTreeChange.bind(this)
       },
@@ -105,38 +658,6 @@ export class BranchesListComponent {
     );
   }
 
-  // 2. Signals Mutables y Reactivos para UI State
-  searchQuery = signal('');
-
-  // Preferencia del usuario
-  viewModePreference = signal<'grid' | 'list'>('grid');
-
-  // Detección Responsive de Mobile Strict
-  isMobile = signal<boolean>(false);
-
-  // ViewMode final: Obliga Grid en Celulares, respeta preferencia en Tablets+
-  viewMode = computed(() => this.isMobile() ? 'grid' : this.viewModePreference());
-
-  branchTabs = [
-    { label: 'Todas', value: 'Todas' },
-    { label: 'Operativas', value: 'Operativas' },
-    { label: 'Críticas (Ingreso $0)', value: 'Criticas' },
-  ];
-
-  onTabChange(tab: string) {
-    this.activeTab.set(tab as 'Todas' | 'Operativas' | 'Criticas');
-    this.resetPagination();
-  }
-
-  onSearch(query: string) {
-    this.searchQuery.set(query);
-    this.resetPagination();
-  }
-
-  onAddBranch() {
-    // Action for adding branch
-  }
-
   constructor() {
     if (typeof window !== 'undefined') {
       const mobileQuery = window.matchMedia('(max-width: 768px)');
@@ -144,32 +665,16 @@ export class BranchesListComponent {
       mobileQuery.addEventListener('change', (e) => this.isMobile.set(e.matches));
     }
   }
-  activeTab = signal<'Todas' | 'Operativas' | 'Criticas'>('Todas');
 
-  // Array de campos configurables para inyectar en el Query Builder
-  availableFields: FilterField[] = [
-    { id: 'name', label: 'Nombre de Sucursal', type: 'text' },
-    { id: 'status', label: 'Estado Operativo', type: 'select' },
-    { id: 'revenue', label: 'Ingresos', type: 'number' }
-  ];
-
-  // El Árbol Lógico Inicial (Raíz Genuinamente Recursiva)
-  filterTree = signal<FilterGroup>({
-    type: 'group',
-    id: 'root',
-    logicalOperator: 'AND',
-    children: []
-  });
-
-  // Handler del Root
   onFilterTreeChange(newTree: FilterNode) {
     if (newTree.type === 'group') {
       this.filterTree.set(newTree as FilterGroup);
+      this.resetPagination();
     }
   }
 
-  // Clear function
   clearAllFilters() {
+    this.searchQuery.set('');
     this.filterTree.set({
       type: 'group',
       id: 'root',
@@ -179,125 +684,73 @@ export class BranchesListComponent {
     this.resetPagination();
   }
 
-  // Counter
   activeFiltersCount = computed(() => {
-    const tree = this.filterTree();
-
     const countLeaves = (node: FilterNode): number => {
       if (node.type === 'group') {
         return node.children.reduce((acc, child) => acc + countLeaves(child), 0);
       } else {
         const rule = node as FilterRule;
-        // Cuenta solo si tiene un valor ingresado y no es un esqueleto vacío
         return rule.value && rule.value.trim() !== '' ? 1 : 0;
       }
     };
-
-    return countLeaves(tree);
+    return countLeaves(this.filterTree());
   });
 
   // ========== ESTADO DE PAGINACIÓN ==========
   currentPage = signal(1);
-  pageSize = signal(10); // 10 cards por página simulando Vercel
-
-  // Al cambiar filtros o tab, mandar la paginación de vuelta a 1
+  pageSize = signal(10);
   resetPagination = () => this.currentPage.set(1);
-
-  // Computed signals para los labels "1-10 of 42"
-  totalItems = computed(() => this.filteredBranches().length);
   totalPages = computed(() => Math.ceil(this.totalItems() / this.pageSize()) || 1);
 
-  startIndex = computed(() => {
-    if (this.totalItems() === 0) return 0;
-    return (this.currentPage() - 1) * this.pageSize() + 1;
-  });
-
-  endIndex = computed(() => {
-    return Math.min(this.currentPage() * this.pageSize(), this.totalItems());
-  });
-
-  // Cortar el array grande para dar de comer al Loop de Angular
-  paginatedBranches = computed(() => {
-    const start = (this.currentPage() - 1) * this.pageSize();
-    const end = start + this.pageSize();
-    return this.filteredBranches().slice(start, end);
-  });
-
-  // Funcionales de Paginación
-  nextPage() {
-    if (this.currentPage() < this.totalPages()) {
-      this.currentPage.update(p => p + 1);
+  getLogIcon(action: string): string {
+    switch (action) {
+      case 'CREATE': return 'lucidePlusCircle';
+      case 'UPDATE': return 'lucideRefreshCw';
+      case 'DELETE': return 'lucideTrash';
+      case 'IMPORT': return 'lucideCloudDownload';
+      default: return 'lucideHistory';
     }
   }
 
-  prevPage() {
-    if (this.currentPage() > 1) {
-      this.currentPage.update(p => p - 1);
+  getLogActionLabel(action: string): string {
+    switch (action) {
+      case 'CREATE': return 'Creación';
+      case 'UPDATE': return 'Actualización';
+      case 'DELETE': return 'Eliminación';
+      case 'IMPORT': return 'Importación';
+      default: return action;
     }
   }
 
-  // 3. Computed signal evaluador INFINITO N-Depth
-  filteredBranches = computed(() => {
-    const query = this.searchQuery().toLowerCase().trim();
-    const tree = this.filterTree();
-    const tab = this.activeTab();
-    let result = this.branchesData();
+  getChangedFields(oldData: any, newData: any) {
+    if (!oldData || !newData) return [];
+    
+    const fieldsToTrack = [
+      { field: 'name', label: 'Nombre' },
+      { field: 'address', label: 'Dirección' },
+      { field: 'phone', label: 'Teléfono' },
+      { field: 'manager', label: 'Encargado' },
+      { field: 'isActive', label: 'Estado' },
+      { field: 'revenue', label: 'Ingresos' }
+    ];
 
-    // Tab Evaluation (Pre-filter)
-    if (tab === 'Operativas') {
-      result = result.filter(branch => branch.status === 'Operativa');
-    } else if (tab === 'Criticas') {
-      result = result.filter(branch => branch.revenue === '$0');
-    }
+    return fieldsToTrack
+      .filter(f => {
+        const oldVal = oldData[f.field];
+        const newVal = newData[f.field];
+        return JSON.stringify(oldVal) !== JSON.stringify(newVal);
+      })
+      .map(f => ({
+        ...f,
+        oldValue: this.formatValue(oldData[f.field]),
+        newValue: this.formatValue(newData[f.field])
+      }));
+  }
 
-    // Text Box Evaluation
-    if (query) {
-      result = result.filter(branch =>
-        branch.name.toLowerCase().includes(query) ||
-        branch.address.toLowerCase().includes(query)
-      );
-    }
-
-    // Evaluador Matemático Recursivo Interno
-    const evaluateNode = (node: FilterNode, objectToFilter: any): boolean => {
-      if (node.type === 'group') {
-        if (node.children.length === 0) return true; // Grupos vacíos no filtran
-
-        const evaluations = node.children.map(child => evaluateNode(child, objectToFilter));
-        return node.logicalOperator === 'AND'
-          ? evaluations.every(Boolean)
-          : evaluations.some(Boolean);
-      } else {
-        // Regla Pura (Leaf)
-        if (!node.value) return true;
-
-        let bVal: any = objectToFilter[node.field as keyof typeof objectToFilter];
-        let fVal: any = node.value;
-
-        // Castings para matemáticas
-        if (node.field === 'revenue' && typeof bVal === 'string') {
-          bVal = Number(bVal.replace(/[^0-9.-]+/g, ""));
-          fVal = Number(fVal) || 0;
-        } else if (typeof bVal === 'string' && typeof fVal === 'string') {
-          bVal = bVal.toLowerCase();
-          fVal = fVal.toLowerCase();
-        }
-
-        switch (node.operator) {
-          case 'equals': return bVal === fVal;
-          case 'contains': return String(bVal).includes(String(fVal));
-          case 'greaterThan': return bVal > fVal;
-          case 'lessThan': return bVal < fVal;
-          default: return true;
-        }
-      }
-    };
-
-    // Aplicar Filtro Base
-    if (tree.children.length > 0) {
-      result = result.filter(branch => evaluateNode(tree, branch));
-    }
-
-    return result;
-  });
+  private formatValue(val: any): string {
+    if (val === true) return 'Activado';
+    if (val === false) return 'Desactivado';
+    if (val === null || val === undefined) return '';
+    return String(val);
+  }
 }

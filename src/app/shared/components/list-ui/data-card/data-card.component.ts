@@ -1,27 +1,28 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IconComponent } from '../../../../core/layout/atoms/icon/icon.component';
+import { ActionItem, ActionsMenuComponent } from '../../ui/actions-menu/actions-menu';
 
 export interface DataCardDetail {
-    icon: string;
-    text: string;
+  icon: string;
+  text: string;
 }
 
 export interface DataCardMetric {
-    label: string;
-    value: string;
+  label: string;
+  value: string;
 }
 
 export interface DataCardAvatar {
-    url: string;
-    name: string;
+  url: string;
+  name: string;
 }
 
 @Component({
-    selector: 'app-data-card',
-    standalone: true,
-    imports: [CommonModule, IconComponent],
-    template: `
+  selector: 'app-data-card',
+  standalone: true,
+  imports: [CommonModule, IconComponent, ActionsMenuComponent],
+  template: `
     <article class="data-card">
       <header class="data-card__header">
         <div class="data-card__title-container">
@@ -36,9 +37,13 @@ export interface DataCardAvatar {
             </span>
           }
         </div>
-        <button class="data-card__kebab" (click)="optionsClick.emit()">
-          <app-icon name="lucideMoreVertical"></app-icon>
-        </button>
+        
+        <div class="data-card__kebab" *ngIf="actions.length > 0">
+          <app-actions-menu 
+            [actions]="actions" 
+            (actionClick)="actionClick.emit($event)">
+          </app-actions-menu>
+        </div>
       </header>
 
       <div class="data-card__body">
@@ -68,18 +73,19 @@ export interface DataCardAvatar {
       </footer>
     </article>
   `,
-    styleUrls: ['./data-card.component.scss']
+  styleUrls: ['./data-card.component.scss']
 })
 export class DataCardComponent {
-    @Input({ required: true }) title!: string;
-    @Input() status: string = '';
-    // statusConfig defines the color variant: 'active' (default/success), 'inactive' (gray/closed), 'warning' (yellow)
-    @Input() statusConfig: 'active' | 'inactive' | 'warning' = 'active';
+  @Input({ required: true }) title!: string;
+  @Input() status: string = '';
+  // statusConfig defines the color variant: 'active' (default/success), 'inactive' (gray/closed), 'warning' (yellow)
+  @Input() statusConfig: 'active' | 'inactive' | 'warning' = 'active';
 
-    @Input() details: DataCardDetail[] = [];
+  @Input() details: DataCardDetail[] = [];
 
-    @Input() metric?: DataCardMetric;
-    @Input() avatars: DataCardAvatar[] = [];
+  @Input() metric?: DataCardMetric;
+  @Input() avatars: DataCardAvatar[] = [];
+  @Input() actions: ActionItem[] = [];
 
-    @Output() optionsClick = new EventEmitter<void>();
+  @Output() actionClick = new EventEmitter<ActionItem>();
 }

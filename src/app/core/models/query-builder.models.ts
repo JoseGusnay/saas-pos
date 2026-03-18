@@ -1,4 +1,15 @@
-export type FilterOperator = 'equals' | 'contains' | 'greaterThan' | 'lessThan';
+export type FilterOperator =
+    | 'equals'
+    | 'notEqual'
+    | 'contains'
+    | 'notContains'
+    | 'startsWith'
+    | 'endsWith'
+    | 'blank'
+    | 'notBlank'
+    | 'greaterThan'
+    | 'lessThan'
+    | 'inRange';
 export type LogicalOperator = 'AND' | 'OR';
 
 export interface FilterField {
@@ -23,3 +34,14 @@ export interface FilterGroup {
 }
 
 export type FilterNode = FilterGroup | FilterRule;
+
+// Ag-Grid compatibility for backend
+export interface AgGridFilterCondition {
+    filterType?: 'text' | 'number' | 'date' | 'set';
+    type?: FilterOperator;
+    filter?: string | number;
+}
+
+export interface AgGridFilterModel {
+    [key: string]: AgGridFilterCondition | { operator: 'AND' | 'OR'; conditions: AgGridFilterCondition[] };
+}

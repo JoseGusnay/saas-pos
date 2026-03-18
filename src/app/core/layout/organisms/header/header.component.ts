@@ -1,11 +1,14 @@
 import { Component, inject } from '@angular/core';
 import { IconComponent } from '../../atoms/icon/icon.component';
 import { LayoutService } from '../../services/layout.service';
+import { BreadcrumbService, Breadcrumb } from '../../../services/breadcrumb.service';
+import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [IconComponent],
+  imports: [CommonModule, RouterLink, IconComponent],
   template: `
     <header class="header">
       
@@ -15,13 +18,16 @@ import { LayoutService } from '../../services/layout.service';
           <app-icon name="lucideMenu"></app-icon>
         </button>
 
-        <!-- Breadcrumbs Minimalistas Premium -->
+        <!-- Breadcrumbs Dinámicos Premium -->
         <nav class="header__breadcrumbs">
-          <a href="#" class="header__breadcrumb-link">Acme Corp</a>
-          <span class="header__breadcrumb-separator">/</span>
-          <a href="#" class="header__breadcrumb-link">Proyectos</a>
-          <span class="header__breadcrumb-separator">/</span>
-          <span class="header__breadcrumb-current">Dashboard</span>
+          @for (bc of breadcrumbs.breadcrumbs(); track bc.url; let last = $last) {
+            @if (!last) {
+              <a [routerLink]="bc.url" class="header__breadcrumb-link">{{ bc.label }}</a>
+              <span class="header__breadcrumb-separator">/</span>
+            } @else {
+              <span class="header__breadcrumb-current">{{ bc.label }}</span>
+            }
+          }
         </nav>
       </div>
 
@@ -29,14 +35,14 @@ import { LayoutService } from '../../services/layout.service';
         
         <!-- Search Input ⌘K -->
         <div class="header__search">
-          <app-icon name="search"></app-icon>
+          <app-icon name="lucideSearch"></app-icon>
           <input type="text" placeholder="Buscar...">
           <kbd class="shortcut">⌘K</kbd>
         </div>
 
         <!-- Acciones -->
         <button class="header__action">
-          <app-icon name="bell"></app-icon>
+          <app-icon name="lucideBell"></app-icon>
           <!-- Puntito rojo simulando nueva notificación -->
           <span class="indicator"></span>
         </button>
@@ -49,4 +55,5 @@ import { LayoutService } from '../../services/layout.service';
 })
 export class HeaderComponent {
   layout = inject(LayoutService);
+  breadcrumbs = inject(BreadcrumbService);
 }

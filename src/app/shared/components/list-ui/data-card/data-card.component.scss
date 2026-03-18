@@ -8,14 +8,24 @@
     border-radius: var(--radius-lg);
     padding: 20px;
     transition: all var(--transition-base);
+    position: relative;
+    z-index: 1;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+
     height: 100%; // To ensure grid items stretch vertically
 
     &:hover {
         border-color: var(--color-border-subtle);
         box-shadow: var(--shadow-sm);
         transform: translateY(-2px);
+        z-index: 10;
     }
+
+    &:has(.actions-menu-open) {
+        z-index: 50;
+    }
+
+
 
     &__header {
         @include flex-between;
@@ -60,23 +70,8 @@
     }
 
     &__kebab {
-        background: transparent;
-        border: none;
-        color: var(--color-icon-muted);
-        cursor: pointer;
-        padding: 4px;
-        border-radius: var(--radius-sm);
-        transition: var(--transition-base);
-
-        &:hover {
-            background-color: var(--color-bg-hover);
-            color: var(--color-text-main);
-        }
-
-        app-icon {
-            width: 16px;
-            height: 16px;
-        }
+        // Estilos específicos de posicionamiento si fueran necesarios
+        margin-left: auto;
     }
 
     &__body {
@@ -96,10 +91,13 @@
         font-size: var(--font-size-sm);
 
         app-icon {
-            width: 14px;
-            height: 14px;
+            flex-shrink: 0;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
         }
     }
+
 
     &__footer {
         width: 100%;

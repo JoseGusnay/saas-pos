@@ -1,0 +1,59 @@
+.brand-form {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.form-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+
+  &__title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-gray-400);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+  }
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-gray-700);
+}
+
+.form-control {
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--color-gray-200);
+  border-radius: 8px;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+
+  &:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 4px var(--color-primary-subtle);
+  }
+
+  &.is-invalid {
+    border-color: #ef4444;
+    &:focus {
+      box-shadow: 0 0 0 4px #fee2e2;
+    }
+  }
+}
+
+.invalid-feedback {
+  font-size: 0.75rem;
+  color: #ef4444;
+}

@@ -15,7 +15,18 @@ export const routes: Routes = [
             { path: '', redirectTo: 'sucursales', pathMatch: 'full' },
             {
                 path: 'sucursales',
-                loadComponent: () => import('./features/branches/pages/branches-list/branches-list.component').then(m => m.BranchesListComponent)
+                loadComponent: () => import('./features/branches/pages/branches-list/branches-list.component').then(m => m.BranchesListComponent),
+                data: { breadcrumb: 'Sucursales' }
+            },
+            {
+                path: 'usuarios',
+                loadChildren: () => import('./features/users/users.routes').then(m => m.USER_ROUTES),
+                data: { breadcrumb: 'Usuarios' }
+            },
+            {
+                path: 'inventario',
+                loadChildren: () => import('./features/inventory/inventory.routes').then(m => m.INVENTORY_ROUTES),
+                data: { breadcrumb: 'Inventario' }
             }
         ]
     },

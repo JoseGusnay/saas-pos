@@ -1,0 +1,25 @@
+<div *ngIf="isOpen" class="drawer-backdrop" (click)="onClose()" @backdropAnimation></div>
+
+<aside *ngIf="isOpen" class="drawer-container"
+  [class]="'drawer-container drawer--' + (size || 'default')"
+  [@drawerAnimation]="{ value: '', params: { initialTransform: initialTransform } }" role="dialog"
+  [attr.aria-label]="title">
+
+
+  <header class="drawer-header">
+    <div class="drawer-header-content">
+      <h2 class="drawer-title">{{ title }}</h2>
+      <button class="drawer-close-btn" (click)="onClose()" aria-label="Close">
+        <ng-icon name="lucideX"></ng-icon>
+      </button>
+    </div>
+  </header>
+
+  <main class="drawer-body">
+    <ng-content select="[drawerBody]"></ng-content>
+  </main>
+
+  <footer class="drawer-footer">
+    <ng-content select="[drawerFooter]"></ng-content>
+  </footer>
+</aside>

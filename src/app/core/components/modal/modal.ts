@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, effect, inject, signal } from '@angular/core';
 import { CommonModule, NgComponentOutlet } from '@angular/common';
 import { IconComponent } from '../../layout/atoms/icon/icon.component';
 import { ModalService } from './modal.service';
@@ -13,6 +13,22 @@ import { ModalService } from './modal.service';
 export class Modal {
   // Inyectamos el servicio Singleton como estado global del modal
   modalService = inject(ModalService);
+  hasEntered = signal(false);
+
+  constructor() {
+    // Resetear el estado cuando el modal se abre/cierra
+    effect(() => {
+      if (!this.modalService.isOpen()) {
+        this.hasEntered.set(false);
+      }
+    });
+  }
+
+  onAnimationEnd(event: AnimationEvent) {
+    if (event.animationName === 'slideUpFade') {
+      this.hasEntered.set(true);
+    }
+  }
 
   close() {
     this.modalService.close();

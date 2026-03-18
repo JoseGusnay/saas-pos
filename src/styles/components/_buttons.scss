@@ -1,0 +1,176 @@
+@use '../abstracts/variables';
+@use '../abstracts/mixins';
+
+/* =========================================================================
+   Botones Premium - Sistema de Diseño Neo-Minimalista
+   ========================================================================= */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  border-radius: var(--radius-md);
+  font-family: var(--font-family-sans);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  border: 1px solid transparent;
+  outline: none;
+  white-space: nowrap;
+  user-select: none;
+  text-decoration: none;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    filter: grayscale(1);
+    transform: none !important;
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+
+  ng-icon {
+    font-size: 1.1em;
+  }
+}
+
+/* --- Variantes de Color --- */
+
+// Primario: El "Linear/Vercel" Look (Fondo sólido)
+.btn-primary {
+  background-color: var(--color-accent-primary);
+  color: var(--color-bg-surface);
+  box-shadow: var(--shadow-sm);
+
+  &:hover:not(:disabled) {
+    background-color: var(--color-accent-hover);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+  }
+
+  [data-theme="dark"] & {
+    // En dark mode, el accent primary suele ser blanco
+    color: #000000;
+  }
+}
+
+// Secundario: Bordes sutiles y fondo blanco
+.btn-secondary {
+  background-color: var(--color-bg-surface);
+  color: var(--color-text-main);
+  border-color: var(--color-border-light);
+  box-shadow: var(--shadow-sm);
+
+  &:hover:not(:disabled) {
+    background-color: var(--color-bg-hover);
+    border-color: var(--color-text-muted);
+    transform: translateY(-1px);
+  }
+}
+
+// Fantasma: Solo texto, fondo en hover
+.btn-ghost {
+  background-color: transparent;
+  color: var(--color-text-muted);
+
+  &:hover:not(:disabled) {
+    background-color: var(--color-bg-hover);
+    color: var(--color-text-main);
+  }
+}
+
+// Peligro: Rojo premium
+.btn-danger {
+  background-color: var(--color-danger-bg);
+  color: var(--color-danger-text);
+  border-color: rgba(220, 38, 38, 0.1);
+
+  &:hover:not(:disabled) {
+    background-color: var(--color-danger-text);
+    color: #ffffff;
+    transform: translateY(-1px);
+  }
+}
+
+/* --- Tamaños --- */
+
+.btn-sm {
+  padding: 0.4rem 0.8rem;
+  font-size: var(--font-size-sm);
+  gap: 0.375rem;
+}
+
+.btn-lg {
+  padding: 0.8rem 1.75rem;
+  font-size: var(--font-size-lg);
+  gap: 0.75rem;
+}
+
+/* --- Estado de Carga --- */
+
+.btn.is-loading {
+  position: relative;
+  color: transparent !important;
+  pointer-events: none; // Bloquea clics accidentales mientras carga
+  
+  .geist-spinner {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    .bar {
+        position: absolute;
+        width: 28%;
+        height: 8%;
+        left: 36%;
+        top: 46%;
+        background: currentColor;
+        border-radius: 50px;
+        animation: geist-spin 1.2s linear infinite;
+        transform-origin: center;
+
+        @for $i from 1 through 12 {
+            &:nth-child(#{$i}) {
+                transform: rotate(#{($i - 1) * 30}deg) translate(200%);
+                animation-delay: #{($i - 13) * 100}ms;
+            }
+        }
+    }
+  }
+}
+
+@keyframes geist-spin {
+    0% { opacity: 1; }
+    100% { opacity: 0.15; }
+}
+
+@keyframes btn-spinner {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// Utilidades de color para botones transparentes (ghost)
+.btn-danger-text {
+  color: var(--color-danger-text) !important;
+  
+  &:hover:not(:disabled) {
+    background-color: var(--color-danger-bg) !important;
+  }
+}
+
+.is-active {
+  background-color: var(--color-bg-hover) !important;
+  color: var(--color-text-main) !important;
+}
