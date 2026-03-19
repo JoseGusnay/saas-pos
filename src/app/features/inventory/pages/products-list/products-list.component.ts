@@ -87,6 +87,9 @@ import { QueryNodeComponent } from '../../../../core/components/query-node/query
           @for (n of [1,2,3,4,5,6]; track n) {
             @if (viewMode() === 'grid') {
               <div class="data-card skeleton-card">
+                <div class="skeleton-image-zone">
+                  <app-skeleton width="100%" height="160px" radius="0"></app-skeleton>
+                </div>
                 <header class="data-card__header">
                   <div class="data-card__title-container">
                     <app-skeleton width="150px" height="1.25rem"></app-skeleton>
@@ -158,6 +161,7 @@ import { QueryNodeComponent } from '../../../../core/components/query-node/query
             @if (viewMode() === 'grid') {
               <app-data-card
                 [title]="product.name"
+                [imageUrl]="product.imageUrl ?? null"
                 [status]="product.isActive ? 'Activo' : 'Inactivo'"
                 [statusConfig]="product.isActive ? 'active' : 'inactive'"
                 [actions]="productActions"

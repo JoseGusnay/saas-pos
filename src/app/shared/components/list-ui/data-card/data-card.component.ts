@@ -23,7 +23,20 @@ export interface DataCardAvatar {
   standalone: true,
   imports: [CommonModule, IconComponent, ActionsMenuComponent],
   template: `
-    <article class="data-card">
+    <article class="data-card" [class.data-card--has-image]="imageUrl !== undefined && imageUrl !== null">
+
+      @if (imageUrl !== undefined) {
+        <div class="data-card__image-zone">
+          @if (imageUrl) {
+            <img [src]="imageUrl" [alt]="title" class="data-card__img">
+          } @else {
+            <div class="data-card__img-placeholder">
+              <span>{{ title[0]?.toUpperCase() }}</span>
+            </div>
+          }
+        </div>
+      }
+
       <header class="data-card__header">
         <div class="data-card__title-container">
           <h3 class="data-card__name">{{ title }}</h3>
@@ -85,6 +98,7 @@ export class DataCardComponent {
   // statusConfig defines the color variant: 'active' (default/success), 'inactive' (gray/closed), 'warning' (yellow)
   @Input() statusConfig: 'active' | 'inactive' | 'warning' = 'active';
 
+  @Input() imageUrl?: string | null;
   @Input() details: DataCardDetail[] = [];
 
   @Input() metric?: DataCardMetric;
