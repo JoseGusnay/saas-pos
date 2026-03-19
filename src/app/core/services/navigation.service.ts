@@ -67,6 +67,7 @@ export class NavigationService {
       children: [
         { label: 'Categorías', route: '/inventario/categorias', icon: 'lucideLayers' },
         { label: 'Marcas', route: '/inventario/marcas', icon: 'lucideTag' },
+        { label: 'Presentaciones', route: '/inventario/presentaciones', icon: 'lucideArchive' },
         { label: 'Productos', route: '/inventario/productos', icon: 'lucideBox' }
       ]
     },

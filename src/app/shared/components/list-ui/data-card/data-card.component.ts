@@ -53,24 +53,28 @@ export interface DataCardAvatar {
             <span>{{ detail.text }}</span>
           </div>
         }
+        <ng-content></ng-content>
       </div>
 
-      <footer class="data-card__footer">
-        @if (metric) {
-          <div class="data-card__metric">
-            <span class="data-card__metric-label">{{ metric.label }}</span>
-            <span class="data-card__metric-value">{{ metric.value }}</span>
-          </div>
-        }
-        
-        @if (avatars && avatars.length > 0) {
-          <div class="data-card__avatars">
-            @for (avatar of avatars; track avatar.url) {
-              <img [src]="avatar.url" class="data-card__avatar" [alt]="avatar.name">
-            }
-          </div>
-        }
-      </footer>
+      @if (metric || (avatars && avatars.length > 0)) {
+        <footer class="data-card__footer">
+          <ng-content select="[footer]"></ng-content>
+          @if (metric) {
+            <div class="data-card__metric">
+              <span class="data-card__metric-label">{{ metric.label }}</span>
+              <span class="data-card__metric-value">{{ metric.value }}</span>
+            </div>
+          }
+          
+          @if (avatars && avatars.length > 0) {
+            <div class="data-card__avatars">
+              @for (avatar of avatars; track avatar.url) {
+                <img [src]="avatar.url" class="data-card__avatar" [alt]="avatar.name">
+              }
+            </div>
+          }
+        </footer>
+      }
     </article>
   `,
   styleUrls: ['./data-card.component.scss']

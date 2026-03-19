@@ -1,9 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
+import { trigger, transition, style, animate, query } from '@angular/animations';
 import { SidebarComponent } from '../../organisms/sidebar/sidebar.component';
 import { HeaderComponent } from '../../organisms/header/header.component';
-import { RouterOutlet } from '@angular/router';
+import { RouterOutlet, Router } from '@angular/router';
 import { LayoutService } from '../../services/layout.service';
-import { inject } from '@angular/core';
 
 @Component({
   selector: 'app-app-shell',
@@ -31,15 +31,26 @@ import { inject } from '@angular/core';
           <app-header></app-header>
         </header>
         
-        <main class="app-shell__main">
+        <main class="app-shell__main" [@routeFade]="router.url">
           <!-- El Canvas Neo-minimalista -->
-          <router-outlet></router-outlet>
+          <router-outlet #outlet="outlet"></router-outlet>
         </main>
       </div>
     </div>
   `,
-  styleUrl: './app-shell.component.scss'
+  styleUrl: './app-shell.component.scss',
+  animations: [
+    trigger('routeFade', [
+      transition('* => *', [
+        query(':enter', [
+          style({ opacity: 0 }),
+          animate('500ms ease-in-out', style({ opacity: 1 }))
+        ], { optional: true })
+      ])
+    ])
+  ]
 })
 export class AppShellComponent {
   layout = inject(LayoutService);
+  router = inject(Router);
 }

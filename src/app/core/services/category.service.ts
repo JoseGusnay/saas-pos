@@ -3,6 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { ApiResponse } from '../models/auth.models';
 import { Category, CategoryListResponse, CategoryQueryFilters } from '../models/category.models';
+import { CategoryAttributeType } from '../../features/inventory/models/product.model';
 import { Observable, map } from 'rxjs';
 
 @Injectable({
@@ -59,5 +60,23 @@ export class CategoryService {
     bulkImport(categories: Partial<Category>[]): Observable<{ count: number }> {
         return this.http.post<ApiResponse<{ count: number }>>(`${this.baseUrl}/bulk`, categories, { withCredentials: true })
             .pipe(map(res => res.data));
+    }
+
+    getCategoryAttributes(categoryId: string): Observable<CategoryAttributeType[]> {
+        return this.http.get<ApiResponse<CategoryAttributeType[]>>(
+            `${this.baseUrl}/${categoryId}/attributes`,
+            { withCredentials: true }
+        ).pipe(map(res => res.data));
+    }
+
+    assignCategoryAttributes(
+        categoryId: string,
+        attributes: { attributeTypeId: string; isRequired?: boolean; displayOrder?: number }[]
+    ): Observable<CategoryAttributeType[]> {
+        return this.http.post<ApiResponse<CategoryAttributeType[]>>(
+            `${this.baseUrl}/${categoryId}/attributes`,
+            { attributes },
+            { withCredentials: true }
+        ).pipe(map(res => res.data));
     }
 }

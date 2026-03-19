@@ -51,7 +51,8 @@ import {
   lucideShieldCheck,
   lucideLayers,
   lucideTag,
-  lucideBox
+  lucideBox,
+  lucideArchive
 } from '@ng-icons/lucide';
 
 export const appConfig: ApplicationConfig = {
@@ -119,7 +120,8 @@ export const appConfig: ApplicationConfig = {
       lucideShieldCheck,
       lucideLayers,
       lucideTag,
-      lucideBox
+      lucideBox,
+      lucideArchive
     })
   ],
 };

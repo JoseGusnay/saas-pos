@@ -28,12 +28,8 @@ import {
 import { 
   Observable, 
   Subject, 
-  of, 
-  fromEvent, 
   debounceTime, 
   distinctUntilChanged, 
-  switchMap, 
-  tap, 
   finalize, 
   takeUntil 
 } from 'rxjs';
@@ -65,15 +61,21 @@ import { SkeletonComponent } from '../skeleton/skeleton';
       <button 
         type="button" 
         class="search-select__trigger" 
-        [class.has-value]="value()"
+        [class.has-value]="hasValue()"
         (click)="toggle()"
         [disabled]="disabled"
       >
         <span class="selected-label">
-          {{ selectedLabel() || placeholder }}
+          @if (multiple && value()?.length > 0) {
+            <div class="selected-chips">
+               <span class="chip-count">{{ value().length }} seleccionados</span>
+            </div>
+          } @else {
+            {{ selectedLabel() || placeholder }}
+          }
         </span>
         <div class="trigger-actions">
-           @if (value() && !required) {
+           @if (hasValue() && !required) {
              <button type="button" class="clear-btn" (click)="clear($event)">
                <ng-icon name="lucideX"></ng-icon>
              </button>
@@ -85,7 +87,7 @@ import { SkeletonComponent } from '../skeleton/skeleton';
       <!-- Dropdown -->
       @if (isOpen()) {
         <div class="search-select__menu animation-slide-up">
-          <!-- Search Input -->
+          <!-- Search Box -->
           <div class="search-box">
             <ng-icon name="lucideSearch" class="search-icon"></ng-icon>
             <input 
@@ -109,12 +111,14 @@ import { SkeletonComponent } from '../skeleton/skeleton';
           <div class="options-container" #optionsList (scroll)="onScroll($event)">
             @if (initialLoading() && !options().length) {
               <div class="skeletons">
-                @for (i of [1,2,3,4]; track i) {
-                  <div class="option-skeleton">
-                    <app-skeleton width="24px" height="24px" shape="circle"></app-skeleton>
-                    <div class="text-skel">
-                      <app-skeleton width="70%" height="14px"></app-skeleton>
-                      <app-skeleton width="40%" height="10px"></app-skeleton>
+                @for (i of [1,2,3,4,5,6]; track i) {
+                  <div class="option-item" style="pointer-events: none;">
+                    <div class="option-content">
+                      <app-skeleton width="28px" height="28px" shape="circle"></app-skeleton>
+                      <div class="option-text">
+                        <app-skeleton width="140px" height="14px"></app-skeleton>
+                        <app-skeleton width="90px" height="10px" style="margin-top: 4px;"></app-skeleton>
+                      </div>
                     </div>
                   </div>
                 }
@@ -123,7 +127,7 @@ import { SkeletonComponent } from '../skeleton/skeleton';
               @for (option of options(); track option.value) {
                 <div 
                   class="option-item" 
-                  [class.is-selected]="option.value === value()"
+                  [class.is-selected]="isSelected(option)"
                   (click)="select(option)"
                 >
                   <div class="option-content">
@@ -137,7 +141,7 @@ import { SkeletonComponent } from '../skeleton/skeleton';
                       }
                     </div>
                   </div>
-                  @if (option.value === value()) {
+                  @if (isSelected(option)) {
                     <ng-icon name="lucideCheck" class="check-icon"></ng-icon>
                   }
                 </div>
@@ -180,7 +184,7 @@ import { SkeletonComponent } from '../skeleton/skeleton';
         font-size: 14px;
         color: var(--color-text-muted);
         cursor: pointer;
-        transition: all 0.2s;
+        transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s;
         text-align: left;
         gap: 8px;
 
@@ -194,46 +198,19 @@ import { SkeletonComponent } from '../skeleton/skeleton';
           background: var(--color-bg-hover);
         }
 
-        &:focus {
-           box-shadow: 0 0 0 2px rgba(var(--color-primary-rgb), 0.1);
-           border-color: var(--color-primary);
-        }
-
         &:disabled {
           opacity: 0.6;
           cursor: not-allowed;
         }
 
-        .trigger-actions {
-          display: flex;
-          align-items: center;
-          gap: 4px;
+        .selected-chips {
+           background: var(--color-primary);
+           color: white;
+           padding: 2px 8px;
+           border-radius: 12px;
+           font-size: 11px;
+           font-weight: 600;
         }
-
-        .clear-btn {
-          background: transparent;
-          border: none;
-          color: var(--color-text-muted);
-          padding: 4px;
-          border-radius: 4px;
-          display: flex;
-          align-items: center;
-          cursor: pointer;
-          &:hover { 
-            background: var(--color-bg-light); 
-            color: var(--color-danger);
-          }
-        }
-
-        .chevron-icon {
-          font-size: 16px;
-          color: var(--color-text-muted);
-          transition: transform 0.2s;
-        }
-      }
-
-      &.is-open {
-        .chevron-icon { transform: rotate(180deg); }
       }
 
       &__menu {
@@ -261,54 +238,12 @@ import { SkeletonComponent } from '../skeleton/skeleton';
       border-bottom: 1px solid var(--color-border-light);
       position: relative;
       background: var(--color-bg-light);
-
-      .search-icon {
-        color: var(--color-text-muted);
-        font-size: 14px;
-        margin-right: 8px;
-      }
-
-      input {
-        flex: 1;
-        background: transparent;
-        border: none;
-        outline: none;
-        font-size: 13px;
-        color: var(--color-text-main);
-        &::placeholder { color: var(--color-text-muted); }
-      }
-
-      .spin-icon {
-        animation: spin 1s linear infinite;
-        color: var(--color-primary);
-        font-size: 14px;
-      }
-
-      .clear-search {
-        background: transparent;
-        border: none;
-        color: var(--color-text-muted);
-        cursor: pointer;
-        padding: 4px;
-        display: flex;
-        &:hover { color: var(--color-text-main); }
-      }
+      .search-icon { color: var(--color-text-muted); font-size: 14px; margin-right: 8px; }
+      input { flex: 1; background: transparent; border: none; outline: none; font-size: 13px; color: var(--color-text-main); }
+      .spin-icon { animation: spin 1s linear infinite; color: var(--color-primary); }
     }
 
-    .options-container {
-      flex: 1;
-      overflow-y: auto;
-      padding: 4px;
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-      
-      &::-webkit-scrollbar { width: 4px; }
-      &::-webkit-scrollbar-thumb { 
-        background: var(--color-border-subtle); 
-        border-radius: 10px;
-      }
-    }
+    .options-container { flex: 1; overflow-y: auto; padding: 4px; display: flex; flex-direction: column; gap: 2px; }
 
     .option-item {
       display: flex;
@@ -317,102 +252,17 @@ import { SkeletonComponent } from '../skeleton/skeleton';
       padding: 8px 10px;
       border-radius: var(--radius-md);
       cursor: pointer;
-      transition: all 0.15s;
+      transition: background-color 0.15s;
 
-      &:hover {
-        background: var(--color-bg-hover);
-      }
+      &:hover { background: var(--color-bg-hover); }
+      &.is-selected { background: rgba(var(--color-primary-rgb), 0.08); .label { color: var(--color-primary); font-weight: 600; } }
 
-      &.is-selected {
-        background: rgba(var(--color-primary-rgb), 0.08);
-        .label { color: var(--color-primary); font-weight: 600; }
-      }
-
-      .option-content {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        min-width: 0;
-      }
-
-      .option-icon {
-        font-size: 16px;
-        color: var(--color-text-muted);
-        flex-shrink: 0;
-      }
-
-      .option-text {
-        display: flex;
-        flex-direction: column;
-        min-width: 0;
-
-        .label {
-          font-size: 13px;
-          color: var(--color-text-main);
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-        
-        .description {
-          font-size: 11px;
-          color: var(--color-text-muted);
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-      }
-
-      .check-icon {
-        font-size: 14px;
-        color: var(--color-primary);
-        flex-shrink: 0;
-      }
-    }
-
-    .skeletons {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      padding: 8px;
-    }
-
-    .option-skeleton {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      .text-skel {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-      }
-    }
-
-    .load-more-spinner {
-       display: flex;
-       align-items: center;
-       justify-content: center;
-       padding: 12px;
-       gap: 8px;
-       font-size: 12px;
-       color: var(--color-text-muted);
-       .spin { animation: spin 1s linear infinite; }
-    }
-
-    .empty-results {
-      padding: 32px 16px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
-      color: var(--color-text-muted);
-      font-size: 13px;
-      ng-icon { font-size: 24px; opacity: 0.5; }
+      .option-content { display: flex; align-items: center; gap: 12px; min-width: 0; }
+      .option-text { display: flex; flex-direction: column; min-width: 0; .label { font-size: 13px; } .description { font-size: 11px; color: var(--color-text-muted); } }
+      .check-icon { font-size: 14px; color: var(--color-primary); }
     }
 
     @keyframes spin { from { transform: rotate(0); } to { transform: rotate(360deg); } }
-
     @keyframes slideInUp {
       from { opacity: 0; transform: translateY(8px) scale(0.98); }
       to { opacity: 1; transform: translateY(0) scale(1); }
@@ -424,21 +274,22 @@ export class SearchSelectComponent implements AfterViewInit, ControlValueAccesso
   @Input() placeholder = 'Seleccionar...';
   @Input() searchPlaceholder = 'Escribe para buscar...';
   @Input() required = false;
+  @Input() multiple = false;
   @Input() searchFn?: (query: string, page: number) => Observable<{ data: SearchSelectOption[], hasMore: boolean }>;
 
   @ViewChild('searchInput') searchInputElement?: ElementRef<HTMLInputElement>;
-  @ViewChild('optionsList') optionsListElement?: ElementRef<HTMLDivElement>;
-
-  /**
-   * Opción inicial para mostrar el label correcto cuando el valor 
-   * no está en los resultados de búsqueda actuales (evita mostrar el ID).
-   */
+  
   private _initialOption = signal<SearchSelectOption | undefined>(undefined);
   @Input() set initialOption(val: SearchSelectOption | undefined) {
     this._initialOption.set(val);
   }
-  get initialOption(): SearchSelectOption | undefined {
-    return this._initialOption();
+
+  private _initialOptions = signal<SearchSelectOption[]>([]);
+  @Input() set initialOptions(vals: SearchSelectOption[] | null | undefined) {
+    this._initialOptions.set(vals || []);
+  }
+  get initialOptions(): SearchSelectOption[] {
+    return this._initialOptions();
   }
 
   isOpen = signal(false);
@@ -446,11 +297,7 @@ export class SearchSelectComponent implements AfterViewInit, ControlValueAccesso
   searchQuery = signal('');
   options = signal<SearchSelectOption[]>([]);
   
-  /**
-   * Mantiene el objeto completo de la opción seleccionada actualmente
-   * para poder mostrar el label incluso si desaparece de la lista (ej. al buscar).
-   */
-  private currentSelectedOption = signal<SearchSelectOption | undefined>(undefined);
+  private selectedOptionsMap = signal<Map<any, SearchSelectOption>>(new Map());
   
   isLoading = signal(false);
   isLoadingMore = signal(false);
@@ -463,90 +310,79 @@ export class SearchSelectComponent implements AfterViewInit, ControlValueAccesso
   private destroy$ = new Subject<void>();
   private searchSubject = new Subject<string>();
 
-  selectedLabel = computed(() => {
-    const currentValue = this.value();
-    
-    // 1. Intentar buscar en las opciones cargadas actualmente
-    const opt = this.options().find(o => o.value === currentValue);
-    if (opt) return opt.label;
-    
-    // 2. Si no está en las opciones, usar el objeto que tenemos guardado
-    const saved = this.currentSelectedOption();
-    if (saved && saved.value === currentValue) {
-      return saved.label;
-    }
-    
-    // 3. Como último recurso, intentar usar la opción inicial del input
-    const init = this._initialOption();
-    if (init && init.value === currentValue) {
-      return init.label;
-    }
-
-    return currentValue ? String(currentValue) : '';
+  hasValue = computed(() => {
+    const val = this.value();
+    if (this.multiple) return Array.isArray(val) && val.length > 0;
+    return val !== null && val !== undefined && val !== '';
   });
 
-  onTouched = () => {};
+  selectedLabel = computed(() => {
+    if (this.multiple) return '';
+    const currentVal = this.value();
+    if (!currentVal) return '';
+
+    // Search in current Options
+    const opt = this.options().find(o => o.value === currentVal);
+    if (opt) return opt.label;
+
+    // Search in Map
+    const mapped = this.selectedOptionsMap().get(currentVal);
+    if (mapped) return mapped.label;
+
+    // Search in Initial
+    const init = this._initialOption();
+    if (init && init.value === currentVal) return init.label;
+
+    return String(currentVal);
+  });
+
   onChange = (_: any) => {};
+  onTouched = () => {};
 
   constructor() {
     this.setupSearch();
-
-    // Sincronizar el objeto de opción seleccionada (label + value)
-    // Esto asegura que siempre tengamos un label para mostrar, incluso si:
-    // 1. Se carga un valor inicial (initialOption)
-    // 2. El usuario selecciona algo de la lista
-    // 3. El valor actual se encuentra dentro de una nueva carga de opciones
+    
     effect(() => {
-      const currentVal = this.value();
-      const currentOpts = this.options();
-      const initOpt = this._initialOption();
+      const val = this.value();
+      const init = this._initialOption();
+      const inits = this._initialOptions();
 
-      // Prioridad 1: Buscar en las opciones cargadas actualmente
-      if (currentVal && currentOpts.length > 0) {
-        const match = currentOpts.find(o => o.value === currentVal);
-        if (match) {
-          this.currentSelectedOption.set(match);
-          return;
+      this.selectedOptionsMap.update(map => {
+        if (!this.multiple && init && init.value === val) {
+          map.set(init.value, init);
         }
-      }
-
-      // Prioridad 2: Usar la opción inicial si coincide con el valor
-      if (currentVal && initOpt && initOpt.value === currentVal) {
-        this.currentSelectedOption.set(initOpt);
-      }
+        if (this.multiple && Array.isArray(val)) {
+           inits.forEach(o => {
+              if (val.includes(o.value)) map.set(o.value, o);
+           });
+        }
+        return new Map(map);
+      });
     }, { allowSignalWrites: true });
   }
 
-  ngAfterViewInit() {
-    // We can't auto-focus because it depends on isOpen()
-  }
+  ngAfterViewInit() {}
 
   ngOnDestroy() {
     this.destroy$.next();
     this.destroy$.complete();
   }
 
-  // ControlValueAccessor
   writeValue(val: any): void {
-    this.value.set(val);
+    if (this.multiple && !Array.isArray(val)) {
+      this.value.set(val ? [val] : []);
+    } else {
+      this.value.set(val);
+    }
   }
-  registerOnChange(fn: any): void {
-    this.onChange = fn;
-  }
-  registerOnTouched(fn: any): void {
-    this.onTouched = fn;
-  }
-  setDisabledState?(isDisabled: boolean): void {
-    this.disabled = isDisabled;
-  }
+
+  registerOnChange(fn: any): void { this.onChange = fn; }
+  registerOnTouched(fn: any): void { this.onTouched = fn; }
+  setDisabledState(isDisabled: boolean): void { this.disabled = isDisabled; }
 
   toggle() {
     if (this.disabled) return;
-    if (this.isOpen()) {
-      this.close();
-    } else {
-      this.open();
-    }
+    this.isOpen() ? this.close() : this.open();
   }
 
   open() {
@@ -564,26 +400,44 @@ export class SearchSelectComponent implements AfterViewInit, ControlValueAccesso
   }
 
   select(option: SearchSelectOption) {
-    this.value.set(option.value);
-    this.currentSelectedOption.set(option);
-    this.onChange(option.value);
-    this.close();
+    if (this.multiple) {
+      const current = Array.isArray(this.value()) ? [...this.value()] : [];
+      const index = current.indexOf(option.value);
+      
+      if (index >= 0) {
+        current.splice(index, 1);
+        this.selectedOptionsMap.update(m => { m.delete(option.value); return new Map(m); });
+      } else {
+        current.push(option.value);
+        this.selectedOptionsMap.update(m => { m.set(option.value, option); return new Map(m); });
+      }
+      
+      this.value.set(current);
+      this.onChange(current);
+    } else {
+      this.value.set(option.value);
+      this.selectedOptionsMap.update(m => { m.set(option.value, option); return new Map(m); });
+      this.onChange(option.value);
+      this.close();
+    }
+  }
+
+  isSelected(option: SearchSelectOption): boolean {
+    const val = this.value();
+    if (this.multiple) return Array.isArray(val) && val.includes(option.value);
+    return val === option.value;
   }
 
   clear(event: Event) {
     event.stopPropagation();
-    this.value.set(null);
-    this.onChange(null);
+    const clearVal = this.multiple ? [] : null;
+    this.value.set(clearVal);
+    this.selectedOptionsMap.set(new Map());
+    this.onChange(clearVal);
   }
 
-  onSearchInput(event: any) {
-    this.searchSubject.next(event.target.value);
-  }
-
-  resetSearch() {
-    this.searchQuery.set('');
-    this.searchSubject.next('');
-  }
+  onSearchInput(event: any) { this.searchSubject.next(event.target.value); }
+  resetSearch() { this.searchQuery.set(''); this.searchSubject.next(''); }
 
   private setupSearch() {
     this.searchSubject.pipe(
@@ -598,13 +452,8 @@ export class SearchSelectComponent implements AfterViewInit, ControlValueAccesso
 
   private loadResults(reset = false) {
     if (!this.searchFn) return;
-
-    if (reset) {
-      this.currentPage = 1;
-      this.isLoading.set(true);
-    } else {
-      this.isLoadingMore.set(true);
-    }
+    if (reset) { this.currentPage = 1; this.isLoading.set(true); } 
+    else { this.isLoadingMore.set(true); }
 
     this.searchFn(this.searchQuery(), this.currentPage).pipe(
       finalize(() => {
@@ -614,11 +463,8 @@ export class SearchSelectComponent implements AfterViewInit, ControlValueAccesso
       }),
       takeUntil(this.destroy$)
     ).subscribe(res => {
-      if (reset) {
-        this.options.set(res.data);
-      } else {
-        this.options.update(prev => [...prev, ...res.data]);
-      }
+      if (reset) this.options.set(res.data);
+      else this.options.update(prev => [...prev, ...res.data]);
       this.hasMore = res.hasMore;
     });
   }
@@ -634,7 +480,6 @@ export class SearchSelectComponent implements AfterViewInit, ControlValueAccesso
   }
 
   @ViewChild('container') containerElement?: ElementRef<HTMLDivElement>;
-
   @HostListener('document:click', ['$event'])
   onClickOutside(event: Event) {
     if (this.isOpen() && !this.containerElement?.nativeElement.contains(event.target as Node)) {

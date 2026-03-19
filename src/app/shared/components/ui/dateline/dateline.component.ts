@@ -168,7 +168,7 @@ export interface DatelineItem {
             color: var(--color-text-muted);
             box-shadow: var(--shadow-sm);
             position: relative;
-            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.3s, border-color 0.3s;
 
             ng-icon { font-size: 18px; }
 
@@ -207,7 +207,7 @@ export interface DatelineItem {
             border-radius: 16px;
             padding: 16px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.03);
-            transition: all 0.3s ease;
+            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
 
             &:hover {
                 box-shadow: 0 8px 24px rgba(0,0,0,0.06);

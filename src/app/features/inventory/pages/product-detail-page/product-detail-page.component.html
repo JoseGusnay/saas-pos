@@ -1,0 +1,208 @@
+<div class="detail-page">
+  <!-- Loading State -->
+  @if (isLoading() && !product()) {
+    <div class="detail-page__loading">
+      <app-spinner></app-spinner>
+      <p>Cargando información del producto...</p>
+    </div>
+  }
+
+  <!-- Error State -->
+  @if (error()) {
+    <div class="detail-page__error">
+      <ng-icon name="lucideAlertCircle"></ng-icon>
+      <h3>Ups, algo salió mal</h3>
+      <p>{{ error() }}</p>
+      <button class="btn btn-primary" routerLink="/inventario/productos">
+        Volver al Catálogo
+      </button>
+    </div>
+  }
+
+  <!-- Main Content -->
+  @if (product(); as p) {
+    <div class="detail-page__container">
+      
+      <!-- Minimalist Header -->
+      <header class="detail-header">
+        <div class="detail-header__top">
+          <nav class="breadcrumb">
+            <a routerLink="/inventario/productos" class="breadcrumb__link">Catálogo</a>
+            <span class="breadcrumb__separator">/</span>
+            <span class="breadcrumb__current">{{ p.name }}</span>
+          </nav>
+          
+          <div class="detail-header__actions">
+            <button class="btn-vercel btn-vercel--secondary" [routerLink]="['/inventario/productos', p.id, 'editar']">
+              <ng-icon name="lucidePencil"></ng-icon>
+              Editar
+            </button>
+          </div>
+        </div>
+
+        <div class="detail-header__main">
+          <div class="detail-header__title-group">
+            <h1 class="detail-header__title">{{ p.name }}</h1>
+            <div class="detail-header__id-container" (click)="copyToClipboard(p.id)">
+              <code class="product-id">{{ p.id }}</code>
+              <ng-icon [name]="isCopied() ? 'lucideCheck' : 'lucideCopy'" [class.is-copied]="isCopied()"></ng-icon>
+            </div>
+            <div class="detail-header__badges">
+              <span class="badge" [class.badge--active]="p.isActive" [class.badge--inactive]="!p.isActive">
+                {{ p.isActive ? 'Activo' : 'Inactivo' }}
+              </span>
+              <span class="badge badge--outline">{{ p.category?.name || 'Sin Categoría' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Vercel Style Tabs -->
+        <nav class="detail-tabs">
+          <button 
+            class="detail-tabs__item" 
+            [class.is-active]="activeTab() === 'summary'"
+            (click)="onTabChange('summary')">
+            <ng-icon name="lucideInfo"></ng-icon>
+            Resumen
+          </button>
+          <button 
+            class="detail-tabs__item" 
+            [class.is-active]="activeTab() === 'inventory'"
+            (click)="onTabChange('inventory')">
+            <ng-icon name="lucidePackage"></ng-icon>
+            Inventario
+          </button>
+          <button 
+            class="detail-tabs__item" 
+            [class.is-active]="activeTab() === 'reports'"
+            (click)="onTabChange('reports')">
+            <ng-icon name="lucideBarChart3"></ng-icon>
+            Reportes
+          </button>
+          <div class="detail-tabs__slider" [style.transform]="'translateX(' + (activeTab() === 'summary' ? 0 : activeTab() === 'inventory' ? 100 : 200) + '%)'"></div>
+        </nav>
+      </header>
+
+      <main class="detail-content">
+        <!-- Summary Tab -->
+        @if (activeTab() === 'summary') {
+          <section class="tab-panel tab-panel--summary">
+            <div class="summary-grid">
+              <div class="summary-card product-visual">
+                <div class="product-image-container">
+                  @if (p.imageUrl) {
+                    <img [src]="p.imageUrl" [alt]="p.name" class="product-image">
+                  } @else {
+                    <div class="product-image-placeholder">
+                      <ng-icon name="lucidePackage"></ng-icon>
+                    </div>
+                  }
+                </div>
+              </div>
+
+              <div class="summary-details">
+                <div class="summary-card">
+                  <h3 class="card-title">Información General</h3>
+                  <div class="info-grid">
+                    <div class="info-item">
+                      <dt>Tipo de Producto</dt>
+                      <dd>{{ p.type || 'FÍSICO' }}</dd>
+                    </div>
+                    <div class="info-item">
+                      <dt>Marca</dt>
+                      <dd>{{ p.brand?.name || 'No especificada' }}</dd>
+                    </div>
+                    <div class="info-item info-item--full">
+                      <dt>Descripción</dt>
+                      <dd class="description">{{ p.description || 'Sin descripción disponible.' }}</dd>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="summary-card">
+                  <h3 class="card-title">Auditoría</h3>
+                  <div class="info-grid">
+                    <div class="info-item">
+                      <dt><ng-icon name="lucideClock"></ng-icon> Creado el</dt>
+                      <dd>{{ p.createdAt | date:'medium' }}</dd>
+                    </div>
+                    <div class="info-item">
+                      <dt><ng-icon name="lucideClock"></ng-icon> Última modificación</dt>
+                      <dd>{{ p.updatedAt | date:'medium' }}</dd>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        }
+
+        <!-- Inventory Tab -->
+        @if (activeTab() === 'inventory') {
+          <section class="tab-panel tab-panel--inventory">
+            <div class="inventory-card">
+              <div class="inventory-header">
+                <h3 class="card-title">Variantes de Producto</h3>
+                <span class="count-badge">{{ p.variants.length }} Presentaciones</span>
+              </div>
+              
+              <div class="table-container">
+                <table class="vercel-table">
+                  <thead>
+                    <tr>
+                      <th>Presentación</th>
+                      <th>SKU</th>
+                      <th>Código de Barras</th>
+                      <th class="text-right">Precio de Venta</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (variant of p.variants; track variant.id) {
+                      <tr>
+                        <td>
+                          <div class="variant-name">
+                            <strong>{{ variant.name || variant.presentation?.name || 'Sin Nombre' }}</strong>
+                            @if (variant.attributeValues?.length) {
+                              <span class="subtext">
+                                @for (av of variant.attributeValues; track av.attributeTypeId) {
+                                  {{ av.attributeType?.name }}: {{ av.valueText ?? av.valueNumber }}
+                                  @if (!$last) { · }
+                                }
+                              </span>
+                            }
+                          </div>
+                        </td>
+                        <td><code>{{ variant.sku || '---' }}</code></td>
+                        <td>{{ variant.barcode || '---' }}</td>
+                        <td class="text-right price">{{ variant.salePrice | currency }}</td>
+                      </tr>
+                    } @empty {
+                      <tr>
+                        <td colspan="4" class="empty-state">No hay variantes registradas.</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+        }
+
+        <!-- Reports Tab -->
+        @if (activeTab() === 'reports') {
+          <section class="tab-panel tab-panel--reports">
+            <div class="coming-soon-card">
+              <div class="coming-soon-icon">
+                <ng-icon name="lucideBarChart3"></ng-icon>
+              </div>
+              <h2>Módulo de Reportes</h2>
+              <p>Próximamente podrás visualizar analíticas detalladas de ventas, rotación de stock y tendencias para este producto.</p>
+              <div class="vercel-skeleton-chart"></div>
+            </div>
+          </section>
+        }
+      </main>
+
+    </div>
+  }
+</div>

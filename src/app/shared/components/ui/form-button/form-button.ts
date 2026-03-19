@@ -2,19 +2,20 @@ import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import { SpinnerComponent } from '../spinner/spinner';
-import { lucideSave, lucideCheck, lucideX, lucidePencil, lucideHistory } from '@ng-icons/lucide';
+import { lucideSave, lucideCheck, lucideX, lucidePencil, lucideHistory, lucideTrash2, lucidePlus } from '@ng-icons/lucide';
 
 @Component({
   selector: 'app-form-button',
   standalone: true,
   imports: [CommonModule, NgIconComponent, SpinnerComponent],
   providers: [
-    provideIcons({ lucideSave, lucideCheck, lucideX, lucidePencil, lucideHistory })
+    provideIcons({ lucideSave, lucideCheck, lucideX, lucidePencil, lucideHistory, lucideTrash2, lucidePlus })
   ],
   template: `
     <button 
       [type]="type"
       [class]="'btn btn-' + variant"
+      [class.btn--full-width]="fullWidth"
       [disabled]="disabled || loading"
     >
       <span class="btn-content" [class.is-loading]="loading">
@@ -35,15 +36,18 @@ import { lucideSave, lucideCheck, lucideX, lucidePencil, lucideHistory } from '@
        font-size: var(--font-size-sm);
        font-weight: 500;
        cursor: pointer;
-       transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+       transition: background-color 0.2s, border-color 0.2s, color 0.2s, transform 0.2s, box-shadow 0.2s;
        border: 1px solid transparent;
        line-height: 1;
        white-space: nowrap;
        user-select: none;
        min-width: 100px;
        height: 38px;
-        font-family: inherit;
-        width: 100%;
+       font-family: inherit;
+
+       &.btn--full-width {
+         width: 100%;
+       }
     }
 
     .btn-content {
@@ -137,4 +141,5 @@ export class FormButtonComponent {
   @Input() disabled: boolean = false;
   @Input() type: 'submit' | 'button' = 'submit';
   @Input() variant: 'primary' | 'secondary' | 'ghost' | 'danger' = 'primary';
+  @Input() fullWidth: boolean = true;
 }

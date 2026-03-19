@@ -63,7 +63,7 @@ export interface ActionItem {
         justify-content: center;
         border-radius: var(--radius-md);
         color: var(--color-text-muted);
-        transition: all var(--transition-fast);
+        transition: background-color var(--transition-fast), color var(--transition-fast);
 
         &:hover, &.is-active {
           background-color: var(--color-bg-hover);

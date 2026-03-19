@@ -1,0 +1,340 @@
+.detail-page {
+  min-height: 100vh;
+  background-color: var(--color-bg-base);
+  color: var(--color-text-main);
+  padding: 2rem;
+
+  &__loading, &__error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+    gap: 1.5rem;
+    text-align: center;
+    
+    ng-icon { font-size: 3rem; color: var(--color-error); }
+    p { color: var(--color-text-muted); }
+  }
+
+  &__container {
+    max-width: 1200px;
+    margin: 0 auto;
+    animation: fadeIn 0.4s ease-out;
+  }
+}
+
+// Vercel Style Header
+.detail-header {
+  border-bottom: 1px solid var(--color-border-subtle);
+  margin-bottom: 2rem;
+
+  &__top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+  }
+
+  &__main {
+    margin-bottom: 2rem;
+  }
+
+  &__title {
+    font-size: 2.25rem;
+    font-weight: 800;
+    letter-spacing: -0.05em;
+    margin-bottom: 0.5rem;
+    color: var(--color-text-main);
+  }
+
+  &__id-container {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1.25rem;
+    cursor: pointer;
+    color: var(--color-text-muted);
+    transition: color 0.2s;
+
+    &:hover {
+      color: var(--color-text-main);
+      .product-id { border-color: var(--color-text-soft); }
+    }
+
+    .product-id {
+      font-family: var(--font-family-mono, monospace);
+      font-size: 0.75rem;
+      background: var(--color-bg-hover);
+      padding: 0.25rem 0.5rem;
+      border-radius: 6px;
+      border: 1px solid var(--color-border-subtle);
+      transition: border-color 0.2s;
+    }
+
+    ng-icon {
+      font-size: 0.9rem;
+      &.is-copied { color: var(--color-success); }
+    }
+  }
+
+  &__badges {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+  }
+}
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+
+  &__link {
+    color: inherit;
+    text-decoration: none;
+    transition: color 0.2s;
+    &:hover { color: var(--color-text-main); }
+  }
+
+  &__current {
+    font-weight: 500;
+    color: var(--color-text-soft);
+  }
+}
+
+// Vercel Style Tabs
+.detail-tabs {
+  display: flex;
+  gap: 2rem;
+  position: relative;
+  
+  &__item {
+    background: none;
+    border: none;
+    padding: 1rem 0;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: color 0.2s;
+    border-bottom: 2px solid transparent;
+
+    ng-icon { font-size: 1.1rem; }
+
+    &:hover {
+      color: var(--color-text-main);
+    }
+
+    &.is-active {
+      color: var(--color-text-main);
+      border-bottom-color: var(--color-text-main);
+    }
+  }
+}
+
+// Panels & Cards (Vercel Style)
+.summary-grid {
+  display: grid;
+  grid-template-columns: 400px 1fr;
+  gap: 2rem;
+
+  @media (max-width: 992px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.summary-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+}
+
+.summary-card, .inventory-card, .coming-soon-card {
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 16px;
+  padding: 2.25rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+
+  &:hover {
+    border-color: var(--color-text-muted);
+    transform: translateY(-4px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  }
+}
+
+.card-title {
+  font-size: 0.875rem;
+  font-weight: 700;
+  margin-bottom: 2rem;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  border-bottom: 1px solid var(--color-border-subtle);
+  padding-bottom: 0.75rem;
+}
+
+// info-grid for 2 columns
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2.5rem 1.5rem; // Increased vertical gap to 2.5rem
+
+  @media (max-width: 576px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+// Info Lists
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+
+  &--full {
+    grid-column: 1 / -1;
+  }
+
+  dt {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--color-text-muted);
+    font-weight: 600;
+  }
+  
+  dd {
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: var(--color-text-main);
+
+    &.description {
+      line-height: 1.6;
+      color: var(--color-text-soft);
+      font-weight: 400;
+    }
+  }
+}
+
+// Vercel Style Table
+.vercel-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+
+  th {
+    text-align: left;
+    padding: 1rem;
+    font-weight: 500;
+    color: var(--color-text-muted);
+    border-bottom: 1px solid var(--color-border-subtle);
+  }
+
+  td {
+    padding: 1.25rem 1rem;
+    border-bottom: 1px solid var(--color-border-subtle);
+    vertical-align: middle;
+  }
+
+  tr:last-child td {
+    border-bottom: none;
+  }
+
+  .text-right { text-align: right; }
+  
+  code {
+    background: var(--color-bg-hover);
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 0.75rem;
+  }
+
+  .price {
+    font-weight: 600;
+    color: var(--color-text-main);
+  }
+
+  .subtext {
+    display: block;
+    font-size: 11px;
+    color: var(--color-text-muted);
+  }
+}
+
+// Badges
+.badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+
+  &--active { background: #0070f31a; color: #0070f3; }
+  &--inactive { background: #6661; color: #666; }
+  &--outline { border: 1px solid var(--color-border-subtle); color: var(--color-text-muted); }
+}
+
+// Vercel Style Buttons
+.btn-vercel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+
+  &--secondary {
+    background: var(--color-bg-surface);
+    border-color: var(--color-border-subtle);
+    color: var(--color-text-main);
+
+    &:hover {
+      background: var(--color-bg-hover);
+      border-color: var(--color-text-main);
+    }
+  }
+}
+
+// Coming Soon Placeholders
+.coming-soon-card {
+  text-align: center;
+  padding: 4rem 2rem;
+  
+  .coming-soon-icon {
+    font-size: 3rem;
+    color: var(--color-border-light);
+    margin-bottom: 1.5rem;
+  }
+
+  h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: 1rem; }
+  p { color: var(--color-text-muted); max-width: 400px; margin: 0 auto 2rem; }
+}
+
+.vercel-skeleton-chart {
+  height: 200px;
+  background: linear-gradient(90deg, var(--color-bg-hover) 25%, var(--color-border-subtle) 50%, var(--color-bg-hover) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+  border-radius: var(--radius-md);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
