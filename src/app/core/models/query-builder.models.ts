@@ -16,6 +16,7 @@ export interface FilterField {
     id: string;
     label: string;
     type: 'text' | 'number' | 'select' | 'status';
+    options?: { label: string; value: string }[];
 }
 
 export interface FilterRule {
@@ -24,6 +25,7 @@ export interface FilterRule {
     field: string;
     operator: FilterOperator;
     value: string;
+    valueTo?: string;
 }
 
 export interface FilterGroup {
@@ -37,9 +39,10 @@ export type FilterNode = FilterGroup | FilterRule;
 
 // Ag-Grid compatibility for backend
 export interface AgGridFilterCondition {
-    filterType?: 'text' | 'number' | 'date' | 'set';
+    filterType?: 'text' | 'number' | 'date' | 'set' | 'boolean';
     type?: FilterOperator;
-    filter?: string | number;
+    filter?: string | number | boolean;
+    filterTo?: number;
 }
 
 export interface AgGridFilterModel {

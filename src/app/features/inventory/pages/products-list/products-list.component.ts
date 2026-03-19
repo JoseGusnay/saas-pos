@@ -21,12 +21,12 @@ import { FormButtonComponent } from '../../../../shared/components/ui/form-butto
 
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import { ActionItem, ActionsMenuComponent } from '../../../../shared/components/ui/actions-menu/actions-menu';
-import { lucidePlus, lucideSave, lucidePencil, lucideTrash2, lucideDownload, lucideHistory, lucidePlusCircle, lucideRefreshCw, lucideTrash, lucideGlobe, lucideSearch, lucideCheckCircle2, lucideXCircle, lucideCloudDownload, lucideZap, lucideFileText, lucideInbox, lucideTag, lucideDollarSign, lucideChevronDown, lucideHash, lucideBarcode, lucideClock, lucidePackage } from '@ng-icons/lucide';
+import { lucidePlus, lucideSave, lucidePencil, lucideTrash2, lucideDownload, lucideHistory, lucidePlusCircle, lucideRefreshCw, lucideTrash, lucideGlobe, lucideSearch, lucideCheckCircle2, lucideXCircle, lucideCloudDownload, lucideFileText, lucideInbox, lucideTag, lucideDollarSign, lucideChevronDown, lucideHash, lucideBarcode, lucideClock, lucidePackage } from '@ng-icons/lucide';
 import { ToastService } from '../../../../core/services/toast.service';
 import { SkeletonComponent } from '../../../../shared/components/ui/skeleton/skeleton';
 import { EmptyStateComponent } from '../../../../shared/components/ui/empty-state/empty-state';
 import { SpinnerComponent } from '../../../../shared/components/ui/spinner/spinner';
-import { ProductQuickFormComponent } from '../../components/product-quick-form/product-quick-form.component';
+import { ProductImportModalComponent } from '../../components/product-import-modal/product-import-modal';
 import { QueryNodeComponent } from '../../../../core/components/query-node/query-node.component';
 
 @Component({
@@ -48,12 +48,12 @@ import { QueryNodeComponent } from '../../../../core/components/query-node/query
     SpinnerComponent,
     ActionsMenuComponent,
     FormButtonComponent,
-    ProductQuickFormComponent,
+    ProductImportModalComponent,
     QueryNodeComponent,
     NgIconComponent
   ],
   providers: [
-    provideIcons({ lucidePlus, lucideSave, lucidePencil, lucideTrash2, lucideDownload, lucideHistory, lucidePlusCircle, lucideRefreshCw, lucideTrash, lucideGlobe, lucideSearch, lucideCheckCircle2, lucideXCircle, lucideCloudDownload, lucideZap, lucideFileText, lucideInbox, lucideTag, lucideDollarSign, lucideHash, lucideBarcode, lucideClock, lucidePackage })
+    provideIcons({ lucidePlus, lucideSave, lucidePencil, lucideTrash2, lucideDownload, lucideHistory, lucidePlusCircle, lucideRefreshCw, lucideTrash, lucideGlobe, lucideSearch, lucideCheckCircle2, lucideXCircle, lucideCloudDownload, lucideFileText, lucideInbox, lucideTag, lucideDollarSign, lucideChevronDown, lucideHash, lucideBarcode, lucideClock, lucidePackage })
   ],
   template: `
     <div class="products-page">
@@ -63,11 +63,11 @@ import { QueryNodeComponent } from '../../../../core/components/query-node/query
         [activeTab]="activeTab()"
         ctaText="Nuevo Producto"
         ctaIcon="lucidePlus"
-        secondaryCtaText="Creación Rápida"
-        secondaryCtaIcon="lucideZap"
+        secondaryCtaText="Importar"
+        secondaryCtaIcon="lucideDownload"
         (tabChange)="onTabChange($event)"
         (ctaClick)="onFullAddProduct()"
-        (secondaryCtaClick)="onQuickAddProduct()"
+        (secondaryCtaClick)="importModal.open()"
       ></app-page-header>
 
       <app-list-toolbar
@@ -249,54 +249,6 @@ import { QueryNodeComponent } from '../../../../core/components/query-node/query
         }
       </div>
 
-      <!-- Drawer Rápido (Quick Add) -->
-      <app-drawer 
-        [isOpen]="isQuickAddOpen()" 
-        title="Creación Rápida"
-        [allowClose]="!quickForm.isSubmitting()"
-        (close)="onQuickAddCloseAttempt()"
-        size="md">
-        <div drawerBody>
-           <app-product-quick-form #quickForm (success)="onQuickAddSuccess()" (cancelled)="onQuickAddCloseAttempt()"></app-product-quick-form>
-        </div>
-        <div drawerFooter class="drawer-footer-actions">
-           <app-form-button 
-             label="Cancelar" 
-             variant="secondary" 
-             [disabled]="quickForm.isSubmitting()"
-             (click)="onQuickAddCloseAttempt()">
-           </app-form-button>
-           <app-form-button 
-             label="Guardar Producto" 
-             loadingLabel="Guardando..."
-             icon="lucideSave" 
-             [loading]="quickForm.isSubmitting()"
-             [disabled]="quickForm.quickForm.invalid || quickForm.isSubmitting()"
-             (click)="quickForm.onSubmit()">
-           </app-form-button>
-        </div>
-      </app-drawer>
-
-      <!-- Modal de Confirmación de Salida (Quick Add) -->
-      <app-modal 
-        [isOpen]="isQuickAddUnsavedModalOpen()" 
-        [title]="'Cambios sin guardar'"
-        (close)="isQuickAddUnsavedModalOpen.set(false)">
-        
-        <div modalBody>
-          Tienes cambios en el formulario que no has guardado. ¿Estás seguro de que quieres salir? Se perderán todos los datos ingresados.
-        </div>
-
-        <div modalFooter class="modal-footer-actions">
-          <button type="button" class="btn btn-ghost" (click)="isQuickAddUnsavedModalOpen.set(false)">
-            Continuar Editando
-          </button>
-          <button type="button" class="btn btn-danger" (click)="confirmDiscardQuickAdd()">
-            Salir sin Guardar
-          </button>
-        </div>
-      </app-modal>
-
       <!-- Drawer de Historial -->
       <app-drawer 
         [isOpen]="isHistoryOpen()" 
@@ -350,6 +302,11 @@ import { QueryNodeComponent } from '../../../../core/components/query-node/query
         [currentPage]="currentPage()"
         (pageChange)="currentPage.set($event)"
       ></app-pagination>
+
+      <app-product-import-modal
+        #importModal
+        (imported)="refreshTrigger.update(v => v + 1)"
+      ></app-product-import-modal>
     </div>
   `,
   styleUrl: './products-list.component.scss'
@@ -375,9 +332,7 @@ export class ProductsListComponent {
   isDeleting = signal(false);
   productToDelete = signal<any | null>(null);
   
-  isQuickAddOpen = signal(false);
-  isQuickAddUnsavedModalOpen = signal(false);
-  @ViewChild('quickForm') quickFormComponent!: ProductQuickFormComponent;
+  @ViewChild('importModal') importModal!: ProductImportModalComponent;
 
   isHistoryOpen = signal(false);
   isHistoryLoading = signal(false);
@@ -401,7 +356,12 @@ export class ProductsListComponent {
     { id: 'variants.sku', label: 'SKU / Código', type: 'text' },
     { id: 'category.name', label: 'Categoría', type: 'text' },
     { id: 'brand.name', label: 'Marca', type: 'text' },
-    { id: 'variants.barcode', label: 'Código de Barras (EAN)', type: 'text' }
+    { id: 'variants.barcode', label: 'Código de Barras (EAN)', type: 'text' },
+    { id: 'type', label: 'Tipo de Producto', type: 'select', options: [
+      { label: 'Físico', value: 'PHYSICAL' },
+      { label: 'Servicio', value: 'SERVICE' }
+    ]},
+    { id: 'variants.salePrice', label: 'Precio de Venta', type: 'number' }
   ];
 
   activeFiltersCount = computed(() => {
@@ -410,6 +370,8 @@ export class ProductsListComponent {
         return node.children.reduce((acc, child) => acc + countLeaves(child), 0);
       } else {
         const rule = node as FilterRule;
+        const noValueOps: string[] = ['blank', 'notBlank'];
+        if (noValueOps.includes(rule.operator)) return 1;
         return rule.value && String(rule.value).trim() !== '' ? 1 : 0;
       }
     };
@@ -546,29 +508,6 @@ export class ProductsListComponent {
   onFullAddProduct() {
       this.router.navigate(['/inventario/productos/nuevo']);
   }
-
-  onQuickAddProduct() {
-      this.isQuickAddOpen.set(true);
-  }
-
-  onQuickAddCloseAttempt() {
-    if (this.quickFormComponent?.quickForm?.dirty) {
-      this.isQuickAddUnsavedModalOpen.set(true);
-    } else {
-      this.isQuickAddOpen.set(false);
-      if (this.quickFormComponent) {
-         this.quickFormComponent.quickForm.reset({ salePrice: 0 });
-      }
-    }
-  }
-
-  confirmDiscardQuickAdd() {
-    this.isQuickAddUnsavedModalOpen.set(false);
-    this.isQuickAddOpen.set(false);
-    if (this.quickFormComponent) {
-       this.quickFormComponent.quickForm.reset({ salePrice: 0 });
-    }
-  }
   
   onShowDetail(product: any) {
     this.router.navigate(['/inventario/productos', product.id]);
@@ -594,11 +533,6 @@ export class ProductsListComponent {
         this.productToDelete.set(product); 
         this.isDeleteModalOpen.set(true); 
     }
-  }
-
-  onQuickAddSuccess() {
-      this.isQuickAddOpen.set(false);
-      this.refreshTrigger.update(v => v + 1);
   }
 
   confirmDelete() {

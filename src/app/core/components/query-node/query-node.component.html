@@ -91,8 +91,25 @@
         }
     </div>
 
-    <input class="qb-input" [ngModel]="ruleNode.value" (ngModelChange)="onValueChange($event)"
-        [placeholder]="'Escribe un valor...'">
+    @if (showValueInput) {
+        @if (currentField?.type === 'select' && currentFieldOptions.length > 0) {
+            <select class="qb-input qb-select" [ngModel]="ruleNode.value" (ngModelChange)="onSelectValueChange($event)">
+                <option value="" disabled>Seleccionar...</option>
+                @for (opt of currentFieldOptions; track opt.value) {
+                    <option [value]="opt.value">{{ opt.label }}</option>
+                }
+            </select>
+        } @else if (ruleNode.operator === 'inRange') {
+            <input class="qb-input qb-input--half" [ngModel]="ruleNode.value" (ngModelChange)="onValueChange($event)"
+                placeholder="Desde" type="number">
+            <input class="qb-input qb-input--half" [ngModel]="ruleNode.valueTo" (ngModelChange)="onValueToChange($event)"
+                placeholder="Hasta" type="number">
+        } @else {
+            <input class="qb-input" [ngModel]="ruleNode.value" (ngModelChange)="onValueChange($event)"
+                [placeholder]="'Escribe un valor...'"
+                [type]="currentField?.type === 'number' ? 'number' : 'text'">
+        }
+    }
 
     <button class="qb-btn qb-btn--icon" (click)="removeNode.emit(node.id)">
         <app-icon name="lucideX"></app-icon>

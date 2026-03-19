@@ -361,6 +361,19 @@
                         <small>Controla fechas de vencimiento y alertas</small>
                       </div>
                     </label>
+
+                    <div class="tracking-limits" [formGroup]="simpleVariant">
+                      <div class="tracking-field">
+                        <label>Stock mínimo <span class="tracking-optional">Opcional</span></label>
+                        <input type="number" formControlName="minimumStock" min="0" placeholder="Ej: 5">
+                        <small>Alerta cuando el stock baje de este valor</small>
+                      </div>
+                      <div class="tracking-field">
+                        <label>Stock máximo <span class="tracking-optional">Opcional</span></label>
+                        <input type="number" formControlName="maximumStock" min="0" placeholder="Ej: 100">
+                        <small>Techo para reorden automático</small>
+                      </div>
+                    </div>
                   </div>
                 }
               </div>

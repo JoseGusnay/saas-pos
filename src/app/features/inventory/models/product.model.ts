@@ -57,6 +57,8 @@ export interface ProductVariant {
   trackLots: boolean;
   trackExpiry: boolean;
   durationMinutes?: number | null;
+  minimumStock?: number | null;
+  maximumStock?: number | null;
   imageUrl?: string | null;
   imagePublicId?: string | null;
   isActive: boolean;
@@ -95,6 +97,8 @@ export interface CreateVariantPayload {
   trackLots?: boolean;
   trackExpiry?: boolean;
   durationMinutes?: number;
+  minimumStock?: number | null;
+  maximumStock?: number | null;
   imageUrl?: string;
   imagePublicId?: string;
   taxIds?: string[];

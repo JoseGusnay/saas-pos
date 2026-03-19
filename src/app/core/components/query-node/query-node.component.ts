@@ -53,6 +53,28 @@ export class QueryNodeComponent {
         }
     }
 
+    get currentField(): FilterField | undefined {
+        if (this.isGroup) return undefined;
+        return this.availableFields.find(f => f.id === this.ruleNode.field);
+    }
+
+    get currentFieldOptions(): { label: string; value: string }[] {
+        return this.currentField?.options ?? [];
+    }
+
+    get showValueInput(): boolean {
+        return this.ruleNode.operator !== 'blank' && this.ruleNode.operator !== 'notBlank';
+    }
+
+    private getDefaultOperator(field: FilterField): FilterOperator {
+        switch (field.type) {
+            case 'number': return 'equals';
+            case 'select':
+            case 'status': return 'equals';
+            default: return 'contains';
+        }
+    }
+
     // Detects the coordinate system for position: fixed elements relative to any containing block
     getFixedContext(trigger: HTMLElement) {
         const dummy = document.createElement('div');
@@ -130,11 +152,12 @@ export class QueryNodeComponent {
     addRule() {
         if (this.isGroup && this.availableFields.length > 0) {
             const g = this.groupNode;
+            const firstField = this.availableFields[0];
             const newRule: FilterRule = {
                 type: 'rule',
                 id: crypto.randomUUID(),
-                field: this.availableFields[0].id,
-                operator: 'contains',
+                field: firstField.id,
+                operator: this.getDefaultOperator(firstField),
                 value: ''
             };
             this.nodeChange.emit({ ...g, children: [...g.children, newRule] });
@@ -144,6 +167,7 @@ export class QueryNodeComponent {
     addGroup() {
         if (this.isGroup && this.availableFields.length > 0) {
             const g = this.groupNode;
+            const firstField = this.availableFields[0];
             const newGroup: FilterGroup = {
                 type: 'group',
                 id: crypto.randomUUID(),
@@ -151,8 +175,8 @@ export class QueryNodeComponent {
                 children: [{
                     type: 'rule',
                     id: crypto.randomUUID(),
-                    field: this.availableFields[0].id,
-                    operator: 'contains',
+                    field: firstField.id,
+                    operator: this.getDefaultOperator(firstField),
                     value: ''
                 }]
             };
@@ -178,8 +202,9 @@ export class QueryNodeComponent {
 
     onFieldSelect(newFieldId: string) {
         if (!this.isGroup) {
-            const defaultOp = newFieldId === 'revenue' ? 'greaterThan' : 'contains';
-            this.nodeChange.emit({ ...this.ruleNode, field: newFieldId, operator: defaultOp });
+            const field = this.availableFields.find(f => f.id === newFieldId);
+            const defaultOp = field ? this.getDefaultOperator(field) : 'contains';
+            this.nodeChange.emit({ ...this.ruleNode, field: newFieldId, operator: defaultOp, value: '', valueTo: undefined });
             this.isFieldDropdownOpen.set(false);
             this.dropdownPosition.set(null);
         }
@@ -198,6 +223,18 @@ export class QueryNodeComponent {
     onValueChange(newValue: string) {
         if (!this.isGroup) {
             this.nodeChange.emit({ ...this.ruleNode, value: newValue });
+        }
+    }
+
+    onValueToChange(newValue: string) {
+        if (!this.isGroup) {
+            this.nodeChange.emit({ ...this.ruleNode, valueTo: newValue });
+        }
+    }
+
+    onSelectValueChange(value: string) {
+        if (!this.isGroup) {
+            this.nodeChange.emit({ ...this.ruleNode, value });
         }
     }
 

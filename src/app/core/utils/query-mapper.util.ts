@@ -17,7 +17,10 @@ export class QueryMapper {
                 const condition: AgGridFilterCondition = {
                     filterType,
                     type: child.operator,
-                    filter: filterType === 'number' ? Number(child.value) : child.value
+                    filter: filterType === 'number' ? Number(child.value) : child.value,
+                    ...(child.operator === 'inRange' && child.valueTo !== undefined
+                        ? { filterTo: Number(child.valueTo) }
+                        : {})
                 };
 
                 // Si ya existe el campo en el modelo, lo convertimos a multi-condición
@@ -46,8 +49,10 @@ export class QueryMapper {
     }
 
     private static getFilterType(field: string): 'text' | 'number' | 'date' | 'set' {
-        if (field === 'revenue' || field === 'limit') return 'number';
-        if (field === 'isActive' || field === 'isMain') return 'set';
+        const numberFields = ['revenue', 'limit', 'variants.salePrice', 'variants.costPrice', 'salePrice', 'costPrice'];
+        const setFields = ['isActive', 'isMain', 'type'];
+        if (numberFields.includes(field)) return 'number';
+        if (setFields.includes(field)) return 'set';
         return 'text';
     }
 }

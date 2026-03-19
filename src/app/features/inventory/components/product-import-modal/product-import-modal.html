@@ -1,0 +1,185 @@
+<app-modal
+  [isOpen]="isOpen()"
+  [title]="'Importación Masiva de Productos'"
+  [allowClose]="!isProcessing()"
+  (close)="close()">
+
+  <div modalBody class="import-wizard">
+
+    <!-- STEP 1: Selección de Archivo -->
+    @if (step() === 1) {
+      <div class="import-step">
+        <div class="import-instructions">
+          <p>Sigue estos pasos para importar tu catálogo:</p>
+          <ol>
+            <li>Descarga la plantilla CSV con ejemplos incluidos.</li>
+            <li>Para productos con múltiples variantes (tallas, colores, etc.) repite el nombre del producto en varias filas — cada fila agrega una variante.</li>
+            <li>Las categorías deben coincidir exactamente con las del sistema.</li>
+            <li>Sube el archivo para validar y previsualizar los datos.</li>
+          </ol>
+        </div>
+
+        <div class="import-actions-base">
+          <button type="button" class="btn btn-ghost" (click)="downloadTemplate()">
+            <ng-icon name="lucideDownload"></ng-icon>
+            Descargar Plantilla CSV
+          </button>
+        </div>
+
+        <div class="import-dropzone" (click)="fileInput.click()">
+          <input
+            #fileInput
+            type="file"
+            accept=".csv"
+            style="display: none"
+            (change)="onFileSelected($event)">
+
+          <div class="dropzone-content">
+            @if (isProcessing()) {
+              <app-spinner></app-spinner>
+              <div class="dropzone-text">Procesando archivo...</div>
+            } @else {
+              <div class="dropzone-icon">
+                <ng-icon name="lucideUploadCloud"></ng-icon>
+              </div>
+              <div class="dropzone-text">
+                <strong>Haz clic para subir</strong> o arrastra un archivo CSV
+              </div>
+              <div class="dropzone-subtext">Solo archivos .csv (Máx. 5MB)</div>
+            }
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- STEP 2: Previsualización agrupada -->
+    @if (step() === 2) {
+      <div class="import-step import-preview">
+        <div class="preview-header">
+          <div class="preview-stats">
+            <span class="badge badge-primary">{{ products().length }} productos</span>
+            <span class="badge badge-primary">{{ totalVariants }} variantes</span>
+            @if (hasErrors()) {
+              <span class="badge badge-danger">Existen errores de validación</span>
+            } @else {
+              <span class="badge badge-success">Todo listo para importar</span>
+            }
+          </div>
+          <p class="preview-info">
+            Revisa los datos antes de confirmar. Haz clic en una fila para ver sus variantes. Los grupos con errores aparecen expandidos automáticamente.
+          </p>
+        </div>
+
+        <div class="table-container">
+          <table class="import-table">
+            <thead>
+              <tr>
+                <th class="col-toggle"></th>
+                <th>Producto</th>
+                <th>Categoría</th>
+                <th>Tipo</th>
+                <th>Variantes</th>
+                <th>Estado</th>
+                <th>Errores</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (product of products(); track product.name; let i = $index) {
+                <!-- Fila del producto -->
+                <tr class="product-row"
+                    [class.row-error]="product.errors.length > 0"
+                    (click)="toggleExpanded(i)">
+                  <td class="col-toggle">
+                    <ng-icon [name]="product.expanded ? 'lucideChevronDown' : 'lucideChevronRight'" class="toggle-icon"></ng-icon>
+                  </td>
+                  <td class="product-name-cell">{{ product.name }}</td>
+                  <td>{{ product.categoryName }}</td>
+                  <td>
+                    <span class="type-badge" [class.type-service]="product.type === 'SERVICE'">
+                      {{ product.type === 'SERVICE' ? 'Servicio' : 'Físico' }}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="variant-count">{{ product.variants.length }} variante{{ product.variants.length !== 1 ? 's' : '' }}</span>
+                  </td>
+                  <td>
+                    <span [class]="product.isActive ? 'text-success' : 'text-muted'">
+                      {{ product.isActive ? 'Activo' : 'Inactivo' }}
+                    </span>
+                  </td>
+                  <td>
+                    @if (product.errors.length > 0) {
+                      <ul class="error-list">
+                        @for (err of product.errors; track err) {
+                          <li>{{ err }}</li>
+                        }
+                      </ul>
+                    } @else {
+                      <span class="text-success"><ng-icon name="lucideCheck"></ng-icon></span>
+                    }
+                  </td>
+                </tr>
+
+                <!-- Filas de variantes (colapsables) -->
+                @if (product.expanded) {
+                  @for (variant of product.variants; track $index; let vi = $index) {
+                    <tr class="variant-row" [class.row-error]="variant.errors.length > 0">
+                      <td></td>
+                      <td class="variant-name-cell">
+                        <span class="variant-label">{{ variant.variantName || ('Variante ' + (vi + 1)) }}</span>
+                      </td>
+                      <td colspan="2">
+                        <span class="variant-meta">
+                          @if (variant.sku) { <span class="meta-tag">SKU: {{ variant.sku }}</span> }
+                          @if (variant.barcode) { <span class="meta-tag">EAN: {{ variant.barcode }}</span> }
+                        </span>
+                      </td>
+                      <td>{{ variant.salePrice | currency }}</td>
+                      <td></td>
+                      <td>
+                        @if (variant.errors.length > 0) {
+                          <ul class="error-list">
+                            @for (err of variant.errors; track err) {
+                              <li>{{ err }}</li>
+                            }
+                          </ul>
+                        } @else {
+                          <span class="text-success"><ng-icon name="lucideCheck"></ng-icon></span>
+                        }
+                      </td>
+                    </tr>
+                  }
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+
+  </div>
+
+  <div modalFooter class="modal-footer-actions">
+    @if (step() === 1) {
+      <button type="button" class="btn btn-ghost" [disabled]="isProcessing()" (click)="close()">
+        Cerrar
+      </button>
+    }
+
+    @if (step() === 2) {
+      <div class="footer-step-2">
+        <button type="button" class="btn btn-ghost" [disabled]="isProcessing()" (click)="step.set(1)">
+          Volver a Subir
+        </button>
+        <button type="button"
+                class="btn btn-primary"
+                [disabled]="isProcessing() || hasErrors()"
+                (click)="confirmImport()">
+          <app-spinner *ngIf="isProcessing()"></app-spinner>
+          <span>{{ isProcessing() ? 'Procesando...' : 'Confirmar e Importar Todo' }}</span>
+        </button>
+      </div>
+    }
+  </div>
+
+</app-modal>

@@ -224,6 +224,21 @@ import { map } from 'rxjs';
                     <small>Controla fechas de vencimiento y alertas de expiración</small>
                   </div>
                 </label>
+
+                @if (form.get('stockTrackable')?.value) {
+                  <div class="stock-limits">
+                    <div class="field">
+                      <label>Stock mínimo <span class="optional">Opcional</span></label>
+                      <input type="number" formControlName="minimumStock" min="0" placeholder="Ej: 5">
+                      <small class="field-hint">Alerta cuando el stock baje de este valor</small>
+                    </div>
+                    <div class="field">
+                      <label>Stock máximo <span class="optional">Opcional</span></label>
+                      <input type="number" formControlName="maximumStock" min="0" placeholder="Ej: 100">
+                      <small class="field-hint">Techo para reorden automático</small>
+                    </div>
+                  </div>
+                }
               </div>
             </div>
           }
@@ -439,6 +454,9 @@ import { map } from 'rxjs';
     }
 
     .unit-hint { font-weight: 400; text-transform: none; }
+    .optional { font-weight: 400; text-transform: none; color: var(--color-text-muted); font-size: 10px; }
+    .field-hint { font-size: 11px; color: var(--color-text-muted); }
+    .stock-limits { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
     .required-dot { color: var(--color-danger-text); }
 
     .color-field {

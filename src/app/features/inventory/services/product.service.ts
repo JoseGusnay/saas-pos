@@ -58,8 +58,15 @@ export class ProductService {
     return this.http.post<Product>(`${this.apiUrl}/${id}/image`, formData);
   }
 
-  bulkImport(data: any[]): Observable<{ count: number }> {
-    return this.http.post<{ count: number }>(`${this.apiUrl}/bulk`, data);
+  bulkImport(data: {
+    name: string;
+    categoryName: string;
+    type: string;
+    description?: string;
+    isActive: boolean;
+    variants: { sku?: string; barcode?: string; variantName?: string; costPrice: number; salePrice: number }[];
+  }[]): Observable<{ count: number }> {
+    return this.http.post<any>(`${this.apiUrl}/bulk`, data).pipe(map(res => res.data ?? res));
   }
 
   getLogs(id: string): Observable<any[]> {

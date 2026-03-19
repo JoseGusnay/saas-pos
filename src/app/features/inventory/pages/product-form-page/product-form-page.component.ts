@@ -232,6 +232,8 @@ export class ProductFormPageComponent implements OnInit, OnDestroy {
         trackLots: v.trackLots ?? false,
         trackExpiry: v.trackExpiry ?? false,
         durationMinutes: v.durationMinutes ?? null,
+        minimumStock: v.minimumStock ?? null,
+        maximumStock: v.maximumStock ?? null,
       });
     }
   }
@@ -259,6 +261,8 @@ export class ProductFormPageComponent implements OnInit, OnDestroy {
         trackLots: [false],
         trackExpiry: [false],
         durationMinutes: [null],
+        minimumStock: [null],
+        maximumStock: [null],
         isDefault: [true],
         attributes: this.fb.group({})
       })
@@ -363,6 +367,8 @@ export class ProductFormPageComponent implements OnInit, OnDestroy {
       trackLots: [existingVariant?.trackLots ?? false],
       trackExpiry: [existingVariant?.trackExpiry ?? false],
       durationMinutes: [existingVariant?.durationMinutes ?? null],
+      minimumStock: [existingVariant?.minimumStock ?? null],
+      maximumStock: [existingVariant?.maximumStock ?? null],
       taxIds: [existingVariant?.variantTaxes?.map((vt: any) => vt.taxId) ?? []],
       imageUrl: [existingVariant?.imageUrl ?? null],
       imagePublicId: [existingVariant?.imagePublicId ?? null],
@@ -668,6 +674,8 @@ export class ProductFormPageComponent implements OnInit, OnDestroy {
       trackLots: sv.trackLots ?? false,
       trackExpiry: sv.trackExpiry ?? false,
       durationMinutes: type === 'SERVICE' && sv.durationMinutes ? Number(sv.durationMinutes) : undefined,
+      minimumStock: (type !== 'SERVICE' && sv.minimumStock != null) ? Number(sv.minimumStock) : null,
+      maximumStock: (type !== 'SERVICE' && sv.maximumStock != null) ? Number(sv.maximumStock) : null,
       unitsPerPack: type !== 'SERVICE' ? 1 : undefined,
       attributeValues: attributeValues.length ? attributeValues : undefined,
     };
@@ -689,6 +697,8 @@ export class ProductFormPageComponent implements OnInit, OnDestroy {
       trackLots: v.trackLots ?? false,
       trackExpiry: v.trackExpiry ?? false,
       durationMinutes: (!v.stockTrackable && v.durationMinutes) ? Number(v.durationMinutes) : undefined,
+      minimumStock: (v.stockTrackable && v.minimumStock != null) ? Number(v.minimumStock) : null,
+      maximumStock: (v.stockTrackable && v.maximumStock != null) ? Number(v.maximumStock) : null,
       imageUrl: v.imageUrl || undefined,
       imagePublicId: v.imagePublicId || undefined,
       attributeValues: attributeValues.length ? attributeValues : undefined,
