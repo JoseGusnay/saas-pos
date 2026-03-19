@@ -242,7 +242,7 @@ type ConfigState = 'idle' | 'loading' | 'configured' | 'configuring';
       &.selected {
         background: var(--color-accent-primary);
         border-color: var(--color-accent-primary);
-        color: #fff;
+        color: var(--color-bg-canvas);
       }
     }
 
@@ -309,7 +309,7 @@ type ConfigState = 'idle' | 'loading' | 'configured' | 'configuring';
         &.checked {
           background: var(--color-accent-primary);
           border-color: var(--color-accent-primary);
-          color: #fff;
+          color: var(--color-bg-canvas);
         }
       }
 
@@ -358,7 +358,7 @@ type ConfigState = 'idle' | 'loading' | 'configured' | 'configuring';
       padding: 0.5rem 1.25rem;
       font-size: var(--font-size-sm);
       font-weight: 600;
-      color: #fff;
+      color: var(--color-bg-canvas);
       cursor: pointer;
       transition: opacity 0.15s;
       &:disabled { opacity: 0.5; cursor: not-allowed; }

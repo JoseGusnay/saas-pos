@@ -1,16 +1,16 @@
-import { 
-  Component, 
-  Input, 
-  Output, 
-  EventEmitter, 
-  signal, 
-  computed, 
-  effect, 
-  inject, 
-  ElementRef, 
-  HostListener, 
-  ViewChild, 
-  AfterViewInit, 
+import {
+  Component,
+  Input,
+  Output,
+  EventEmitter,
+  signal,
+  computed,
+  effect,
+  inject,
+  ElementRef,
+  HostListener,
+  ViewChild,
+  AfterViewInit,
   forwardRef,
   OnDestroy
 } from '@angular/core';
@@ -277,8 +277,10 @@ export class SearchSelectComponent implements AfterViewInit, ControlValueAccesso
   @Input() multiple = false;
   @Input() searchFn?: (query: string, page: number) => Observable<{ data: SearchSelectOption[], hasMore: boolean }>;
 
+  @Output() selectionChange = new EventEmitter<SearchSelectOption | null>();
+
   @ViewChild('searchInput') searchInputElement?: ElementRef<HTMLInputElement>;
-  
+
   private _initialOption = signal<SearchSelectOption | undefined>(undefined);
   @Input() set initialOption(val: SearchSelectOption | undefined) {
     this._initialOption.set(val);
@@ -418,6 +420,7 @@ export class SearchSelectComponent implements AfterViewInit, ControlValueAccesso
       this.value.set(option.value);
       this.selectedOptionsMap.update(m => { m.set(option.value, option); return new Map(m); });
       this.onChange(option.value);
+      this.selectionChange.emit(option);
       this.close();
     }
   }
@@ -434,6 +437,7 @@ export class SearchSelectComponent implements AfterViewInit, ControlValueAccesso
     this.value.set(clearVal);
     this.selectedOptionsMap.set(new Map());
     this.onChange(clearVal);
+    this.selectionChange.emit(null);
   }
 
   onSearchInput(event: any) { this.searchSubject.next(event.target.value); }

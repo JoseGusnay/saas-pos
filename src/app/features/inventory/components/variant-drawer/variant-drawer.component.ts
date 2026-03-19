@@ -8,11 +8,12 @@ import {
   lucideInfo, lucideCheck, lucideLayers, lucideAlertCircle,
   lucideBoxes, lucideBox, lucideChevronDown,
   lucideBarcode, lucideWrench, lucideTag, lucideZap, lucideClock,
-  lucideSliders
+  lucideSliders, lucideImage
 } from '@ng-icons/lucide';
 import { SearchSelectComponent } from '../../../../shared/components/ui/search-select/search-select';
 import { SearchSelectOption } from '../../../../shared/models/search-select.models';
 import { FormButtonComponent } from '../../../../shared/components/ui/form-button/form-button';
+import { BarcodeFieldComponent } from '../../../../shared/components/ui/barcode-field/barcode-field.component';
 import { PresentationService } from '../../../../core/services/presentation.service';
 import { TaxService } from '../../../../core/services/tax.service';
 import { CategoryAttributeType } from '../../models/product.model';
@@ -21,14 +22,14 @@ import { map } from 'rxjs';
 @Component({
   selector: 'app-variant-drawer',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, NgIconComponent, SearchSelectComponent, FormButtonComponent],
+  imports: [CommonModule, ReactiveFormsModule, NgIconComponent, SearchSelectComponent, FormButtonComponent, BarcodeFieldComponent],
   providers: [
     provideIcons({
       lucideX, lucidePackage, lucideHash, lucideDollarSign,
       lucideInfo, lucideCheck, lucideLayers, lucideAlertCircle,
       lucideBoxes, lucideBox, lucideChevronDown,
       lucideBarcode, lucideWrench, lucideTag, lucideZap, lucideClock,
-      lucideSliders
+      lucideSliders, lucideImage
     })
   ],
   template: `
@@ -70,17 +71,18 @@ import { map } from 'rxjs';
                 <label>SKU Interno</label>
                 <div class="input-icon-wrap">
                   <ng-icon name="lucideHash" class="ic"></ng-icon>
-                  <input type="text" formControlName="sku" placeholder="Cód. Referencia">
+                  <input type="text" formControlName="sku" placeholder="Ej: CAM-ROJO-XL, BEB-001">
                 </div>
               </div>
 
               @if (!isService) {
                 <div class="field">
                   <label>Código de Barras</label>
-                  <div class="input-icon-wrap">
-                    <ng-icon name="lucideBarcode" class="ic"></ng-icon>
-                    <input type="text" formControlName="barcode" placeholder="EAN-13 / UPC">
-                  </div>
+                  <app-barcode-field
+                    formControlName="barcode"
+                    [productName]="form.get('name')?.value"
+                    [salePrice]="form.get('salePrice')?.value">
+                  </app-barcode-field>
                 </div>
 
                 <div class="field">
@@ -104,13 +106,42 @@ import { map } from 'rxjs';
 
               @if (isService) {
                 <div class="field">
-                  <label>Duración (minutos)</label>
-                  <div class="input-icon-wrap">
-                    <ng-icon name="lucideClock" class="ic"></ng-icon>
-                    <input type="number" formControlName="durationMinutes" min="1" placeholder="Ej: 30">
+                  <label>Duración</label>
+                  <div class="duration-picker">
+                    <div class="duration-presets">
+                      @for (preset of durationPresets; track preset) {
+                        <button type="button" class="duration-chip"
+                          [class.selected]="form.get('durationMinutes')?.value === preset"
+                          (click)="form.get('durationMinutes')?.setValue(preset)">
+                          {{ durationLabel(preset) }}
+                        </button>
+                      }
+                    </div>
+                    <div class="duration-custom">
+                      <ng-icon name="lucideClock"></ng-icon>
+                      <input type="number" formControlName="durationMinutes" min="1" placeholder="Otro (min)">
+                    </div>
                   </div>
                 </div>
               }
+
+              <!-- Imagen de variante -->
+              <div class="field">
+                <label>Imagen <span class="optional">Opcional — sobreescribe la del producto</span></label>
+                <label class="variant-image-drop" for="variant-img-{{index}}">
+                  @if (imagePreview()) {
+                    <img [src]="imagePreview()" alt="Preview" class="variant-img-preview">
+                    <span class="variant-img-overlay">Cambiar</span>
+                  } @else {
+                    <div class="variant-img-placeholder">
+                      <ng-icon name="lucideImage"></ng-icon>
+                      <span>Subir imagen</span>
+                    </div>
+                  }
+                </label>
+                <input [id]="'variant-img-' + index" type="file" accept="image/*" hidden
+                  (change)="onImageSelected($event)">
+              </div>
             </div>
           </div>
 
@@ -164,6 +195,35 @@ import { map } from 'rxjs';
                     }
                   </div>
                 }
+              </div>
+            </div>
+          }
+
+          <!-- Section: Tracking -->
+          @if (!isService) {
+            <div class="section-card">
+              <div class="section-kicker"><ng-icon name="lucideBoxes"></ng-icon> Trazabilidad</div>
+              <div class="form-stack">
+                <label class="toggle-row">
+                  <div class="toggle-switch-sm" [class.on]="form.get('trackLots')?.value"
+                    (click)="form.get('trackLots')?.setValue(!form.get('trackLots')?.value)">
+                    <span class="toggle-thumb-sm"></span>
+                  </div>
+                  <div>
+                    <span class="toggle-label">Manejo de lotes</span>
+                    <small>Permite identificar cada entrada de mercancía por lote</small>
+                  </div>
+                </label>
+                <label class="toggle-row">
+                  <div class="toggle-switch-sm" [class.on]="form.get('trackExpiry')?.value"
+                    (click)="form.get('trackExpiry')?.setValue(!form.get('trackExpiry')?.value)">
+                    <span class="toggle-thumb-sm"></span>
+                  </div>
+                  <div>
+                    <span class="toggle-label">Manejo de caducidad</span>
+                    <small>Controla fechas de vencimiento y alertas de expiración</small>
+                  </div>
+                </label>
               </div>
             </div>
           }
@@ -250,7 +310,7 @@ import { map } from 'rxjs';
 
     .drawer-content {
       width: 100%;
-      max-width: 460px;
+      max-width: 560px;
       height: 100%;
       background: var(--color-bg-surface);
       display: flex;
@@ -391,13 +451,100 @@ import { map } from 'rxjs';
 
     .toggle-row {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
+      gap: 0.75rem;
+      cursor: pointer;
+      .toggle-label {
+        font-size: var(--font-size-sm);
+        font-weight: 500;
+        color: var(--color-text-main);
+        display: block;
+      }
+      small {
+        font-size: 11px;
+        color: var(--color-text-muted);
+        margin-top: 2px;
+        display: block;
+      }
+      input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; }
+    }
+
+    .duration-picker {
+      display: flex;
+      flex-direction: column;
+      gap: 0.625rem;
+    }
+
+    .duration-presets {
+      display: flex;
+      flex-wrap: wrap;
       gap: 0.5rem;
+    }
+
+    .duration-chip {
+      padding: 0.375rem 0.875rem;
+      border-radius: 999px;
+      border: 1px solid var(--color-border-light);
+      background: var(--color-bg-surface);
       font-size: var(--font-size-sm);
       font-weight: 500;
-      color: var(--color-text-main);
+      color: var(--color-text-muted);
       cursor: pointer;
-      input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; }
+      transition: all 0.15s;
+      &:hover { border-color: var(--color-accent-primary); color: var(--color-accent-primary); }
+      &.selected {
+        background: var(--color-accent-primary);
+        border-color: var(--color-accent-primary);
+        color: var(--color-bg-canvas);
+      }
+    }
+
+    .duration-custom {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0 0.75rem;
+      border: 1px solid var(--color-border-light);
+      border-radius: var(--radius-md);
+      background: var(--color-bg-canvas);
+      color: var(--color-text-muted);
+      font-size: 0.875rem;
+      input {
+        flex: 1;
+        border: none;
+        background: transparent;
+        padding: 0.5rem 0;
+        font-size: var(--font-size-sm);
+        color: var(--color-text-main);
+        outline: none;
+        &::placeholder { color: var(--color-text-muted); }
+        &::-webkit-outer-spin-button,
+        &::-webkit-inner-spin-button { -webkit-appearance: none; }
+      }
+    }
+
+    .toggle-switch-sm {
+      min-width: 32px;
+      height: 18px;
+      border-radius: 999px;
+      background: var(--color-border-light);
+      position: relative;
+      cursor: pointer;
+      transition: background 0.2s;
+      margin-top: 2px;
+      &.on { background: var(--color-accent-primary); }
+    }
+
+    .toggle-thumb-sm {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--color-bg-surface);
+      transition: transform 0.2s;
+      .toggle-switch-sm.on & { transform: translateX(14px); }
     }
 
     .pricing-split {
@@ -447,6 +594,54 @@ import { map } from 'rxjs';
       gap: 1rem;
       app-form-button { flex: 1; }
     }
+
+    .variant-image-drop {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100px;
+      border: 1.5px dashed var(--color-border-subtle);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      overflow: hidden;
+      position: relative;
+      transition: border-color 0.2s;
+
+      &:hover { border-color: var(--color-accent-primary); }
+
+      .variant-img-placeholder {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        color: var(--color-text-muted);
+        font-size: 12px;
+        ng-icon { font-size: 20px; }
+      }
+
+      .variant-img-preview {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .variant-img-overlay {
+        position: absolute;
+        inset: 0;
+        background: rgba(0,0,0,0.45);
+        color: #fff;
+        font-size: 12px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.2s;
+      }
+
+      &:hover .variant-img-overlay { opacity: 1; }
+    }
   `]
 })
 export class VariantDrawerComponent implements OnInit, OnDestroy {
@@ -461,9 +656,19 @@ export class VariantDrawerComponent implements OnInit, OnDestroy {
   private presentationService = inject(PresentationService);
   private taxService = inject(TaxService);
 
+  readonly durationPresets = [15, 30, 45, 60, 90, 120];
+
+  durationLabel(minutes: number): string {
+    if (minutes < 60) return `${minutes} min`;
+    const h = Math.floor(minutes / 60);
+    const m = minutes % 60;
+    return m > 0 ? `${h}h ${m}min` : `${h}h`;
+  }
+
   initialPresentationOption = signal<SearchSelectOption | undefined>(undefined);
   initialTaxOptions = signal<SearchSelectOption[]>([]);
   margin = signal<number | null>(null);
+  imagePreview = signal<string | null>(null);
 
   private priceSub?: Subscription;
 
@@ -471,6 +676,8 @@ export class VariantDrawerComponent implements OnInit, OnDestroy {
     this.loadInitialOptions();
     this.updateMargin();
     this.priceSub = this.form.valueChanges.subscribe(() => this.updateMargin());
+    const existingImage = this.form.get('imageUrl')?.value;
+    if (existingImage) this.imagePreview.set(existingImage);
   }
 
   ngOnDestroy() {
@@ -489,6 +696,15 @@ export class VariantDrawerComponent implements OnInit, OnDestroy {
       return;
     }
     this.saved.emit(this.form);
+  }
+
+  onImageSelected(event: Event) {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    this.form.patchValue({ imageFile: file });
+    const reader = new FileReader();
+    reader.onload = e => this.imagePreview.set(e.target?.result as string);
+    reader.readAsDataURL(file);
   }
 
   cancel() {

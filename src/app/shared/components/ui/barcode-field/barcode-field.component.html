@@ -1,0 +1,103 @@
+<div class="barcode-field">
+  <div class="barcode-input-row">
+    <div class="input-icon-wrap">
+      <ng-icon name="lucideBarcode" class="ic"></ng-icon>
+      <input
+        type="text"
+        [value]="value()"
+        (input)="onInput($event)"
+        (blur)="onTouched()"
+        [disabled]="disabled"
+        placeholder="EAN-13 / UPC"
+      >
+    </div>
+
+    @if (!value()) {
+      <button type="button" class="btn-action btn-generate" (click)="generate()" title="Generar código">
+        <ng-icon name="lucideZap"></ng-icon>
+        <span>Generar</span>
+      </button>
+    }
+
+    @if (value()) {
+      <button type="button" class="btn-action btn-print" (click)="openModal()" title="Imprimir etiqueta">
+        <ng-icon name="lucidePrinter"></ng-icon>
+        <span>Imprimir</span>
+      </button>
+    }
+  </div>
+</div>
+
+<!-- PRINT MODAL -->
+@if (isModalOpen()) {
+  <div class="bc-modal-overlay" (click)="closeModal()">
+    <div class="bc-modal" (click)="$event.stopPropagation()">
+      <div class="bc-modal-header">
+        <h3>Imprimir Etiqueta</h3>
+        <button type="button" class="btn-close" (click)="closeModal()">
+          <ng-icon name="lucideX"></ng-icon>
+        </button>
+      </div>
+
+      <div class="bc-modal-body">
+        <div class="label-preview">
+          <div class="label-card">
+            @if (productName) {
+              <p class="label-name">{{ productName | slice:0:30 }}{{ productName.length > 30 ? '…' : '' }}</p>
+            }
+            <svg #barcodeRef></svg>
+            @if (salePrice && salePrice > 0) {
+              <p class="label-price">{{ salePrice | currency:'USD':'symbol':'1.2-2' }}</p>
+            }
+          </div>
+        </div>
+
+        <div class="copies-row">
+          <span class="copies-label">Cantidad de etiquetas</span>
+          <div class="copies-control">
+            <button type="button" class="qty-btn" (click)="decreaseCopies()">
+              <ng-icon name="lucideMinus"></ng-icon>
+            </button>
+            <input
+              type="number"
+              class="qty-input"
+              [value]="copies()"
+              (input)="onCopiesInput($event)"
+              min="1"
+              max="100"
+            >
+            <button type="button" class="qty-btn" (click)="increaseCopies()">
+              <ng-icon name="lucidePlus"></ng-icon>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="bc-modal-footer">
+        <button type="button" class="btn-cancel" (click)="closeModal()">Cancelar</button>
+        <button type="button" class="btn-print-confirm" (click)="print()">
+          <ng-icon name="lucidePrinter"></ng-icon>
+          Imprimir {{ copies() }} etiqueta{{ copies() !== 1 ? 's' : '' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- HIDDEN PRINT AREA -->
+<div class="print-area" id="barcode-print-area">
+  <div class="print-grid">
+    @for (i of printItems(); track i) {
+      <div class="print-label">
+        @if (productName) {
+          <p class="print-name">{{ productName | slice:0:30 }}{{ productName.length > 30 ? '…' : '' }}</p>
+        }
+        <svg [attr.data-barcode-print]="i"></svg>
+        <p class="print-code">{{ value() }}</p>
+        @if (salePrice && salePrice > 0) {
+          <p class="print-price">{{ salePrice | currency:'USD':'symbol':'1.2-2' }}</p>
+        }
+      </div>
+    }
+  </div>
+</div>

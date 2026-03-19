@@ -33,6 +33,7 @@ export interface Product {
   categoryId: string;
   brandId?: string;
   imageUrl?: string;
+  imagePublicId?: string;
   isActive: boolean;
   variants: ProductVariant[];
   category?: { id: string; name: string };
@@ -53,7 +54,11 @@ export interface ProductVariant {
   costPrice: number;
   salePrice: number;
   stockTrackable: boolean;
+  trackLots: boolean;
+  trackExpiry: boolean;
   durationMinutes?: number | null;
+  imageUrl?: string | null;
+  imagePublicId?: string | null;
   isActive: boolean;
   variantTaxes?: VariantTax[];
   attributeValues?: VariantAttributeValue[];
@@ -72,6 +77,8 @@ export interface CreateProductPayload {
   categoryId: string;
   brandId?: string;
   isActive?: boolean;
+  imageUrl?: string;
+  imagePublicId?: string;
   variants: CreateVariantPayload[];
 }
 
@@ -85,7 +92,11 @@ export interface CreateVariantPayload {
   costPrice: number;
   salePrice: number;
   stockTrackable?: boolean;
+  trackLots?: boolean;
+  trackExpiry?: boolean;
   durationMinutes?: number;
+  imageUrl?: string;
+  imagePublicId?: string;
   taxIds?: string[];
   attributeValues?: { attributeTypeId: string; valueText?: string | null; valueNumber?: number | null }[];
   isActive?: boolean;
