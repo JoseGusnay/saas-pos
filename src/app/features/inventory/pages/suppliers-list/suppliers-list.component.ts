@@ -14,6 +14,7 @@ import { ModalService } from '../../../../core/components/modal/modal.service';
 import { PageHeaderComponent } from '../../../../shared/components/list-ui/page-header/page-header.component';
 import { ListToolbarComponent } from '../../../../shared/components/list-ui/list-toolbar/list-toolbar.component';
 import { PaginationComponent } from '../../../../shared/components/list-ui/pagination/pagination.component';
+import { DataCardComponent } from '../../../../shared/components/list-ui/data-card/data-card.component';
 import { DrawerComponent } from '../../../../shared/components/ui/drawer/drawer';
 import { ModalComponent } from '../../../../shared/components/ui/modal/modal';
 import { FormButtonComponent } from '../../../../shared/components/ui/form-button/form-button';
@@ -35,7 +36,7 @@ import {
   standalone: true,
   imports: [
     CommonModule, FormsModule,
-    PageHeaderComponent, ListToolbarComponent, PaginationComponent,
+    PageHeaderComponent, ListToolbarComponent, PaginationComponent, DataCardComponent,
     DrawerComponent, ModalComponent, FormButtonComponent,
     SkeletonComponent, EmptyStateComponent, SpinnerComponent,
     DatelineComponent, ActionsMenuComponent, SupplierFormComponent, NgIconComponent
@@ -72,16 +73,21 @@ import {
         @if (isLoading()) {
           @for (n of [1,2,3,4,5,6]; track n) {
             @if (viewMode() === 'grid') {
-              <div class="supplier-card skeleton-card">
-                <div class="supplier-card__header">
-                  <app-skeleton width="150px" height="1.1rem"></app-skeleton>
-                  <app-skeleton width="32px" height="32px" shape="circle"></app-skeleton>
+              <div class="data-card skeleton-card">
+                <header class="data-card__header">
+                  <div class="data-card__title-container">
+                    <app-skeleton width="150px" height="1.1rem"></app-skeleton>
+                    <div style="margin-top:4px"><app-skeleton width="60px" height="18px" radius="999px"></app-skeleton></div>
+                  </div>
+                  <div class="data-card__kebab">
+                    <app-skeleton width="32px" height="32px" shape="circle"></app-skeleton>
+                  </div>
+                </header>
+                <div class="data-card__body">
+                  <div class="data-card__detail"><app-skeleton width="14px" height="14px" shape="circle"></app-skeleton><app-skeleton width="130px" height="0.875rem"></app-skeleton></div>
+                  <div class="data-card__detail"><app-skeleton width="14px" height="14px" shape="circle"></app-skeleton><app-skeleton width="110px" height="0.875rem"></app-skeleton></div>
+                  <div class="data-card__detail"><app-skeleton width="14px" height="14px" shape="circle"></app-skeleton><app-skeleton width="150px" height="0.875rem"></app-skeleton></div>
                 </div>
-                <div style="display:flex;flex-direction:column;gap:6px;margin-top:4px">
-                  <app-skeleton width="120px" height="0.875rem"></app-skeleton>
-                  <app-skeleton width="140px" height="0.875rem"></app-skeleton>
-                </div>
-                <app-skeleton width="70px" height="22px" radius="99px" style="margin-top:8px"></app-skeleton>
               </div>
             } @else {
               <div class="supplier-row skeleton-row">
@@ -98,39 +104,20 @@ import {
         } @else if (suppliers().length > 0) {
           @for (s of suppliers(); track s.id) {
             @if (viewMode() === 'grid') {
-              <div class="supplier-card shadow-sm" (click)="onShowDetail(s)">
-                <div class="supplier-card__header">
-                  <div class="supplier-card__title">
-                    <span class="supplier-name">{{ s.name }}</span>
-                    <span class="badge-status" [class]="s.isActive ? 'active' : 'inactive'">
-                      {{ s.isActive ? 'Activo' : 'Inactivo' }}
-                    </span>
-                  </div>
-                  <div (click)="$event.stopPropagation()">
-                    <app-actions-menu [actions]="actions" (actionClick)="handleAction($event, s)"></app-actions-menu>
-                  </div>
-                </div>
-                <div class="supplier-card__body">
-                  @if (s.ruc) {
-                    <span class="supplier-detail">
-                      <ng-icon name="lucideBuilding2" size="13"></ng-icon> {{ s.ruc }}
-                    </span>
-                  }
-                  @if (s.phone) {
-                    <span class="supplier-detail">
-                      <ng-icon name="lucidePhone" size="13"></ng-icon> {{ s.phone }}
-                    </span>
-                  }
-                  @if (s.email) {
-                    <span class="supplier-detail">
-                      <ng-icon name="lucideMail" size="13"></ng-icon> {{ s.email }}
-                    </span>
-                  }
-                  @if (!s.ruc && !s.phone && !s.email) {
-                    <span class="supplier-detail no-data">Sin datos de contacto</span>
-                  }
-                </div>
-              </div>
+              <app-data-card
+                [title]="s.name"
+                [status]="s.isActive ? 'Activo' : 'Inactivo'"
+                [statusConfig]="s.isActive ? 'active' : 'inactive'"
+                [details]="[
+                  { icon: 'lucideBuilding2', text: s.ruc || 'Sin RUC' },
+                  { icon: 'lucidePhone',    text: s.phone || 'Sin teléfono' },
+                  { icon: 'lucideMail',     text: s.email || 'Sin correo' }
+                ]"
+                [actions]="actions"
+                (actionClick)="handleAction($event, s)"
+                (click)="onShowDetail(s)"
+                class="clickable-card"
+              ></app-data-card>
             } @else {
               <div class="supplier-row shadow-sm" (click)="onShowDetail(s)">
                 <div class="supplier-avatar" [style.background]="'linear-gradient(135deg, var(--color-primary), var(--color-primary-dark))'">{{ s.name[0].toUpperCase() }}</div>
@@ -171,44 +158,81 @@ import {
       <app-drawer [isOpen]="isDetailOpen()" title="Detalle de Proveedor" (close)="isDetailOpen.set(false)" size="md">
         <div drawerBody>
           @if (selected()) {
-            <div class="detail-body">
-              <div class="detail-avatar" [style.background]="'linear-gradient(135deg, var(--color-primary), var(--color-primary-dark))'">{{ selected()!.name[0].toUpperCase() }}</div>
-              <h3 class="detail-name">{{ selected()!.name }}</h3>
-              <span class="badge-status" [class]="selected()!.isActive ? 'active' : 'inactive'">
-                {{ selected()!.isActive ? 'Activo' : 'Inactivo' }}
-              </span>
-              <div class="detail-fields">
+            <div class="sd-view">
+
+              <div class="sd-section sd-header">
+                <div class="sd-header-main">
+                  <h2 class="sd-name">{{ selected()!.name }}</h2>
+                  <span class="sd-status-badge" [ngClass]="selected()!.isActive ? 'active' : 'inactive'">
+                    {{ selected()!.isActive ? 'Activo' : 'Inactivo' }}
+                  </span>
+                </div>
                 @if (selected()!.ruc) {
-                  <div class="detail-field">
-                    <ng-icon name="lucideBuilding2" size="16"></ng-icon>
-                    <div><span class="field-label">RUC</span><span>{{ selected()!.ruc }}</span></div>
-                  </div>
-                }
-                @if (selected()!.phone) {
-                  <div class="detail-field">
-                    <ng-icon name="lucidePhone" size="16"></ng-icon>
-                    <div><span class="field-label">Teléfono</span><span>{{ selected()!.phone }}</span></div>
-                  </div>
-                }
-                @if (selected()!.email) {
-                  <div class="detail-field">
-                    <ng-icon name="lucideMail" size="16"></ng-icon>
-                    <div><span class="field-label">Correo</span><span>{{ selected()!.email }}</span></div>
-                  </div>
-                }
-                @if (selected()!.contactName) {
-                  <div class="detail-field">
-                    <ng-icon name="lucideUser" size="16"></ng-icon>
-                    <div><span class="field-label">Contacto</span><span>{{ selected()!.contactName }}</span></div>
-                  </div>
-                }
-                @if (selected()!.address) {
-                  <div class="detail-field">
-                    <ng-icon name="lucideMapPin" size="16"></ng-icon>
-                    <div><span class="field-label">Dirección</span><span>{{ selected()!.address }}</span></div>
-                  </div>
+                  <p class="sd-code">RUC / Cédula: {{ selected()!.ruc }}</p>
                 }
               </div>
+
+              <div class="sd-kpi-grid">
+                <div class="sd-kpi-card">
+                  <div class="sd-kpi-icon sd-kpi-contact">
+                    <ng-icon name="lucideUser"></ng-icon>
+                  </div>
+                  <div class="sd-kpi-info">
+                    <span class="sd-kpi-label">Persona de Contacto</span>
+                    <span class="sd-kpi-value">{{ selected()!.contactName || 'No asignado' }}</span>
+                  </div>
+                </div>
+                <div class="sd-kpi-card">
+                  <div class="sd-kpi-icon sd-kpi-phone">
+                    <ng-icon name="lucidePhone"></ng-icon>
+                  </div>
+                  <div class="sd-kpi-info">
+                    <span class="sd-kpi-label">Teléfono</span>
+                    <span class="sd-kpi-value">{{ selected()!.phone || 'No registrado' }}</span>
+                  </div>
+                </div>
+              </div>
+
+              @if (selected()!.email || selected()!.address) {
+                <div class="sd-section">
+                  <h3 class="sd-section-title">Información de Contacto</h3>
+                  <div class="sd-info-list">
+                    @if (selected()!.email) {
+                      <div class="sd-info-item">
+                        <div class="sd-icon-box"><ng-icon name="lucideMail"></ng-icon></div>
+                        <div class="sd-item-content">
+                          <span class="sd-item-label">Correo Electrónico</span>
+                          <a [href]="'mailto:' + selected()!.email" class="sd-item-link">{{ selected()!.email }}</a>
+                        </div>
+                      </div>
+                    }
+                    @if (selected()!.address) {
+                      <div class="sd-info-item">
+                        <div class="sd-icon-box"><ng-icon name="lucideMapPin"></ng-icon></div>
+                        <div class="sd-item-content">
+                          <span class="sd-item-label">Dirección</span>
+                          <span class="sd-item-text">{{ selected()!.address }}</span>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+
+              <div class="sd-section">
+                <h3 class="sd-section-title">Datos del Sistema</h3>
+                <div class="sd-meta-grid">
+                  <div class="sd-meta-item">
+                    <span class="sd-meta-label">Registrado</span>
+                    <span class="sd-meta-text">{{ selected()!.createdAt | date:'longDate' }}</span>
+                  </div>
+                  <div class="sd-meta-item">
+                    <span class="sd-meta-label">Última Actualización</span>
+                    <span class="sd-meta-text">{{ selected()!.updatedAt | date:'longDate' }}</span>
+                  </div>
+                </div>
+              </div>
+
             </div>
           }
         </div>
@@ -279,27 +303,25 @@ import {
     .suppliers-page__list { display: flex; flex-direction: column; gap: 0.75rem; }
     .suppliers-page__empty { grid-column: 1 / -1; display: flex; justify-content: center; width: 100%; padding: 4rem 1rem; }
 
-    .supplier-card {
-      background: var(--color-bg-surface); border-radius: var(--radius-lg); border: 1px solid var(--color-border-light);
-      padding: 1.25rem; display: flex; flex-direction: column; gap: 0.75rem;
-      cursor: pointer; transition: all var(--transition-base);
+    /* ── Card grid ── */
+    .clickable-card { cursor: pointer; }
+    .skeleton-card {
+      pointer-events: none; border: 1px solid var(--color-border-light);
+      border-radius: var(--radius-lg); background: var(--color-bg-surface);
+      display: flex; flex-direction: column; box-sizing: border-box; padding: 20px;
     }
-    .supplier-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); border-color: var(--color-accent-primary); }
-    .skeleton-card { height: 160px; pointer-events: none; }
-    .supplier-card__header { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; }
-    .supplier-card__title { display: flex; flex-direction: column; gap: 0.375rem; min-width: 0; }
-    .supplier-card__body { display: flex; flex-direction: column; gap: 0.375rem; }
+    .skeleton-card .data-card__header { display: flex; justify-content: space-between; margin-bottom: 16px; }
+    .skeleton-card .data-card__title-container { display: flex; flex-direction: column; }
+    .skeleton-card .data-card__body { display: flex; flex-direction: column; gap: 10px; flex: 1; }
+    .skeleton-card .data-card__detail { display: flex; align-items: center; gap: 8px; }
 
+    /* ── Row list ── */
     .supplier-avatar {
       width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0;
       display: flex; align-items: center; justify-content: center;
       color: white; font-weight: 700; font-size: 1.125rem;
       box-shadow: 0 4px 10px rgba(0,0,0,0.1);
     }
-    .supplier-name { font-weight: var(--font-weight-semibold); color: var(--color-text-main); font-size: var(--font-size-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .supplier-detail { display: flex; align-items: center; gap: 0.375rem; font-size: var(--font-size-xs); color: var(--color-text-muted); }
-    .supplier-detail.no-data { font-style: italic; }
-
     .supplier-row {
       display: flex; align-items: center; gap: 1rem; padding: 0.875rem 1.25rem;
       background: var(--color-bg-surface); border: 1px solid var(--color-border-light);
@@ -312,19 +334,41 @@ import {
     .supplier-row__info { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
     .supplier-sub { font-size: var(--font-size-xs); color: var(--color-text-muted); }
 
-    .badge-status { padding: 0.2rem 0.625rem; border-radius: 99px; font-size: var(--font-size-xs); font-weight: var(--font-weight-semibold); }
+    /* ── Badge ── */
+    .badge-status { padding: 4px 10px; border-radius: 99px; font-size: 11px; font-weight: 600; width: fit-content; }
     .badge-status.active   { background: var(--color-success-bg); color: var(--color-success-text); }
-    .badge-status.inactive { background: var(--color-border-subtle); color: var(--color-text-muted); }
+    .badge-status.inactive { background: var(--color-bg-hover); color: var(--color-text-muted); }
 
-    /* Detail drawer */
-    .detail-body { display: flex; flex-direction: column; align-items: center; gap: 0.75rem; padding: 1.5rem 1rem; }
-    .detail-avatar { width: 72px; height: 72px; border-radius: 18px; background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark)); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 2rem; box-shadow: 0 4px 16px rgba(0,0,0,0.12); }
-    .detail-name { font-size: 1.25rem; font-weight: var(--font-weight-bold); color: var(--color-text-main); margin: 0; }
-    .detail-fields { width: 100%; display: flex; flex-direction: column; gap: 0.875rem; margin-top: 0.75rem; }
-    .detail-field { display: flex; align-items: flex-start; gap: 0.75rem; color: var(--color-text-muted); }
-    .detail-field div { display: flex; flex-direction: column; gap: 2px; }
-    .field-label { font-size: var(--font-size-xs); text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-muted); }
-    .detail-field span:last-child { font-size: var(--font-size-sm); color: var(--color-text-main); }
+    /* ── Detail drawer (sd- prefix) ── */
+    .sd-view { padding: 8px 4px; display: flex; flex-direction: column; gap: 28px; }
+    .sd-section { display: flex; flex-direction: column; gap: 16px; }
+    .sd-header .sd-header-main { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+    .sd-name { font-size: 22px; font-weight: 800; color: var(--color-text-main); margin: 0; letter-spacing: -0.02em; }
+    .sd-code { font-size: 13px; color: var(--color-text-muted); margin: 0; }
+    .sd-status-badge { padding: 4px 12px; border-radius: 999px; font-size: 11px; font-weight: 700; text-transform: uppercase; white-space: nowrap; }
+    .sd-status-badge.active  { background: rgba(16,185,129,0.1); color: #10b981; }
+    .sd-status-badge.inactive { background: rgba(239,68,68,0.1); color: #ef4444; }
+    .sd-section-title { font-size: 12px; font-weight: 700; color: var(--color-text-main); text-transform: uppercase; letter-spacing: 0.05em; margin: 0; padding-bottom: 8px; border-bottom: 2px solid var(--color-border-subtle); }
+    .sd-kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .sd-kpi-card { background: var(--color-bg-hover); border: 1px solid var(--color-border-subtle); border-radius: 14px; padding: 14px; display: flex; align-items: center; gap: 12px; }
+    .sd-kpi-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+    .sd-kpi-contact { background: rgba(59,130,246,0.1); color: #3b82f6; }
+    .sd-kpi-phone   { background: rgba(16,185,129,0.1); color: #10b981; }
+    .sd-kpi-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .sd-kpi-label { font-size: 10px; color: var(--color-text-muted); font-weight: 600; }
+    .sd-kpi-value { font-size: 14px; font-weight: 700; color: var(--color-text-main); }
+    .sd-info-list { display: flex; flex-direction: column; gap: 16px; }
+    .sd-info-item { display: flex; gap: 14px; align-items: flex-start; }
+    .sd-icon-box { width: 34px; height: 34px; border-radius: 9px; background: var(--color-bg-hover); color: var(--color-text-soft); display: flex; align-items: center; justify-content: center; font-size: 16px; border: 1px solid var(--color-border-subtle); flex-shrink: 0; }
+    .sd-item-content { display: flex; flex-direction: column; gap: 2px; }
+    .sd-item-label { font-size: 11px; color: var(--color-text-muted); font-weight: 600; }
+    .sd-item-text { font-size: 14px; color: var(--color-text-main); font-weight: 500; line-height: 1.4; }
+    .sd-item-link { font-size: 14px; color: var(--color-primary); font-weight: 500; text-decoration: none; }
+    .sd-item-link:hover { text-decoration: underline; }
+    .sd-meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .sd-meta-item { display: flex; flex-direction: column; gap: 4px; }
+    .sd-meta-label { font-size: 11px; color: var(--color-text-muted); }
+    .sd-meta-text { font-size: 13px; color: var(--color-text-soft); font-weight: 500; }
 
     .history-container { padding: 1rem; }
     .drawer-footer-actions { display: flex; justify-content: flex-end; gap: 12px; width: 100%; }

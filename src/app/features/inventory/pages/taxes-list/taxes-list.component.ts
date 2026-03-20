@@ -82,7 +82,7 @@ import { TaxFormComponent } from './components/tax-form/tax-form.component';
     provideIcons({
       lucidePlus, lucideSearch, lucideLayoutGrid, lucideList,
       lucideFilter, lucideMoreVertical, lucidePencil, lucideTrash2,
-      lucideChevronRight, lucidePercent, lucideInfo, lucideTag,
+      lucideHistory, lucideChevronRight, lucidePercent, lucideInfo, lucideTag,
       lucidePlusCircle, lucideRefreshCw, lucideTrash, lucideHash
     })
   ],
@@ -235,43 +235,59 @@ import { TaxFormComponent } from './components/tax-form/tax-form.component';
       >
         <div drawerBody>
           @if (selectedTax()) {
-            <div class="tax-detail">
-              <div class="detail-row">
-                <span class="detail-label">Nombre</span>
-                <span class="detail-value">{{ selectedTax()!.name }}</span>
+            <div class="tax-detail-view">
+
+              <div class="td-section td-header">
+                <div class="td-header-main">
+                  <h2 class="td-name">{{ selectedTax()!.name }}</h2>
+                  <span class="td-status-badge" [ngClass]="selectedTax()!.isActive ? 'active' : 'inactive'">
+                    {{ selectedTax()!.isActive ? 'Activo' : 'Inactivo' }}
+                  </span>
+                </div>
+                <p class="td-code">
+                  Código: {{ selectedTax()!.code }}
+                  @if (selectedTax()!.sriCode) { · SRI: {{ selectedTax()!.sriCode }} }
+                </p>
               </div>
-              <div class="detail-row">
-                <span class="detail-label">Código</span>
-                <span class="detail-value">{{ selectedTax()!.code }}</span>
+
+              <div class="td-kpi-grid">
+                <div class="td-kpi-card">
+                  <div class="td-kpi-icon td-kpi-type">
+                    <ng-icon name="lucideTag"></ng-icon>
+                  </div>
+                  <div class="td-kpi-info">
+                    <span class="td-kpi-label">Tipo</span>
+                    <span class="td-kpi-value">{{ selectedTax()!.type === 'PERCENTAGE' ? 'Porcentual' : 'Monto Fijo' }}</span>
+                  </div>
+                </div>
+                <div class="td-kpi-card">
+                  <div class="td-kpi-icon td-kpi-rate">
+                    <ng-icon name="lucidePercent"></ng-icon>
+                  </div>
+                  <div class="td-kpi-info">
+                    <span class="td-kpi-label">Tarifa</span>
+                    <span class="td-kpi-value">
+                      {{ selectedTax()!.type === 'PERCENTAGE' ? (selectedTax()!.percentage ?? 0) + '%' : '$' + selectedTax()!.fixedAmount }}
+                    </span>
+                  </div>
+                </div>
               </div>
+
               @if (selectedTax()!.sriCode) {
-                <div class="detail-row">
-                  <span class="detail-label">Código SRI</span>
-                  <span class="detail-value">{{ selectedTax()!.sriCode }}</span>
+                <div class="td-section">
+                  <h3 class="td-section-title">Configuración Fiscal</h3>
+                  <div class="td-info-list">
+                    <div class="td-info-item">
+                      <div class="td-icon-box"><ng-icon name="lucideHash"></ng-icon></div>
+                      <div class="td-item-content">
+                        <span class="td-item-label">Código SRI</span>
+                        <span class="td-item-text">{{ selectedTax()!.sriCode }}</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               }
-              <div class="detail-row">
-                <span class="detail-label">Tipo</span>
-                <span [class]="'badge-type ' + (selectedTax()!.type === 'PERCENTAGE' ? 'percentage' : 'fixed')">
-                  {{ selectedTax()!.type === 'PERCENTAGE' ? 'Porcentual' : 'Monto Fijo' }}
-                </span>
-              </div>
-              @if (selectedTax()!.type === 'PERCENTAGE') {
-                <div class="detail-row">
-                  <span class="detail-label">Porcentaje</span>
-                  <span class="detail-value">{{ selectedTax()!.percentage ?? 0 }}%</span>
-                </div>
-              }
-              <div class="detail-row">
-                <span class="detail-label">Monto Fijo</span>
-                <span class="detail-value">\${{ selectedTax()!.fixedAmount }}</span>
-              </div>
-              <div class="detail-row">
-                <span class="detail-label">Estado</span>
-                <span [class]="'badge-status ' + (selectedTax()!.isActive ? 'active' : 'inactive')">
-                  {{ selectedTax()!.isActive ? 'Activo' : 'Inactivo' }}
-                </span>
-              </div>
+
             </div>
           }
         </div>

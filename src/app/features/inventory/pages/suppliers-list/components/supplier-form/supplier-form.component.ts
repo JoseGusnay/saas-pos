@@ -1,4 +1,4 @@
-import { Component, inject, output, signal } from '@angular/core';
+import { Component, inject, output, signal, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SupplierService } from '../../../../../../core/services/supplier.service';
@@ -89,26 +89,24 @@ import { ToastService } from '../../../../../../core/services/toast.service';
 export class SupplierFormComponent {
   private supplierService = inject(SupplierService);
   private toastService = inject(ToastService);
+  private cdr = inject(ChangeDetectorRef);
 
   saved = output<void>();
   cancelled = output<void>();
 
   isSubmitting = signal(false);
   private editingId: string | null = null;
+  private pristineData = this.emptyForm();
 
-  formData = {
-    name: '',
-    ruc: '',
-    email: '',
-    phone: '',
-    contactName: '',
-    address: '',
-    isActive: true,
-  };
+  formData = this.emptyForm();
+
+  private emptyForm() {
+    return { name: '', ruc: '', email: '', phone: '', contactName: '', address: '', isActive: true };
+  }
 
   setSupplier(supplier: Supplier) {
     this.editingId = supplier.id;
-    this.formData = {
+    const data = {
       name:        supplier.name,
       ruc:         supplier.ruc ?? '',
       email:       supplier.email ?? '',
@@ -117,15 +115,19 @@ export class SupplierFormComponent {
       address:     supplier.address ?? '',
       isActive:    supplier.isActive,
     };
+    this.formData = { ...data };
+    this.pristineData = { ...data };
+    this.cdr.detectChanges();
   }
 
   resetForm() {
     this.editingId = null;
-    this.formData = { name: '', ruc: '', email: '', phone: '', contactName: '', address: '', isActive: true };
+    this.formData = this.emptyForm();
+    this.pristineData = this.emptyForm();
   }
 
   hasUnsavedChanges(): boolean {
-    return this.formData.name.trim().length > 0;
+    return JSON.stringify(this.formData) !== JSON.stringify(this.pristineData);
   }
 
   onSubmit() {
