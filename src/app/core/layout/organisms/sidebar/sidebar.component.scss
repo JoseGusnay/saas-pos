@@ -34,15 +34,15 @@
     &__nav {
         display: flex;
         flex-direction: column;
-        gap: 4px; 
-        flex: 1; 
-        
+        gap: 4px;
+        flex: 1;
+        padding-bottom: 2rem;
         // PREMIUM SCROLLING
         overflow-y: auto;
         overflow-x: hidden;
         scrollbar-gutter: stable; // Previene saltos de layout cuando aparece el scroll
         padding-left: 16px; // El contenido se mantiene indentado
-        padding-right: 0;   // El scrollbar va al filo!
+        padding-right: 0; // El scrollbar va al filo!
 
         // CRÍTICO: Cuando está colapsado, necesitamos que los tooltips salgan.
         // CSS no permite overflow-y: auto y overflow-x: visible simultáneamente.
@@ -55,6 +55,7 @@
         &::-webkit-scrollbar {
             width: 4px;
         }
+
         &::-webkit-scrollbar-thumb {
             background: var(--color-border-light);
             border-radius: 10px;

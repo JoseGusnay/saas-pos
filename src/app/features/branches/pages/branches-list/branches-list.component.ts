@@ -417,6 +417,7 @@ export class BranchesListComponent {
   isDetailOpen = signal(false);
   selectedBranchDetail = signal<Branch | null>(null);
 
+
   mappedLogs = computed<DatelineItem[]>(() => {
     return this.branchLogs().map(log => ({
       id: log.id,
@@ -536,7 +537,12 @@ export class BranchesListComponent {
   onShowDetail(branch: Branch) {
     this.selectedBranchDetail.set(branch);
     this.isDetailOpen.set(true);
+    this.branchService.findOne(branch.id).subscribe({
+      next: (full) => this.selectedBranchDetail.set(full),
+      error: () => { /* mantiene datos básicos de la lista */ }
+    });
   }
+
 
   onImportClick() {
     this.importModalRef.open();

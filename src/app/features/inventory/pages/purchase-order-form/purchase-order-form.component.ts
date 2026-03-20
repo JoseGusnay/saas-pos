@@ -2,7 +2,7 @@ import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { map, Observable } from 'rxjs';
+import { map, Observable, of } from 'rxjs';
 import { HttpClient, HttpParams } from '@angular/common/http';
 
 import { PurchaseOrderService } from '../../../../core/services/purchase-order.service';
@@ -25,7 +25,7 @@ import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import {
   lucidePlus, lucideTrash2, lucideSave, lucideArrowLeft,
   lucidePackagePlus, lucideCheck, lucideBuilding2,
-  lucideTruck, lucideFileText, lucidePrinter,
+  lucideTruck, lucideFileText, lucidePrinter, lucideCalendar,
 } from '@ng-icons/lucide';
 
 // ─── Local types ─────────────────────────────────────────────────────────────
@@ -57,10 +57,13 @@ const TAX_RATES = [
   { value: 15, label: '15%' },
 ];
 
-const PAYMENT_CONDITIONS: { value: PaymentCondition; label: string }[] =
-  (Object.entries(PAYMENT_CONDITION_LABELS) as [PaymentCondition, string][]).map(
-    ([value, label]) => ({ value, label })
-  );
+const PAYMENT_CONDITIONS: { value: PaymentCondition; label: string; short: string }[] = [
+  { value: 'CONTADO',    label: 'Contado',         short: 'Contado'  },
+  { value: 'CREDITO_15', label: 'Crédito 15 días',  short: '15 días'  },
+  { value: 'CREDITO_30', label: 'Crédito 30 días',  short: '30 días'  },
+  { value: 'CREDITO_60', label: 'Crédito 60 días',  short: '60 días'  },
+  { value: 'CREDITO_90', label: 'Crédito 90 días',  short: '90 días'  },
+];
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
@@ -69,7 +72,7 @@ const PAYMENT_CONDITIONS: { value: PaymentCondition; label: string }[] =
   standalone: true,
   imports: [CommonModule, FormsModule, SearchSelectComponent, FormButtonComponent, SpinnerComponent, NgIconComponent],
   providers: [
-    provideIcons({ lucidePlus, lucideTrash2, lucideSave, lucideArrowLeft, lucidePackagePlus, lucideCheck, lucideBuilding2, lucideTruck, lucideFileText, lucidePrinter })
+    provideIcons({ lucidePlus, lucideTrash2, lucideSave, lucideArrowLeft, lucidePackagePlus, lucideCheck, lucideBuilding2, lucideTruck, lucideFileText, lucidePrinter, lucideCalendar })
   ],
   template: `
     <div class="doc-page">
@@ -180,28 +183,41 @@ const PAYMENT_CONDITIONS: { value: PaymentCondition; label: string }[] =
                 <span class="lf-value">{{ today | date:'MMM dd, yyyy' }}</span>
               </div>
 
+              <!-- Sucursal: SearchSelect custom -->
               <div class="logi-field">
                 <span class="lf-label">SUCURSAL DESTINO *</span>
-                <select class="lf-select" [(ngModel)]="selectedBranchId">
-                  <option value="">Seleccionar sucursal...</option>
-                  @for (b of branches(); track b.id) {
-                    <option [value]="b.id">{{ b.name }}</option>
-                  }
-                </select>
+                <app-search-select
+                  placeholder="Seleccionar sucursal..."
+                  searchPlaceholder="Buscar sucursal..."
+                  [searchFn]="branchSearchFn"
+                  [initialOption]="initialBranch()"
+                  (selectionChange)="onBranchChange($event)"
+                ></app-search-select>
               </div>
 
+              <!-- Condición de pago: SearchSelect -->
               <div class="logi-field">
                 <span class="lf-label">CONDICIÓN DE PAGO</span>
-                <select class="lf-select" [(ngModel)]="paymentCondition">
-                  @for (pc of paymentConditions; track pc.value) {
-                    <option [value]="pc.value">{{ pc.label }}</option>
-                  }
-                </select>
+                <app-search-select
+                  placeholder="Seleccionar condición..."
+                  searchPlaceholder="Buscar condición..."
+                  [searchFn]="paymentConditionSearchFn"
+                  [initialOption]="initialPaymentCondition()"
+                  (selectionChange)="onPaymentConditionChange($event)"
+                ></app-search-select>
               </div>
 
+              <!-- Fecha de entrega: input custom con ícono -->
               <div class="logi-field">
                 <span class="lf-label">FECHA DE ENTREGA ESPERADA</span>
-                <input class="lf-input" type="date" [(ngModel)]="expectedDeliveryDate" />
+                <label class="date-field">
+                  <ng-icon name="lucideCalendar" size="14" class="date-field__icon"></ng-icon>
+                  <input
+                    class="date-field__input"
+                    type="date"
+                    [(ngModel)]="expectedDeliveryDate"
+                  />
+                </label>
               </div>
 
               <div class="logi-field">
@@ -352,31 +368,6 @@ const PAYMENT_CONDITIONS: { value: PaymentCondition; label: string }[] =
             placeholder="Observaciones, condiciones especiales, instrucciones de entrega..."></textarea>
         </div>
 
-        <!-- ══ FOOTER ACTIONS ════════════════════════════════════════════ -->
-        <div class="doc-footer">
-          <app-form-button label="Cancelar" variant="secondary" [disabled]="isSaving()" (click)="goBack()"></app-form-button>
-          <div class="doc-footer__right">
-            <app-form-button
-              [label]="isEdit() ? 'Actualizar Borrador' : 'Guardar como Borrador'"
-              loadingLabel="Guardando..."
-              icon="lucideSave"
-              variant="secondary"
-              [loading]="isSaving() && !savingAndApproving()"
-              [disabled]="!canSave() || isSaving()"
-              (click)="save(false)"
-            ></app-form-button>
-            @if (!isEdit()) {
-              <app-form-button
-                label="Guardar y Aprobar"
-                loadingLabel="Aprobando..."
-                icon="lucideCheck"
-                [loading]="isSaving() && savingAndApproving()"
-                [disabled]="!canSave() || isSaving()"
-                (click)="save(true)"
-              ></app-form-button>
-            }
-          </div>
-        </div>
 
       }
     </div>
@@ -429,7 +420,6 @@ const PAYMENT_CONDITIONS: { value: PaymentCondition; label: string }[] =
       background: var(--color-bg-surface);
       border: 1px solid var(--color-border-light);
       border-radius: var(--radius-lg);
-      overflow: hidden;
     }
     .doc-card__head {
       display: flex; align-items: center; gap: 0.5rem;
@@ -438,6 +428,7 @@ const PAYMENT_CONDITIONS: { value: PaymentCondition; label: string }[] =
       background: var(--color-bg-subtle);
       font-size: 11px; font-weight: 700; letter-spacing: 0.08em;
       color: var(--color-text-muted); text-transform: uppercase;
+      border-radius: var(--radius-lg) var(--radius-lg) 0 0;
     }
     .doc-card__body { padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem; }
 
@@ -456,27 +447,49 @@ const PAYMENT_CONDITIONS: { value: PaymentCondition; label: string }[] =
     .vendor-empty { font-size: var(--font-size-sm); color: var(--color-text-muted); margin: 0.5rem 0 0; }
 
     /* Logistics card */
-    .logi-field { display: flex; flex-direction: column; gap: 4px; }
+    .logi-field { display: flex; flex-direction: column; gap: 6px; }
     .lf-label {
       font-size: 10px; font-weight: 700; letter-spacing: 0.07em;
       color: var(--color-text-muted); text-transform: uppercase;
     }
     .lf-value { font-size: var(--font-size-sm); font-weight: 600; color: var(--color-text-main); }
-    .lf-select, .lf-input {
+    .lf-input {
       width: 100%; padding: 0.45rem 0.75rem; box-sizing: border-box;
-      border: 1px solid var(--color-border-light); border-radius: var(--radius-md);
+      border: 1.5px solid var(--color-border-light); border-radius: var(--radius-md);
       background: var(--color-bg-surface); color: var(--color-text-main);
-      font-size: var(--font-size-sm); transition: border-color var(--transition-base);
+      font-size: var(--font-size-sm); font-family: inherit;
+      transition: border-color var(--transition-base);
     }
-    .lf-select:focus, .lf-input:focus { outline: none; border-color: var(--color-accent-primary); }
-    .lf-select { cursor: pointer; }
+    .lf-input:focus { outline: none; border-color: var(--color-accent-primary); }
+    .lf-input::placeholder { color: var(--color-text-muted); }
+
+    /* Custom date field */
+    .date-field {
+      display: flex; align-items: center; gap: 0.5rem;
+      padding: 0.45rem 0.75rem; box-sizing: border-box;
+      border: 1.5px solid var(--color-border-light); border-radius: var(--radius-md);
+      background: var(--color-bg-surface); cursor: pointer;
+      transition: border-color var(--transition-base);
+    }
+    .date-field:focus-within {
+      border-color: var(--color-accent-primary);
+    }
+    .date-field__icon { color: var(--color-text-muted); flex-shrink: 0; }
+    .date-field__input {
+      flex: 1; border: none; background: transparent;
+      color: var(--color-text-main); font-size: var(--font-size-sm);
+      font-family: inherit; cursor: pointer;
+    }
+    .date-field__input:focus { outline: none; }
+    .date-field__input::-webkit-calendar-picker-indicator {
+      opacity: 0; width: 0; padding: 0; margin: 0;
+    }
 
     /* ── Order items section ───────────────────────────────────────────────── */
     .doc-section {
       background: var(--color-bg-surface);
       border: 1px solid var(--color-border-light);
       border-radius: var(--radius-lg);
-      overflow: hidden;
     }
     .doc-section__head {
       display: flex; align-items: center; justify-content: space-between;
@@ -485,6 +498,7 @@ const PAYMENT_CONDITIONS: { value: PaymentCondition; label: string }[] =
       background: var(--color-bg-subtle);
       font-size: 11px; font-weight: 700; letter-spacing: 0.08em;
       color: var(--color-text-muted); text-transform: uppercase;
+      border-radius: var(--radius-lg) var(--radius-lg) 0 0;
     }
     .add-item-wrap { width: 280px; }
 
@@ -584,13 +598,6 @@ const PAYMENT_CONDITIONS: { value: PaymentCondition; label: string }[] =
     .notes-input:focus { outline: none; }
     .notes-input::placeholder { color: var(--color-text-muted); }
 
-    /* Footer */
-    .doc-footer {
-      display: flex; align-items: center; justify-content: space-between;
-      flex-wrap: wrap; gap: 0.75rem;
-      padding-top: 1rem; border-top: 1px solid var(--color-border-light);
-    }
-    .doc-footer__right { display: flex; gap: 0.75rem; flex-wrap: wrap; }
   `]
 })
 export class PurchaseOrderFormComponent implements OnInit {
@@ -613,20 +620,24 @@ export class PurchaseOrderFormComponent implements OnInit {
   savingAndApproving = signal(false);
 
   // Form state
-  selectedSupplierId    = '';
+  selectedSupplierId    = signal('');
   selectedSupplierName  = signal('');
   selectedSupplierRuc   = signal('');
   selectedSupplierEmail = signal('');
   selectedSupplierPhone = signal('');
 
-  selectedBranchId      = '';
+  selectedBranchId      = signal('');
   paymentCondition: PaymentCondition = 'CONTADO';
   expectedDeliveryDate  = '';
   deliveryAddress       = '';
   internalNotes         = '';
 
-  initialSupplier      = signal<SearchSelectOption | undefined>(undefined);
-  variantSelectorReset = signal<SearchSelectOption | undefined>(undefined);
+  initialSupplier          = signal<SearchSelectOption | undefined>(undefined);
+  initialBranch            = signal<SearchSelectOption | undefined>(undefined);
+  initialPaymentCondition  = signal<SearchSelectOption | undefined>(
+    { value: 'CONTADO', label: 'Contado' }
+  );
+  variantSelectorReset     = signal<SearchSelectOption | undefined>(undefined);
 
   private itemsSignal = signal<LineItem[]>([]);
   items = this.itemsSignal.asReadonly();
@@ -649,10 +660,26 @@ export class PurchaseOrderFormComponent implements OnInit {
   total         = computed(() => this.subtotal() + this.totalIva());
 
   canSave = computed(() =>
-    !!this.selectedSupplierId && !!this.selectedBranchId && this.itemsSignal().length > 0
+    !!this.selectedSupplierId() && !!this.selectedBranchId() && this.itemsSignal().length > 0
   );
 
   // ─── Search functions ───────────────────────────────────────────────────────
+
+  paymentConditionSearchFn = (query: string): Observable<{ data: SearchSelectOption[]; hasMore: boolean }> => {
+    const q = query.toLowerCase();
+    const filtered = PAYMENT_CONDITIONS
+      .filter(pc => !q || pc.label.toLowerCase().includes(q))
+      .map(pc => ({ value: pc.value, label: pc.label }));
+    return of({ data: filtered, hasMore: false });
+  };
+
+  branchSearchFn = (query: string): Observable<{ data: SearchSelectOption[]; hasMore: boolean }> => {
+    const q = query.toLowerCase();
+    const filtered = this.branches()
+      .filter((b: any) => !q || b.name.toLowerCase().includes(q))
+      .map((b: any) => ({ value: b.id, label: b.name }));
+    return of({ data: filtered, hasMore: false });
+  };
 
   supplierSearchFn = (query: string, page: number): Observable<{ data: SearchSelectOption[]; hasMore: boolean }> => {
     const params = new HttpParams().set('search', query).set('page', page).set('limit', 20);
@@ -704,9 +731,15 @@ export class PurchaseOrderFormComponent implements OnInit {
       this.orderService.findOne(id).subscribe({
         next: order => {
           this.editOrderNumber.set(order.orderNumber);
-          this.selectedSupplierId = order.supplierId;
-          this.selectedBranchId   = order.branchId;
-          this.paymentCondition   = order.paymentCondition ?? 'CONTADO';
+          this.selectedSupplierId.set(order.supplierId);
+          this.selectedBranchId.set(order.branchId);
+          this.initialBranch.set({
+            value: order.branchId,
+            label: (order as any).branchName ?? order.branchId,
+          });
+          this.paymentCondition = order.paymentCondition ?? 'CONTADO';
+          const pc = PAYMENT_CONDITIONS.find(p => p.value === this.paymentCondition);
+          this.initialPaymentCondition.set({ value: this.paymentCondition, label: pc?.label ?? this.paymentCondition });
           this.expectedDeliveryDate = order.expectedDeliveryDate?.slice(0, 10) ?? '';
           this.deliveryAddress    = order.deliveryAddress ?? '';
           this.internalNotes      = order.internalNotes ?? '';
@@ -743,9 +776,19 @@ export class PurchaseOrderFormComponent implements OnInit {
 
   // ─── Handlers ──────────────────────────────────────────────────────────────
 
+  onBranchChange(opt: SearchSelectOption | SearchSelectOption[] | null) {
+    const b = opt as SearchSelectOption | null;
+    this.selectedBranchId.set(b?.value ?? '');
+  }
+
+  onPaymentConditionChange(opt: SearchSelectOption | SearchSelectOption[] | null) {
+    const pc = opt as SearchSelectOption | null;
+    this.paymentCondition = (pc?.value ?? 'CONTADO') as PaymentCondition;
+  }
+
   onSupplierChange(opt: SearchSelectOption | SearchSelectOption[] | null) {
     const s = opt as SearchSelectOption | null;
-    this.selectedSupplierId = s?.value ?? '';
+    this.selectedSupplierId.set(s?.value ?? '');
     const m = (s as any)?.meta ?? {};
     this.selectedSupplierName.set(s?.label ?? '');
     this.selectedSupplierRuc.set(m.ruc ?? '');
@@ -791,8 +834,8 @@ export class PurchaseOrderFormComponent implements OnInit {
     this.savingAndApproving.set(approve);
 
     const base = {
-      supplierId:           this.selectedSupplierId,
-      branchId:             this.selectedBranchId,
+      supplierId:           this.selectedSupplierId(),
+      branchId:             this.selectedBranchId(),
       paymentCondition:     this.paymentCondition,
       expectedDeliveryDate: this.expectedDeliveryDate || undefined,
       deliveryAddress:      this.deliveryAddress.trim() || undefined,

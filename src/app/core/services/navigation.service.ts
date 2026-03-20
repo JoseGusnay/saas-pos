@@ -30,79 +30,78 @@ export type SidebarItem = NavItem | NavSection | NavGroup;
 export class NavigationService {
   
   private readonly menu = signal<SidebarItem[]>([
-    { 
+    {
       type: 'item',
-      label: 'Dashboard', 
-      icon: 'lucideLayoutDashboard', 
-      route: '/dashboard', 
-      exactMatch: true 
+      label: 'Dashboard',
+      icon: 'lucideLayoutDashboard',
+      route: '/dashboard',
+      exactMatch: true
     },
-    { 
-      type: 'item',
-      label: 'Sucursales', 
-      icon: 'lucideMapPin', 
-      route: '/sucursales' 
-    },
-    
+
     { type: 'section', label: 'Operaciones' },
-    { 
+    {
       type: 'item',
-      label: 'Punto de Venta', 
-      icon: 'lucideTerminal', 
-      route: '/pos', 
-      badge: 'Hot', 
-      badgeVariant: 'success' 
+      label: 'Punto de Venta',
+      icon: 'lucideTerminal',
+      route: '/pos',
+      badge: 'Hot',
+      badgeVariant: 'success'
     },
-    { 
+    {
       type: 'item',
-      label: 'Caja Registradora', 
-      icon: 'lucideBanknote', 
-      route: '/cash-register' 
+      label: 'Caja Registradora',
+      icon: 'lucideBanknote',
+      route: '/cash-register'
     },
-    
+
+    { type: 'section', label: 'Inventario' },
     {
       type: 'group',
-      label: 'Inventario',
+      label: 'Catálogo',
       icon: 'lucidePackage',
       children: [
-        { label: 'Categorías', route: '/inventario/categorias', icon: 'lucideLayers' },
-        { label: 'Marcas', route: '/inventario/marcas', icon: 'lucideTag' },
+        { label: 'Productos',      route: '/inventario/productos',      icon: 'lucideBox' },
+        { label: 'Categorías',     route: '/inventario/categorias',     icon: 'lucideLayers' },
+        { label: 'Marcas',         route: '/inventario/marcas',         icon: 'lucideTag' },
         { label: 'Presentaciones', route: '/inventario/presentaciones', icon: 'lucideArchive' },
-        { label: 'Impuestos', route: '/inventario/impuestos', icon: 'lucidePercent' },
-        { label: 'Productos', route: '/inventario/productos', icon: 'lucideBox' },
-        { label: 'Stock', route: '/inventario/stock', icon: 'lucideWarehouse' },
-        { label: 'Proveedores', route: '/inventario/proveedores', icon: 'lucideBuilding2' },
-        { label: 'Órdenes de Compra', route: '/inventario/ordenes-compra', icon: 'lucideShoppingCart' }
+        { label: 'Stock',          route: '/inventario/stock',          icon: 'lucideWarehouse' },
       ]
     },
-
     {
       type: 'group',
-      label: 'Usuarios y Seguridad',
-      icon: 'lucideShieldCheck',
+      label: 'Compras',
+      icon: 'lucideShoppingCart',
       children: [
-        { label: 'Listado de Usuarios', route: '/usuarios', icon: 'lucideUsers' },
-        { label: 'Roles y Permisos', route: '/usuarios/roles', icon: 'lucideShield' }
+        { label: 'Proveedores',       route: '/inventario/proveedores',    icon: 'lucideBuilding2' },
+        { label: 'Órdenes de Compra', route: '/inventario/ordenes-compra', icon: 'lucideClipboardList' },
       ]
     },
 
-    { type: 'section', label: 'Reportes y Ajustes' },
+    { type: 'section', label: 'Reportes' },
     {
       type: 'group',
       label: 'Reportes',
       icon: 'lucideBarChart2',
       children: [
-        { label: 'Ventas Anuales', route: '/reports/sales', icon: 'lucideTrendingUp' },
-        { label: 'Rendimiento', route: '/reports/performance', icon: 'lucideActivity' },
-        { label: 'Impuestos', route: '/reports/taxes', icon: 'lucideFileText' }
+        { label: 'Ventas Anuales', route: '/reports/sales',       icon: 'lucideTrendingUp' },
+        { label: 'Rendimiento',    route: '/reports/performance', icon: 'lucideActivity' },
+        { label: 'Impuestos',      route: '/reports/taxes',       icon: 'lucideFileText' },
       ]
     },
-    { 
-      type: 'item',
-      label: 'Configuración', 
-      icon: 'lucideSettings', 
-      route: '/settings' 
-    }
+
+    { type: 'section', label: 'Configuración' },
+    {
+      type: 'group',
+      label: 'Configuración',
+      icon: 'lucideSettings',
+      children: [
+        { label: 'Empresa Fiscal',  route: '/configuracion/empresa-fiscal', icon: 'lucideBuilding2' },
+        { label: 'Sucursales',      route: '/configuracion/sucursales',     icon: 'lucideMapPin' },
+        { label: 'Impuestos',       route: '/configuracion/impuestos',      icon: 'lucidePercent' },
+        { label: 'Usuarios',        route: '/configuracion/usuarios',       icon: 'lucideUsers' },
+        { label: 'Roles y Permisos',route: '/configuracion/usuarios/roles', icon: 'lucideShield' },
+      ]
+    },
   ]);
 
   readonly sidebarMenu = this.menu.asReadonly();

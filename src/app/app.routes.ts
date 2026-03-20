@@ -12,22 +12,25 @@ export const routes: Routes = [
         component: AppShellComponent,
         canActivate: [authGuardFn],
         children: [
-            { path: '', redirectTo: 'sucursales', pathMatch: 'full' },
+            { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
             {
-                path: 'sucursales',
+                path: 'dashboard',
                 loadComponent: () => import('./features/branches/pages/branches-list/branches-list.component').then(m => m.BranchesListComponent),
-                data: { breadcrumb: 'Sucursales' }
-            },
-            {
-                path: 'usuarios',
-                loadChildren: () => import('./features/users/users.routes').then(m => m.USER_ROUTES),
-                data: { breadcrumb: 'Usuarios' }
+                data: { breadcrumb: 'Dashboard' }
             },
             {
                 path: 'inventario',
                 loadChildren: () => import('./features/inventory/inventory.routes').then(m => m.INVENTORY_ROUTES),
                 data: { breadcrumb: 'Inventario' }
-            }
+            },
+            {
+                path: 'configuracion',
+                loadChildren: () => import('./features/configuracion/configuracion.routes').then(m => m.CONFIGURACION_ROUTES),
+                data: { breadcrumb: 'Configuración' }
+            },
+            // Redirecciones de compatibilidad con rutas anteriores
+            { path: 'sucursales', redirectTo: 'configuracion/sucursales', pathMatch: 'full' },
+            { path: 'usuarios',   redirectTo: 'configuracion/usuarios',   pathMatch: 'full' },
         ]
     },
     {

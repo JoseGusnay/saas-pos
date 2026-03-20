@@ -85,3 +85,219 @@
   color: var(--color-danger-text);
   font-size: var(--font-size-xs);
 }
+
+.form-section-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0.25rem 0;
+
+  span {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+    white-space: nowrap;
+  }
+
+  &::before,
+  &::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--color-border-light);
+  }
+}
+
+.form-group small {
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+.puntos-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.punto-card {
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.punto-row {
+  display: grid;
+  grid-template-columns: 100px 1fr auto;
+  gap: 0.75rem;
+  align-items: end;
+  padding: 0.75rem 0.75rem 0.5rem;
+
+  .punto-codigo input,
+  .punto-desc input {
+    width: 100%;
+    padding: 0.625rem 0.875rem;
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-surface);
+    font-size: var(--font-size-base);
+    color: var(--color-text-main);
+    transition: var(--transition-fast);
+
+    &::placeholder { color: var(--color-text-muted); }
+    &:focus {
+      outline: none;
+      border-color: var(--color-accent-primary);
+      box-shadow: 0 0 0 2px rgba(17, 17, 17, 0.05);
+    }
+  }
+
+  input[readonly] {
+    background: var(--color-bg-hover);
+    color: var(--color-text-soft);
+    border-color: var(--color-border-subtle);
+    cursor: default;
+  }
+}
+
+.btn-remove-punto {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: var(--transition-fast);
+  flex-shrink: 0;
+
+  &:hover {
+    border-color: var(--color-danger-text);
+    color: var(--color-danger-text);
+    background: rgba(239, 68, 68, 0.05);
+  }
+}
+
+.btn-toggle-sec {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  width: 100%;
+  padding: 0.4rem 0.75rem;
+  border: none;
+  border-top: 1px solid var(--color-border-subtle);
+  background: var(--color-bg-hover);
+  color: var(--color-text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: var(--transition-fast);
+
+  ng-icon { font-size: 13px; }
+
+  &:hover {
+    color: var(--color-text-soft);
+    background: var(--color-bg-surface);
+  }
+}
+
+.secuenciales-form {
+  padding: 0.5rem 0.75rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+.sec-row-form {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--color-border-subtle);
+
+  &:last-child { border-bottom: none; }
+
+  .sec-label {
+    font-size: 12px;
+    color: var(--color-text-soft);
+    font-weight: 500;
+    flex: 1;
+  }
+
+  .sec-input-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 3px;
+  }
+
+  .sec-preview {
+    font-size: 10px;
+    font-family: monospace;
+    letter-spacing: 0.08em;
+    color: var(--color-text-muted);
+  }
+
+  input[type="number"] {
+    width: 90px;
+    padding: 0.35rem 0.625rem;
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-surface);
+    font-size: 13px;
+    color: var(--color-text-main);
+    text-align: right;
+    transition: var(--transition-fast);
+
+    &:focus {
+      outline: none;
+      border-color: var(--color-accent-primary);
+      box-shadow: 0 0 0 2px rgba(17, 17, 17, 0.05);
+    }
+
+    &::-webkit-inner-spin-button,
+    &::-webkit-outer-spin-button { opacity: 0.4; }
+  }
+}
+
+.btn-add-punto {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.5rem 0.875rem;
+  border: 1px dashed var(--color-border-light);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-fast);
+  width: 100%;
+  justify-content: center;
+
+  ng-icon { font-size: 14px; }
+
+  &:hover:not(:disabled) {
+    border-color: var(--color-accent-primary);
+    color: var(--color-accent-primary);
+    background: var(--color-bg-hover);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+.required {
+  color: var(--color-danger-text);
+}

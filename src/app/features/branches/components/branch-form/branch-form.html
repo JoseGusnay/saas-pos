@@ -39,5 +39,105 @@
         <label for="isMain">Sucursal principal</label>
       </div>
     </div>
+
+    @if (facturacionElectronica()) {
+
+      <!-- Datos SRI -->
+      <div class="form-section-divider">
+        <span>Datos SRI Ecuador</span>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="codigoEstablecimiento">Código Establecimiento <span class="required">*</span></label>
+          <input id="codigoEstablecimiento" type="text" formControlName="codigoEstablecimiento"
+            placeholder="001" maxlength="3">
+          <small *ngIf="branchForm.get('codigoEstablecimiento')?.invalid && branchForm.get('codigoEstablecimiento')?.touched" class="error-msg">
+            @if (branchForm.get('codigoEstablecimiento')?.hasError('required')) {
+              El código de establecimiento es requerido
+            } @else if (branchForm.get('codigoEstablecimiento')?.hasError('pattern')) {
+              Deben ser exactamente 3 dígitos numéricos (ej. 001)
+            }
+          </small>
+          <small *ngIf="!branchForm.get('codigoEstablecimiento')?.invalid">3 dígitos asignados por el SRI</small>
+        </div>
+        <div class="form-group">
+          <label for="nombreComercialSucursal">Nombre Comercial Sucursal</label>
+          <input id="nombreComercialSucursal" type="text" formControlName="nombreComercialSucursal"
+            placeholder="Nombre comercial (opcional)">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="dirEstablecimiento">Dirección para Comprobantes <span class="required">*</span></label>
+        <textarea id="dirEstablecimiento" formControlName="dirEstablecimiento" rows="2"
+          placeholder="Dirección que aparecerá en los comprobantes electrónicos"></textarea>
+        <small *ngIf="branchForm.get('dirEstablecimiento')?.hasError('required') && branchForm.get('dirEstablecimiento')?.touched" class="error-msg">
+          La dirección para comprobantes es requerida
+        </small>
+      </div>
+
+      <!-- Puntos de Emisión -->
+      <div class="form-section-divider">
+        <span>Puntos de Emisión</span>
+      </div>
+
+      <div formArrayName="puntosEmision" class="puntos-list">
+        @for (punto of puntosEmisionArray.controls; track $index; let puntoIdx = $index) {
+          <div [formGroupName]="puntoIdx" class="punto-card">
+
+            <!-- Fila principal: código / descripción / eliminar -->
+            <div class="punto-row">
+              <div class="form-group punto-codigo">
+                @if ($first) { <label>Código <span class="required">*</span></label> }
+                <input type="text" formControlName="codigoPuntoEmision" placeholder="001" maxlength="3"
+                  [readonly]="isPuntoExisting(puntoIdx)">
+                @if (!$first) {
+                  <small *ngIf="(punto.get('codigoPuntoEmision'))?.invalid && (punto.get('codigoPuntoEmision'))?.touched" class="error-msg">
+                    Requerido, 3 dígitos
+                  </small>
+                }
+              </div>
+              <div class="form-group punto-desc">
+                @if ($first) { <label>Descripción</label> }
+                <input type="text" formControlName="descripcion" placeholder="Ej. Caja principal">
+              </div>
+              <button type="button" class="btn-remove-punto" (click)="removePuntoEmision(puntoIdx)" title="Eliminar">
+                <ng-icon name="lucideTrash2"></ng-icon>
+              </button>
+            </div>
+
+            <!-- Toggle secuenciales -->
+            <button type="button" class="btn-toggle-sec" (click)="togglePunto(puntoIdx)">
+              <ng-icon [name]="isPuntoExpanded(puntoIdx) ? 'lucideChevronDown' : 'lucideChevronRight'"></ng-icon>
+              {{ isPuntoExisting(puntoIdx) ? 'Secuenciales actuales' : 'Secuenciales iniciales' }}
+            </button>
+
+            <!-- Secuenciales expandidos -->
+            @if (isPuntoExpanded(puntoIdx)) {
+              <div formArrayName="secuenciales" class="secuenciales-form">
+                @for (sec of getSecuencialesArray(puntoIdx).controls; track $index; let secIdx = $index) {
+                  <div [formGroupName]="secIdx" class="sec-row-form">
+                    <span class="sec-label">{{ sec.get('label')?.value }}</span>
+                    <div class="sec-input-wrap">
+                      <span class="sec-preview">{{ formatSecuencial(sec.get('ultimoNumero')?.value) }}</span>
+                      <input type="number" formControlName="ultimoNumero" min="0" placeholder="0">
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+
+          </div>
+        }
+      </div>
+
+      <button type="button" class="btn-add-punto" (click)="addPuntoEmision()">
+        <ng-icon name="lucidePlus"></ng-icon>
+        Agregar punto de emisión
+      </button>
+
+    }
+
   </fieldset>
 </form>

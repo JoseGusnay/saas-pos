@@ -56,7 +56,13 @@ import {
   lucidePercent,
   lucideWarehouse,
   lucideBuilding2,
-  lucideShoppingCart
+  lucideShoppingCart,
+  lucideClipboardList,
+  lucideUpload,
+  lucideCheckCircle2,
+  lucideAlertTriangle,
+  lucideRefreshCw,
+  lucideInfo,
 } from '@ng-icons/lucide';
 
 export const appConfig: ApplicationConfig = {
@@ -129,7 +135,13 @@ export const appConfig: ApplicationConfig = {
       lucidePercent,
       lucideWarehouse,
       lucideBuilding2,
-      lucideShoppingCart
+      lucideShoppingCart,
+      lucideClipboardList,
+      lucideUpload,
+      lucideCheckCircle2,
+      lucideAlertTriangle,
+      lucideRefreshCw,
+      lucideInfo,
     })
   ],
 };

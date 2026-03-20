@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { ApiResponse } from '../models/auth.models';
-import { Branch, BranchListResponse, BranchQueryFilters } from '../models/branch.models';
+import { Branch, BranchListResponse, BranchQueryFilters, CreateBranchPayload } from '../models/branch.models';
 import { Observable, map } from 'rxjs';
 
 @Injectable({
@@ -41,12 +41,12 @@ export class BranchService {
             .pipe(map(res => res.data));
     }
 
-    create(branch: Partial<Branch>): Observable<Branch> {
+    create(branch: CreateBranchPayload): Observable<Branch> {
         return this.http.post<ApiResponse<Branch>>(this.baseUrl, branch, { withCredentials: true })
             .pipe(map(res => res.data));
     }
 
-    update(id: string, branch: Partial<Branch>): Observable<Branch> {
+    update(id: string, branch: CreateBranchPayload): Observable<Branch> {
         return this.http.patch<ApiResponse<Branch>>(`${this.baseUrl}/${id}`, branch, { withCredentials: true })
             .pipe(map(res => res.data));
     }
