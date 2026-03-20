@@ -17,6 +17,11 @@ export const INVENTORY_ROUTES: Routes = [
     data: { breadcrumb: 'Presentaciones' }
   },
   {
+    path: 'impuestos',
+    loadComponent: () => import('./pages/taxes-list/taxes-list.component').then(m => m.TaxesListComponent),
+    data: { breadcrumb: 'Impuestos' }
+  },
+  {
     path: 'productos',
     loadComponent: () => import('./pages/products-list/products-list.component').then(m => m.ProductsListComponent),
     data: { breadcrumb: 'Catálogo de Productos' }
@@ -35,6 +40,31 @@ export const INVENTORY_ROUTES: Routes = [
     path: 'productos/:id/editar',
     loadComponent: () => import('./pages/product-form-page/product-form-page.component').then(m => m.ProductFormPageComponent),
     data: { breadcrumb: 'Editar Producto' }
+  },
+  {
+    path: 'stock',
+    loadComponent: () => import('./pages/stock-list/stock-list.component').then(m => m.StockListComponent),
+    data: { breadcrumb: 'Stock' }
+  },
+  {
+    path: 'proveedores',
+    loadComponent: () => import('./pages/suppliers-list/suppliers-list.component').then(m => m.SuppliersListComponent),
+    data: { breadcrumb: 'Proveedores' }
+  },
+  {
+    path: 'ordenes-compra',
+    loadComponent: () => import('./pages/purchase-orders-list/purchase-orders-list.component').then(m => m.PurchaseOrdersListComponent),
+    data: { breadcrumb: 'Órdenes de Compra' }
+  },
+  {
+    path: 'ordenes-compra/nueva',
+    loadComponent: () => import('./pages/purchase-order-form/purchase-order-form.component').then(m => m.PurchaseOrderFormComponent),
+    data: { breadcrumb: 'Nueva Orden de Compra' }
+  },
+  {
+    path: 'ordenes-compra/:id/editar',
+    loadComponent: () => import('./pages/purchase-order-form/purchase-order-form.component').then(m => m.PurchaseOrderFormComponent),
+    data: { breadcrumb: 'Editar Orden de Compra' }
   }
 ];
 

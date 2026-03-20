@@ -427,7 +427,7 @@ export class VariantCardComponent implements OnInit {
 
     const taxIds = this.form.get('taxIds')?.value as string[];
     if (taxIds?.length) {
-      this.taxService.findAll().subscribe(taxes => {
+      this.taxService.findAllSimple().subscribe(taxes => {
         const matched = taxes.filter(t => taxIds.includes(t.id));
         this.initialTaxOptions.set(matched.map(m => ({ value: m.id, label: `${m.name} (${m.percentage}%)` })));
       });
@@ -444,7 +444,7 @@ export class VariantCardComponent implements OnInit {
   }
 
   searchTaxesFn(query: string) {
-    return this.taxService.findAll().pipe(
+    return this.taxService.findAllSimple().pipe(
       map(items => ({
         data: items
           .filter(i => i.name.toLowerCase().includes(query.toLowerCase()))

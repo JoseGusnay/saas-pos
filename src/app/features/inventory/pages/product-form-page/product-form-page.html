@@ -120,7 +120,7 @@
                       searchPlaceholder="Buscar categorías…"
                       [searchFn]="searchCategoriesFn.bind(this)"
                       [initialOption]="selectedCategoryOption()"
-                      (selectionChange)="selectedCategoryOption.set($event ?? undefined)">
+                      (selectionChange)="selectedCategoryOption.set($any($event) ?? undefined)">
                     </app-search-select>
                     @if (form.get('categoryId')?.invalid && form.get('categoryId')?.touched) {
                       <small class="err-msg">
@@ -137,7 +137,8 @@
                         placeholder="Seleccionar marca…"
                         searchPlaceholder="Buscar marcas…"
                         [searchFn]="searchBrandsFn.bind(this)"
-                        [initialOption]="selectedBrandOption()">
+                        [initialOption]="selectedBrandOption()"
+                        (selectionChange)="selectedBrandOption.set($any($event) ?? undefined)">
                       </app-search-select>
                     </div>
                   }
@@ -294,7 +295,8 @@
                     searchPlaceholder="Buscar impuestos…"
                     [multiple]="true"
                     [searchFn]="searchTaxesFn.bind(this)"
-                    [initialOptions]="initialTaxOptions()">
+                    [initialOptions]="initialTaxOptions()"
+                    (selectionChange)="onTaxSelectionChange($event)">
                   </app-search-select>
                 </div>
 

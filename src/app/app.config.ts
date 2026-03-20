@@ -52,7 +52,11 @@ import {
   lucideLayers,
   lucideTag,
   lucideBox,
-  lucideArchive
+  lucideArchive,
+  lucidePercent,
+  lucideWarehouse,
+  lucideBuilding2,
+  lucideShoppingCart
 } from '@ng-icons/lucide';
 
 export const appConfig: ApplicationConfig = {
@@ -121,7 +125,11 @@ export const appConfig: ApplicationConfig = {
       lucideLayers,
       lucideTag,
       lucideBox,
-      lucideArchive
+      lucideArchive,
+      lucidePercent,
+      lucideWarehouse,
+      lucideBuilding2,
+      lucideShoppingCart
     })
   ],
 };

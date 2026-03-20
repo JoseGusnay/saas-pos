@@ -86,6 +86,11 @@ export class ProductFormPageComponent implements OnInit, OnDestroy {
   selectedCategoryOption = signal<SearchSelectOption | undefined>(undefined);
   selectedBrandOption = signal<SearchSelectOption | undefined>(undefined);
   initialTaxOptions = signal<SearchSelectOption[]>([]);
+
+  onTaxSelectionChange(event: SearchSelectOption | SearchSelectOption[] | null) {
+    if (Array.isArray(event)) this.initialTaxOptions.set(event);
+    else if (!event) this.initialTaxOptions.set([]);
+  }
   imagePreview = signal<string | null>(null);
   selectedImageFile = signal<File | null>(null);
   imagePublicId = signal<string | null>(null);
@@ -204,7 +209,7 @@ export class ProductFormPageComponent implements OnInit, OnDestroy {
     if (!this.hasVariants.value && p.variants?.length === 1) {
       const taxIds = p.variants[0].variantTaxes?.map((vt: any) => vt.taxId) ?? [];
       if (taxIds.length) {
-        this.taxSvc.findAll().subscribe(taxes => {
+        this.taxSvc.findAllSimple().subscribe(taxes => {
           const matched = taxes.filter((t: any) => taxIds.includes(t.id));
           this.initialTaxOptions.set(matched.map((t: any) => ({ value: t.id, label: `${t.name} (${t.percentage}%)` })));
         });
@@ -512,7 +517,7 @@ export class ProductFormPageComponent implements OnInit, OnDestroy {
   }
 
   searchTaxesFn(query: string) {
-    return this.taxSvc.findAll().pipe(
+    return this.taxSvc.findAllSimple().pipe(
       map(taxes => {
         const filtered = taxes.filter((t: any) =>
           t.name.toLowerCase().includes(query.toLowerCase())

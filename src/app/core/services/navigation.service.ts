@@ -68,7 +68,11 @@ export class NavigationService {
         { label: 'Categorías', route: '/inventario/categorias', icon: 'lucideLayers' },
         { label: 'Marcas', route: '/inventario/marcas', icon: 'lucideTag' },
         { label: 'Presentaciones', route: '/inventario/presentaciones', icon: 'lucideArchive' },
-        { label: 'Productos', route: '/inventario/productos', icon: 'lucideBox' }
+        { label: 'Impuestos', route: '/inventario/impuestos', icon: 'lucidePercent' },
+        { label: 'Productos', route: '/inventario/productos', icon: 'lucideBox' },
+        { label: 'Stock', route: '/inventario/stock', icon: 'lucideWarehouse' },
+        { label: 'Proveedores', route: '/inventario/proveedores', icon: 'lucideBuilding2' },
+        { label: 'Órdenes de Compra', route: '/inventario/ordenes-compra', icon: 'lucideShoppingCart' }
       ]
     },
 

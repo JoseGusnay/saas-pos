@@ -92,6 +92,7 @@ import { map } from 'rxjs';
                     placeholder="Ej: Botella Vidrio"
                     [searchFn]="searchPresentationsFn.bind(this)"
                     [initialOption]="initialPresentationOption()"
+                    (selectionChange)="onPresentationChange($event)"
                   ></app-search-select>
                 </div>
 
@@ -279,6 +280,7 @@ import { map } from 'rxjs';
                 [multiple]="true"
                 [searchFn]="searchTaxesFn.bind(this)"
                 [initialOptions]="initialTaxOptions()"
+                (selectionChange)="onTaxSelectionChange($event)"
               ></app-search-select>
             </div>
           </div>
@@ -744,11 +746,20 @@ export class VariantDrawerComponent implements OnInit, OnDestroy {
 
     const taxIds = this.form.get('taxIds')?.value as string[];
     if (taxIds?.length) {
-      this.taxService.findAll().subscribe(taxes => {
+      this.taxService.findAllSimple().subscribe(taxes => {
         const matched = taxes.filter(t => taxIds.includes(t.id));
         this.initialTaxOptions.set(matched.map(m => ({ value: m.id, label: `${m.name} (${m.percentage}%)` })));
       });
     }
+  }
+
+  onPresentationChange(event: SearchSelectOption | SearchSelectOption[] | null) {
+    if (!Array.isArray(event)) this.initialPresentationOption.set(event ?? undefined);
+  }
+
+  onTaxSelectionChange(event: SearchSelectOption | SearchSelectOption[] | null) {
+    if (Array.isArray(event)) this.initialTaxOptions.set(event);
+    else if (!event) this.initialTaxOptions.set([]);
   }
 
   searchPresentationsFn(query: string) {
@@ -761,7 +772,7 @@ export class VariantDrawerComponent implements OnInit, OnDestroy {
   }
 
   searchTaxesFn(query: string) {
-    return this.taxService.findAll().pipe(
+    return this.taxService.findAllSimple().pipe(
       map(items => ({
         data: items
           .filter(i => i.name.toLowerCase().includes(query.toLowerCase()))

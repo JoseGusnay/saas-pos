@@ -277,7 +277,7 @@ export class SearchSelectComponent implements AfterViewInit, ControlValueAccesso
   @Input() multiple = false;
   @Input() searchFn?: (query: string, page: number) => Observable<{ data: SearchSelectOption[], hasMore: boolean }>;
 
-  @Output() selectionChange = new EventEmitter<SearchSelectOption | null>();
+  @Output() selectionChange = new EventEmitter<SearchSelectOption | SearchSelectOption[] | null>();
 
   @ViewChild('searchInput') searchInputElement?: ElementRef<HTMLInputElement>;
 
@@ -405,7 +405,7 @@ export class SearchSelectComponent implements AfterViewInit, ControlValueAccesso
     if (this.multiple) {
       const current = Array.isArray(this.value()) ? [...this.value()] : [];
       const index = current.indexOf(option.value);
-      
+
       if (index >= 0) {
         current.splice(index, 1);
         this.selectedOptionsMap.update(m => { m.delete(option.value); return new Map(m); });
@@ -413,9 +413,11 @@ export class SearchSelectComponent implements AfterViewInit, ControlValueAccesso
         current.push(option.value);
         this.selectedOptionsMap.update(m => { m.set(option.value, option); return new Map(m); });
       }
-      
+
       this.value.set(current);
       this.onChange(current);
+      const selectedOpts = current.map(v => this.selectedOptionsMap().get(v)).filter(Boolean) as SearchSelectOption[];
+      this.selectionChange.emit(selectedOpts);
     } else {
       this.value.set(option.value);
       this.selectedOptionsMap.update(m => { m.set(option.value, option); return new Map(m); });
@@ -437,7 +439,7 @@ export class SearchSelectComponent implements AfterViewInit, ControlValueAccesso
     this.value.set(clearVal);
     this.selectedOptionsMap.set(new Map());
     this.onChange(clearVal);
-    this.selectionChange.emit(null);
+    this.selectionChange.emit(this.multiple ? [] : null);
   }
 
   onSearchInput(event: any) { this.searchSubject.next(event.target.value); }
