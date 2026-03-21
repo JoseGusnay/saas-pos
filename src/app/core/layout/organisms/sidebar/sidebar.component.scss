@@ -49,6 +49,8 @@
         // Por eso, en colapsado (donde hay pocos items habitualmente) forzamos visible.
         .sidebar--collapsed & {
             overflow: visible;
+            padding-left: 0;
+            padding-right: 0;
         }
 
         // Estilos de scrollbar locales (Mac/Vercel Aesthetic)
