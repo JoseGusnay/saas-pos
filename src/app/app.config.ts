@@ -63,6 +63,7 @@ import {
   lucideAlertTriangle,
   lucideRefreshCw,
   lucideInfo,
+  lucideRuler,
 } from '@ng-icons/lucide';
 
 export const appConfig: ApplicationConfig = {
@@ -142,6 +143,7 @@ export const appConfig: ApplicationConfig = {
       lucideAlertTriangle,
       lucideRefreshCw,
       lucideInfo,
+      lucideRuler,
     })
   ],
 };

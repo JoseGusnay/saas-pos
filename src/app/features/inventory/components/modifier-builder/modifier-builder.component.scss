@@ -1,79 +1,126 @@
 .mb {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 
-  // ── Group ──────────────────────────────────────────────────────────────
-  &__group {
+  // ── Empty state ──────────────────────────────────────────────────────────────
+  &__empty {
+    margin: 0;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+    font-style: italic;
+    padding: 4px 0;
+  }
+
+  // ── Group card ───────────────────────────────────────────────────────────────
+  &__group-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    background: var(--color-bg-surface);
     border: 1px solid var(--color-border-light);
     border-radius: var(--radius-md);
-    overflow: hidden;
-    background: var(--color-bg-surface);
-  }
-
-  &__group-header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 14px;
-    background: var(--color-bg-canvas);
-    border-bottom: 1px solid var(--color-border-subtle);
-  }
-
-  &__collapse-btn {
-    width: 28px;
-    height: 28px;
-    border: none;
-    background: transparent;
-    color: var(--color-text-muted);
-    cursor: pointer;
-    border-radius: var(--radius-sm);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 14px;
-    flex-shrink: 0;
-    transition: background var(--transition-fast);
-
-    &:hover { background: var(--color-bg-hover); }
-  }
-
-  &__group-name-input {
-    flex: 1;
-    height: 34px;
-    border: 1px solid var(--color-border-light);
-    border-radius: var(--radius-sm);
-    padding: 0 10px;
-    font-size: var(--font-size-sm);
-    font-weight: var(--font-weight-medium);
-    color: var(--color-text-main);
-    background: var(--color-bg-surface);
-    font-family: inherit;
-    outline: none;
     transition: border-color var(--transition-fast);
 
-    &:focus { border-color: var(--color-accent-primary); }
-    &--error { border-color: var(--color-danger-text); }
-    &::placeholder { color: var(--color-text-muted); font-weight: var(--font-weight-normal); }
+    &:hover { border-color: var(--color-accent-primary); }
   }
 
-  &__req-toggle {
+  &__group-card-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  &__group-card-name {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-main);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__group-card-badges {
     display: flex;
     align-items: center;
-    gap: 5px;
-    cursor: pointer;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  &__badge {
+    display: inline-flex;
+    align-items: center;
+    height: 20px;
+    padding: 0 8px;
+    border-radius: 999px;
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    background: var(--color-bg-canvas);
+    color: var(--color-text-muted);
+    border: 1px solid var(--color-border-light);
+
+    &--req {
+      background: rgba(79, 70, 229, 0.08);
+      color: var(--color-accent-primary);
+      border-color: transparent;
+    }
+
+    &--default {
+      background: rgba(16, 185, 129, 0.08);
+      color: var(--color-success-text, #10b981);
+      border-color: transparent;
+    }
+
+    &--stock {
+      background: rgba(245, 158, 11, 0.08);
+      color: var(--color-warning-text, #f59e0b);
+      border-color: transparent;
+    }
+
+    &--error {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: var(--color-danger-bg);
+      color: var(--color-danger-text);
+      border-color: transparent;
+
+      ng-icon { font-size: 11px; }
+    }
+  }
+
+  &__group-card-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
     flex-shrink: 0;
   }
 
-  &__req-checkbox {
-    accent-color: var(--color-accent-primary);
-    cursor: pointer;
-  }
-
-  &__req-label {
-    font-size: var(--font-size-xs);
+  &__edit-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    height: 30px;
+    padding: 0 12px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--color-border-light);
+    background: var(--color-bg-surface);
     color: var(--color-text-secondary);
-    white-space: nowrap;
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    font-family: inherit;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+
+    ng-icon { font-size: 12px; }
+
+    &:hover {
+      border-color: var(--color-accent-primary);
+      color: var(--color-accent-primary);
+    }
   }
 
   &__remove-group-btn {
@@ -97,12 +144,113 @@
     }
   }
 
-  // ── Group body ─────────────────────────────────────────────────────────
-  &__group-body {
-    padding: 14px;
+  // ── Add group button ─────────────────────────────────────────────────────────
+  &__add-group-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    height: 38px;
+    border-radius: var(--radius-md);
+    border: 1px dashed var(--color-border-light);
+    background: transparent;
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+    font-family: inherit;
+    transition: all var(--transition-fast);
+
+    ng-icon { font-size: 14px; }
+
+    &:hover {
+      border-color: var(--color-accent-primary);
+      color: var(--color-accent-primary);
+      background: rgba(79, 70, 229, 0.04);
+    }
+  }
+
+  // ── Drawer body ──────────────────────────────────────────────────────────────
+  &__drawer-body {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 20px;
+    padding: 24px;
+  }
+
+  &__drawer-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+
+  &__drawer-toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 16px;
+    background: var(--color-bg-canvas);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-md);
+  }
+
+  &__drawer-toggle-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  &__drawer-toggle-label {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-main);
+  }
+
+  &__drawer-toggle-hint {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+  }
+
+  &__drawer-btn {
+    height: 38px;
+    padding: 0 20px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border-light);
+    background: var(--color-bg-surface);
+    color: var(--color-text-main);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    font-family: inherit;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+
+    &:hover { background: var(--color-bg-hover); }
+
+    &--ghost {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: transparent;
+      border-color: transparent;
+      color: var(--color-text-secondary);
+
+      ng-icon { font-size: 14px; }
+
+      &:hover {
+        background: var(--color-bg-hover);
+        border-color: var(--color-border-light);
+      }
+    }
+  }
+
+  // ── Selections grid ──────────────────────────────────────────────────────────
+  &__selections-block {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
   }
 
   &__selections-row {
@@ -111,7 +259,18 @@
     gap: 12px;
   }
 
-  // ── Options ────────────────────────────────────────────────────────────
+  &__cross-error {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin: 0;
+    font-size: var(--font-size-xs);
+    color: var(--color-danger-text);
+
+    ng-icon { font-size: 12px; flex-shrink: 0; }
+  }
+
+  // ── Options section ──────────────────────────────────────────────────────────
   &__options {
     display: flex;
     flex-direction: column;
@@ -160,223 +319,67 @@
     color: var(--color-text-muted);
     font-style: italic;
     padding: 6px 0;
-  }
-
-  &__option {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 6px 10px;
-    background: var(--color-bg-canvas);
-    border: 1px solid var(--color-border-subtle);
-    border-radius: var(--radius-sm);
-  }
+    gap: 6px;
 
-  &__opt-name {
-    flex: 1;
-    height: 30px;
-    border: 1px solid var(--color-border-light);
-    border-radius: var(--radius-sm);
-    padding: 0 8px;
-    font-size: var(--font-size-sm);
-    color: var(--color-text-main);
-    background: var(--color-bg-surface);
-    font-family: inherit;
-    outline: none;
-    transition: border-color var(--transition-fast);
-
-    &:focus { border-color: var(--color-accent-primary); }
-    &--error { border-color: var(--color-danger-text); }
-    &::placeholder { color: var(--color-text-muted); }
-  }
-
-  &__opt-price-wrap {
-    display: flex;
-    align-items: center;
-    border: 1px solid var(--color-border-light);
-    border-radius: var(--radius-sm);
-    background: var(--color-bg-surface);
-    height: 30px;
-    flex-shrink: 0;
-    overflow: hidden;
-
-    &:focus-within { border-color: var(--color-accent-primary); }
-  }
-
-  &__opt-currency {
-    padding: 0 6px;
-    font-size: var(--font-size-xs);
-    color: var(--color-text-muted);
-    flex-shrink: 0;
-  }
-
-  &__opt-price {
-    width: 72px;
-    height: 100%;
-    border: none;
-    background: transparent;
-    font-size: var(--font-size-sm);
-    color: var(--color-text-main);
-    font-family: inherit;
-    outline: none;
-    text-align: right;
-    padding-right: 6px;
-
-    &::-webkit-inner-spin-button,
-    &::-webkit-outer-spin-button { -webkit-appearance: none; }
-  }
-
-  &__opt-default {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    cursor: pointer;
-    flex-shrink: 0;
-  }
-
-  &__opt-default-check {
-    accent-color: var(--color-accent-primary);
-    cursor: pointer;
-  }
-
-  &__opt-default-label {
-    font-size: var(--font-size-xs);
-    color: var(--color-text-secondary);
-    white-space: nowrap;
-  }
-
-  &__opt-variant-wrap {
-    position: relative;
-    flex-shrink: 0;
-  }
-
-  &__opt-variant-tag {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    height: 26px;
-    padding: 0 8px;
-    border-radius: var(--radius-sm);
-    background: rgba(79, 70, 229, 0.1);
-    color: var(--color-accent-primary);
-    font-size: var(--font-size-xs);
-    font-weight: var(--font-weight-medium);
-    max-width: 140px;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-
-    ng-icon { font-size: 11px; flex-shrink: 0; }
-  }
-
-  &__opt-variant-clear {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 16px;
-    height: 16px;
-    border: none;
-    background: transparent;
-    color: var(--color-accent-primary);
-    cursor: pointer;
-    padding: 0;
-    border-radius: var(--radius-sm);
-    flex-shrink: 0;
-
-    &:hover { color: var(--color-danger-text); }
-    ng-icon { font-size: 10px; }
-  }
-
-  &__opt-search-wrap {
-    position: relative;
-    width: 170px;
-  }
-
-  &__opt-search-input {
-    width: 100%;
-    height: 28px;
-    border: 1px solid var(--color-accent-primary);
-    border-radius: var(--radius-sm);
-    padding: 0 8px;
-    font-size: var(--font-size-xs);
-    color: var(--color-text-main);
-    background: var(--color-bg-surface);
-    font-family: inherit;
-    outline: none;
-
-    &::placeholder { color: var(--color-text-muted); }
-  }
-
-  &__opt-searching {
-    position: absolute;
-    top: calc(100% + 2px);
-    left: 0;
-    font-size: var(--font-size-xs);
-    color: var(--color-text-muted);
-    font-style: italic;
-    white-space: nowrap;
-  }
-
-  &__opt-dropdown {
-    position: absolute;
-    top: calc(100% + 2px);
-    left: 0;
-    min-width: 200px;
-    max-width: 300px;
-    background: var(--color-bg-surface);
-    border: 1px solid var(--color-border-light);
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-md);
-    z-index: 50;
-    overflow: hidden;
-  }
-
-  &__opt-result {
-    display: block;
-    width: 100%;
-    padding: 7px 10px;
-    border: none;
-    background: transparent;
-    text-align: left;
-    cursor: pointer;
-    font-family: inherit;
-    font-size: var(--font-size-xs);
-    color: var(--color-text-main);
-    transition: background var(--transition-fast);
-
-    &:hover { background: var(--color-bg-hover); }
-  }
-
-  &__opt-result-product {
-    font-weight: var(--font-weight-medium);
-  }
-
-  &__opt-result-variant {
-    color: var(--color-text-muted);
-  }
-
-  &__opt-link-btn {
-    height: 26px;
-    padding: 0 8px;
-    border: 1px dashed var(--color-border-light);
-    border-radius: var(--radius-sm);
-    background: transparent;
-    color: var(--color-text-muted);
-    font-size: var(--font-size-xs);
-    cursor: pointer;
-    font-family: inherit;
-    white-space: nowrap;
-    transition: all var(--transition-fast);
-
-    &:hover {
-      border-color: var(--color-accent-primary);
-      color: var(--color-accent-primary);
+    &--error {
+      color: var(--color-danger-text);
+      font-style: normal;
+      font-weight: var(--font-weight-medium);
+      ng-icon { font-size: 13px; flex-shrink: 0; }
     }
   }
 
+  // ── Option card (vista grupo) ────────────────────────────────────────────────
+  &__opt-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: var(--color-bg-canvas);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-sm);
+    transition: border-color var(--transition-fast);
+
+    &:hover { border-color: var(--color-border-light); }
+
+    &--invalid { border-color: var(--color-danger-text); }
+  }
+
+  &__opt-card-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  &__opt-card-name {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-main);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__opt-card-badges {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+
+  &__opt-card-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+
   &__remove-opt-btn {
-    width: 26px;
-    height: 26px;
+    width: 28px;
+    height: 28px;
     border-radius: var(--radius-sm);
     border: none;
     background: transparent;
@@ -395,22 +398,138 @@
     }
   }
 
-  // ── Add group button ───────────────────────────────────────────────────
-  &__add-group-btn {
+  // ── Variant section (vista opción) ───────────────────────────────────────────
+  &__variant-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 16px;
+    background: var(--color-bg-canvas);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-md);
+  }
+
+  &__variant-hint {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    margin-top: -4px;
+  }
+
+  &__opt-variant-tag {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: rgba(79, 70, 229, 0.08);
+    border-radius: var(--radius-sm);
+    color: var(--color-accent-primary);
+    font-size: var(--font-size-sm);
+
+    ng-icon { font-size: 13px; flex-shrink: 0; }
+  }
+
+  &__opt-variant-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: var(--font-weight-medium);
+  }
+
+  &__opt-variant-clear {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border: none;
+    background: transparent;
+    color: var(--color-accent-primary);
+    cursor: pointer;
+    padding: 0;
+    border-radius: var(--radius-sm);
+    flex-shrink: 0;
+
+    &:hover { color: var(--color-danger-text); }
+    ng-icon { font-size: 12px; }
+  }
+
+  &__opt-search-wrap {
+    position: relative;
+    width: 100%;
+  }
+
+  &__opt-search-input {
+    width: 100%;
+    height: 36px;
+    border: 1px solid var(--color-accent-primary);
+    border-radius: var(--radius-sm);
+    padding: 0 10px;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-main);
+    background: var(--color-bg-surface);
+    font-family: inherit;
+    outline: none;
+    box-sizing: border-box;
+
+    &::placeholder { color: var(--color-text-muted); }
+  }
+
+  &__opt-searching {
+    display: block;
+    margin-top: 6px;
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    font-style: italic;
+  }
+
+  &__opt-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    background: var(--color-bg-surface);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+    z-index: 50;
+    overflow: hidden;
+  }
+
+  &__opt-result {
+    display: block;
+    width: 100%;
+    padding: 8px 12px;
+    border: none;
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-main);
+    transition: background var(--transition-fast);
+
+    &:hover { background: var(--color-bg-hover); }
+  }
+
+  &__opt-result-product { font-weight: var(--font-weight-medium); }
+  &__opt-result-variant { color: var(--color-text-muted); }
+
+  &__opt-link-btn {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
+    gap: 8px;
     width: 100%;
     height: 38px;
-    border-radius: var(--radius-md);
     border: 1px dashed var(--color-border-light);
+    border-radius: var(--radius-sm);
     background: transparent;
-    color: var(--color-text-secondary);
+    color: var(--color-text-muted);
     font-size: var(--font-size-sm);
-    font-weight: var(--font-weight-medium);
-    cursor: pointer;
     font-family: inherit;
+    cursor: pointer;
     transition: all var(--transition-fast);
 
     ng-icon { font-size: 14px; }

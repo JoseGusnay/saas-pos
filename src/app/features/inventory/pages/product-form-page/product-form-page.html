@@ -234,6 +234,7 @@
                 </div>
                 <div class="pfc__fields" formGroupName="simpleVariant">
                   <app-raw-material-form
+                    [categoryAttributes]="categoryAttributes()"
                     [productName]="form.get('name')?.value"
                     [initialUnitOption]="initialUnitOption()"
                   ></app-raw-material-form>

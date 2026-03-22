@@ -54,7 +54,9 @@
           searchPlaceholder="Buscar categorías…"
           [searchFn]="searchCategoriesFn"
           [initialOption]="_catOption()"
+          createNewLabel="Crear nueva categoría"
           (selectionChange)="onCatChange($event)"
+          (createNew)="onOpenCategoryCreate()"
         ></app-search-select>
         @if (categoryCtrl?.invalid && categoryCtrl?.touched) {
           <small class="pff__error">
@@ -76,7 +78,9 @@
             searchPlaceholder="Buscar marcas…"
             [searchFn]="searchBrandsFn"
             [initialOption]="_brandOption()"
+            createNewLabel="Crear nueva marca"
             (selectionChange)="onBrandChange($event)"
+            (createNew)="onOpenBrandCreate()"
           ></app-search-select>
         </div>
       }
@@ -128,3 +132,17 @@
 
   </div>
 </section>
+
+<!-- ══ Drawer: Crear categoría rápida ══ -->
+<app-category-drawer
+  [isOpen]="catCreateOpen()"
+  (saved)="onCategoryCreated($event)"
+  (close)="catCreateOpen.set(false)"
+></app-category-drawer>
+
+<!-- ══ Drawer: Crear marca rápida ══ -->
+<app-brand-drawer
+  [isOpen]="brandCreateOpen()"
+  (saved)="onBrandCreated($event)"
+  (close)="brandCreateOpen.set(false)"
+></app-brand-drawer>

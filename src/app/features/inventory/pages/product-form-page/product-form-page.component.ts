@@ -272,8 +272,8 @@ export class ProductFormPageComponent implements OnInit {
         presentationId: v.presentationId ?? '',
         baseUnitId: v.baseUnitId ?? '',
         conversionFactor: v.conversionFactor ?? 1,
-        costPrice: v.costPrice,
-        salePrice: v.salePrice,
+        costPrice: this.round2(v.costPrice),
+        salePrice: this.round2(v.salePrice),
         taxIds: v.variantTaxes?.map((vt: any) => vt.taxId) || [],
         stockTrackable: v.stockTrackable ?? true,
         trackLots: v.trackLots ?? false,
@@ -419,7 +419,8 @@ export class ProductFormPageComponent implements OnInit {
   private syncValidators() {
     const type = this.typeCtrl.value;
     const hasVariants = this.hasVariants.value;
-    const salePriceCtrl = this.simpleVariant.get('salePrice')!;
+    const salePriceCtrl  = this.simpleVariant.get('salePrice')!;
+    const baseUnitIdCtrl = this.simpleVariant.get('baseUnitId')!;
 
     if (hasVariants) {
       this.simpleVariant.disable();
@@ -437,6 +438,17 @@ export class ProductFormPageComponent implements OnInit {
         salePriceCtrl.clearValidators();
       }
       salePriceCtrl.updateValueAndValidity({ emitEvent: false });
+
+      const conversionFactorCtrl = this.simpleVariant.get('conversionFactor')!;
+      if (type === 'RAW_MATERIAL') {
+        baseUnitIdCtrl.setValidators([Validators.required]);
+        conversionFactorCtrl.setValidators([Validators.required, Validators.min(0.0001)]);
+      } else {
+        baseUnitIdCtrl.clearValidators();
+        conversionFactorCtrl.setValidators([Validators.min(0.0001)]);
+      }
+      baseUnitIdCtrl.updateValueAndValidity({ emitEvent: false });
+      conversionFactorCtrl.updateValueAndValidity({ emitEvent: false });
     }
   }
 
@@ -551,8 +563,8 @@ export class ProductFormPageComponent implements OnInit {
       presentationId: [existingVariant?.presentationId ?? ''],
       baseUnitId: [existingVariant?.baseUnitId ?? ''],
       conversionFactor: [existingVariant?.conversionFactor ?? 1, [Validators.min(0.0001)]],
-      costPrice: [existingVariant?.costPrice ?? 0, [Validators.min(0)]],
-      salePrice: [existingVariant?.salePrice ?? null, [Validators.required, Validators.min(0)]],
+      costPrice: [this.round2(existingVariant?.costPrice ?? 0), [Validators.min(0)]],
+      salePrice: [this.round2(existingVariant?.salePrice ?? null), [Validators.required, Validators.min(0)]],
       stockTrackable: [existingVariant?.stockTrackable ?? true],
       trackLots: [existingVariant?.trackLots ?? false],
       trackExpiry: [existingVariant?.trackExpiry ?? false],
@@ -889,6 +901,11 @@ export class ProductFormPageComponent implements OnInit {
           notes: ing.notes || undefined,
         })),
     };
+  }
+
+  private round2(value: number | null | undefined): number | null {
+    if (value === null || value === undefined) return null;
+    return Math.round(value * 100) / 100;
   }
 
   private buildAttributeValues(attrs: Record<string, any> = {}) {

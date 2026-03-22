@@ -112,3 +112,21 @@
     }
   }
 }
+
+// ── Utility: footer de drawer con botones ────────────────────────────────────
+.drawer-footer-actions,
+.modal-footer-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+
+  @media (max-width: 768px) {
+    flex-direction: column-reverse;
+    gap: 8px;
+
+    app-form-button,
+    button { width: 100%; }
+  }
+}

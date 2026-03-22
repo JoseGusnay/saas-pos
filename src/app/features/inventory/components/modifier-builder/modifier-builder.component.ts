@@ -1,28 +1,37 @@
 import {
-  Component, Input, OnInit, OnDestroy, inject, signal,
-  ChangeDetectionStrategy
+  Component, Input, OnInit, OnDestroy, inject, signal, computed,
+  ChangeDetectionStrategy, ChangeDetectorRef
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   AbstractControl, FormArray, FormBuilder, FormGroup,
-  ReactiveFormsModule, Validators
+  ReactiveFormsModule, ValidationErrors, ValidatorFn, Validators
 } from '@angular/forms';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import {
-  lucidePlus, lucideTrash2, lucideChevronDown, lucideChevronUp,
-  lucideX, lucideSearch
+  lucidePlus, lucideTrash2, lucideX, lucideLink,
+  lucidePencil, lucideChevronLeft, lucideAlertCircle
 } from '@ng-icons/lucide';
-import { Subject, debounceTime, distinctUntilChanged, switchMap, of, takeUntil } from 'rxjs';
+import {
+  Subject, Subscription, debounceTime, distinctUntilChanged,
+  switchMap, of, takeUntil
+} from 'rxjs';
 import { ProductService } from '../../services/product.service';
 import { FieldInputComponent } from '../../../../shared/components/ui/field-input/field-input';
+import { ToggleSwitchComponent } from '../../../../shared/components/ui/toggle-switch/toggle-switch';
+import { DrawerComponent } from '../../../../shared/components/ui/drawer/drawer';
 
 @Component({
   selector: 'app-modifier-builder',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, ReactiveFormsModule, NgIconComponent, FieldInputComponent],
+  imports: [CommonModule, ReactiveFormsModule, NgIconComponent,
+    FieldInputComponent, ToggleSwitchComponent, DrawerComponent],
   providers: [
-    provideIcons({ lucidePlus, lucideTrash2, lucideChevronDown, lucideChevronUp, lucideX, lucideSearch })
+    provideIcons({
+      lucidePlus, lucideTrash2, lucideX, lucideLink,
+      lucidePencil, lucideChevronLeft, lucideAlertCircle
+    })
   ],
   templateUrl: './modifier-builder.component.html',
   styleUrl: './modifier-builder.component.scss'
@@ -30,27 +39,75 @@ import { FieldInputComponent } from '../../../../shared/components/ui/field-inpu
 export class ModifierBuilderComponent implements OnInit, OnDestroy {
   @Input({ required: true }) formArray!: FormArray;
 
-  private fb = inject(FormBuilder);
+  private fb         = inject(FormBuilder);
   private productSvc = inject(ProductService);
-  private destroy$ = new Subject<void>();
+  private cdr        = inject(ChangeDetectorRef);
+  private destroy$   = new Subject<void>();
   private optSearch$ = new Subject<string>();
+  private requiredSub?: Subscription;
+  private isDefaultSub?: Subscription;
 
-  // Track which groups are expanded (all open by default when added)
-  private openGroups = signal<Set<number>>(new Set());
+  // ── Drawer state ──────────────────────────────────────────────────────────────
+  drawerOpen        = signal(false);
+  drawerView        = signal<'group' | 'option'>('group');
+  editingGroupIndex = signal<number | null>(null);
+  editingOptionOi   = signal<number | null>(null);
 
-  // Variant search state for modifier options
-  activeOptKey = signal<string | null>(null);   // "gi:oi"
-  optQuery = signal('');
-  optResults = signal<any[]>([]);
+  // Draft para opciones nuevas (no se añaden al FormArray hasta guardar)
+  draftOption  = signal<FormGroup | null>(null);
+  isNewOption  = signal(false);
+
+  // Variant search
+  activeOptKey = signal<string | null>(null);
+  optQuery     = signal('');
+  optResults   = signal<any[]>([]);
   optSearching = signal(false);
 
-  ngOnInit() {
-    // Abrir todos los grupos pre-existentes (modo edición)
-    if (this.formArray.length > 0) {
-      const s = new Set<number>();
-      for (let i = 0; i < this.formArray.length; i++) s.add(i);
-      this.openGroups.set(s);
+  // ── Validators ────────────────────────────────────────────────────────────────
+
+  private atLeastOneOption: ValidatorFn = (ctrl: AbstractControl): ValidationErrors | null =>
+    (ctrl as FormArray).length > 0 ? null : { noOptions: true };
+
+  private minMaxValidator: ValidatorFn = (group: AbstractControl): ValidationErrors | null => {
+    const min = Number(group.get('minSelections')?.value ?? 0);
+    const max = Number(group.get('maxSelections')?.value ?? 1);
+    return min > max ? { minExceedsMax: true } : null;
+  };
+
+  // ── Computed getters ──────────────────────────────────────────────────────────
+
+  get editingGroup(): FormGroup | null {
+    const i = this.editingGroupIndex();
+    if (i === null || i >= this.formArray.length) return null;
+    return this.asGroup(this.formArray.at(i));
+  }
+
+  get editingOption(): FormGroup | null {
+    const gi = this.editingGroupIndex();
+    const oi = this.editingOptionOi();
+    if (gi === null || oi === null) return null;
+    const options = this.getOptions(this.formArray.at(gi));
+    if (oi >= options.length) return null;
+    return this.asGroup(options.at(oi));
+  }
+
+  /** Opción activa: draft (nueva) o existente */
+  get currentOption(): FormGroup | null {
+    return this.isNewOption() ? this.draftOption() : this.editingOption;
+  }
+
+  get drawerTitle(): string {
+    if (this.drawerView() === 'option') {
+      return this.currentOption?.get('name')?.value || 'Nueva opción';
     }
+    return this.editingGroup?.get('name')?.value || 'Grupo de modificadores';
+  }
+
+  // ── Lifecycle ─────────────────────────────────────────────────────────────────
+
+  ngOnInit() {
+    this.formArray.valueChanges.pipe(takeUntil(this.destroy$))
+      .subscribe(() => this.cdr.markForCheck());
 
     this.optSearch$.pipe(
       debounceTime(300),
@@ -71,10 +128,221 @@ export class ModifierBuilderComponent implements OnInit, OnDestroy {
     });
   }
 
-  ngOnDestroy() { this.destroy$.next(); this.destroy$.complete(); }
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
+    this.requiredSub?.unsubscribe();
+    this.isDefaultSub?.unsubscribe();
+  }
 
-  openOptSearch(gi: number, oi: number) {
-    this.activeOptKey.set(`${gi}:${oi}`);
+  // ── Drawer grupo ──────────────────────────────────────────────────────────────
+
+  openGroupDrawer(index: number) {
+    this.requiredSub?.unsubscribe();
+    this.isDefaultSub?.unsubscribe();
+
+    this.editingGroupIndex.set(index);
+    this.drawerView.set('group');
+    this.editingOptionOi.set(null);
+    this.draftOption.set(null);
+    this.isNewOption.set(false);
+    this.drawerOpen.set(true);
+
+    const grp = this.formArray.at(index);
+
+    if (!grp.hasValidator(this.minMaxValidator)) {
+      grp.addValidators(this.minMaxValidator);
+      grp.updateValueAndValidity({ emitEvent: false });
+    }
+    const opts = this.getOptions(grp);
+    if (!opts.hasValidator(this.atLeastOneOption)) {
+      opts.addValidators(this.atLeastOneOption);
+      opts.updateValueAndValidity({ emitEvent: false });
+    }
+
+    this.requiredSub = grp.get('required')!.valueChanges
+      .subscribe(() => this.onRequiredChange(index));
+  }
+
+  /** Listo en vista grupo: valida, bloquea si hay errores */
+  doneGroup() {
+    const grp = this.editingGroup;
+    if (!grp) { this._closeDrawer(); return; }
+    grp.markAllAsTouched();
+    this.cdr.markForCheck();
+    if (grp.invalid) return;
+    this._closeDrawer();
+  }
+
+  /** X del drawer: cierra sin validar */
+  closeGroupDrawer() {
+    this._closeDrawer();
+  }
+
+  private _closeDrawer() {
+    this.drawerOpen.set(false);
+    this.drawerView.set('group');
+    this.editingGroupIndex.set(null);
+    this.editingOptionOi.set(null);
+    this.draftOption.set(null);
+    this.isNewOption.set(false);
+    this.requiredSub?.unsubscribe();
+    this.requiredSub = undefined;
+    this.isDefaultSub?.unsubscribe();
+    this.isDefaultSub = undefined;
+    this.activeOptKey.set(null);
+    this.optResults.set([]);
+  }
+
+  // ── Drawer opción ─────────────────────────────────────────────────────────────
+
+  openOptionView(oi: number) {
+    this.isDefaultSub?.unsubscribe();
+    this.editingOptionOi.set(oi);
+    this.isNewOption.set(false);
+    this.draftOption.set(null);
+    this.drawerView.set('option');
+    this.activeOptKey.set(null);
+    this.optResults.set([]);
+
+    const gi  = this.editingGroupIndex()!;
+    const opt = this.asGroup(this.getOptions(this.formArray.at(gi)).at(oi));
+    this._setupOptionSubscriptions(opt, gi, oi);
+  }
+
+  /** Añadir opción: crea draft, no toca el FormArray todavía */
+  startNewOption(groupIndex: number) {
+    this.isDefaultSub?.unsubscribe();
+
+    const sortOrder = this.getOptions(this.formArray.at(groupIndex)).length;
+    const draft = this.fb.group({
+      name: ['', [Validators.required, Validators.maxLength(100)]],
+      priceAdjustment: [0, [Validators.min(0)]],
+      variantId: [null],
+      variantName: [''],
+      isDefault: [false],
+      sortOrder: [sortOrder]
+    });
+
+    this.draftOption.set(draft);
+    this.isNewOption.set(true);
+    this.editingOptionOi.set(null);
+    this.drawerView.set('option');
+    this.activeOptKey.set(null);
+    this.optResults.set([]);
+
+    this._setupOptionSubscriptions(draft, groupIndex, null);
+  }
+
+  private _setupOptionSubscriptions(opt: FormGroup, gi: number, oi: number | null) {
+    // Asegurar precio no negativo
+    const priceCtrl = opt.get('priceAdjustment')!;
+    if (!priceCtrl.hasValidator(Validators.min(0))) {
+      priceCtrl.addValidators(Validators.min(0));
+      priceCtrl.updateValueAndValidity({ emitEvent: false });
+    }
+
+    // Solo una opción predeterminada a la vez
+    this.isDefaultSub = opt.get('isDefault')!.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(val => {
+        if (val) {
+          this.getOptions(this.formArray.at(gi)).controls.forEach((ctrl, idx) => {
+            if (idx !== oi) ctrl.get('isDefault')!.setValue(false, { emitEvent: false });
+          });
+          // Si hay un draft y el existing se activa, no aplica al revés
+        }
+      });
+  }
+
+  /** Guardar opción: valida — si nueva la añade al array, si existente solo vuelve */
+  doneOption() {
+    const opt = this.currentOption;
+    if (opt) {
+      opt.markAllAsTouched();
+      this.cdr.markForCheck();
+      if (opt.invalid) return;
+    }
+
+    if (this.isNewOption() && opt) {
+      const gi = this.editingGroupIndex()!;
+      this.getOptions(this.formArray.at(gi)).push(opt);
+    }
+
+    this._backToGroup();
+  }
+
+  /** Volver: libre, sin validar (para nueva opción descarta el draft) */
+  backToGroup() {
+    this._backToGroup();
+  }
+
+  private _backToGroup() {
+    this.isDefaultSub?.unsubscribe();
+    this.isDefaultSub = undefined;
+    this.draftOption.set(null);
+    this.isNewOption.set(false);
+    this.drawerView.set('group');
+    this.editingOptionOi.set(null);
+    this.activeOptKey.set(null);
+    this.optResults.set([]);
+  }
+
+  // ── Form helpers ──────────────────────────────────────────────────────────────
+
+  asGroup(ctrl: AbstractControl): FormGroup {
+    return ctrl as FormGroup;
+  }
+
+  getOptions(grpCtrl: AbstractControl): FormArray {
+    return grpCtrl.get('options') as FormArray;
+  }
+
+  addGroup() {
+    const index = this.formArray.length;
+    this.formArray.push(this.fb.group(
+      {
+        name: ['', [Validators.required, Validators.maxLength(100)]],
+        minSelections: [0, [Validators.min(0)]],
+        maxSelections: [1, [Validators.required, Validators.min(1)]],
+        required: [false],
+        sortOrder: [index],
+        options: this.fb.array([], [this.atLeastOneOption])
+      },
+      { validators: [this.minMaxValidator] }
+    ));
+    this.openGroupDrawer(index);
+  }
+
+  removeGroup(index: number) {
+    if (this.editingGroupIndex() === index) this._closeDrawer();
+    this.formArray.removeAt(index);
+  }
+
+  onRequiredChange(gi: number) {
+    const grp = this.formArray.at(gi);
+    if (grp.get('required')?.value && (grp.get('minSelections')?.value ?? 0) < 1) {
+      grp.get('minSelections')!.setValue(1);
+    }
+  }
+
+  removeOption(groupIndex: number, optionIndex: number) {
+    if (!this.isNewOption() && this.editingOptionOi() === optionIndex) {
+      this._backToGroup();
+    }
+    this.getOptions(this.formArray.at(groupIndex)).removeAt(optionIndex);
+  }
+
+  // ── Variant search (opera sobre currentOption) ────────────────────────────────
+
+  get currentOptKey(): string {
+    return this.isNewOption()
+      ? `${this.editingGroupIndex()}:new`
+      : `${this.editingGroupIndex()}:${this.editingOptionOi()}`;
+  }
+
+  openOptSearch() {
+    this.activeOptKey.set(this.currentOptKey);
     this.optQuery.set('');
     this.optResults.set([]);
   }
@@ -89,87 +357,17 @@ export class ModifierBuilderComponent implements OnInit, OnDestroy {
     setTimeout(() => { this.activeOptKey.set(null); this.optResults.set([]); }, 180);
   }
 
-  selectVariant(r: any, gi: number, oi: number) {
-    const opt = this.getOptions(this.formArray.at(gi)).at(oi);
-    opt.patchValue({
+  selectVariant(r: any) {
+    this.currentOption?.patchValue({
       variantId: r.variantId,
-      variantName: `${r.productName} — ${r.variantName !== r.productName ? r.variantName : ''}`.trim().replace(/—\s*$/, ''),
-      priceAdjustment: r.salePrice,
+      variantName: `${r.productName}${r.variantName !== r.productName ? ' — ' + r.variantName : ''}`,
+      priceAdjustment: r.salePrice ?? 0,
     });
     this.activeOptKey.set(null);
     this.optResults.set([]);
   }
 
-  clearVariant(gi: number, oi: number) {
-    this.getOptions(this.formArray.at(gi)).at(oi).patchValue({ variantId: null, variantName: '' });
-  }
-
-  isOpen(index: number): boolean {
-    return this.openGroups().has(index);
-  }
-
-  toggleGroup(index: number) {
-    const s = new Set(this.openGroups());
-    if (s.has(index)) s.delete(index);
-    else s.add(index);
-    this.openGroups.set(s);
-  }
-
-  asGroup(ctrl: AbstractControl): FormGroup {
-    return ctrl as FormGroup;
-  }
-
-  getOptions(grpCtrl: AbstractControl): FormArray {
-    return grpCtrl.get('options') as FormArray;
-  }
-
-  addGroup() {
-    const index = this.formArray.length;
-    this.formArray.push(this.fb.group({
-      name: ['', [Validators.required, Validators.maxLength(100)]],
-      minSelections: [0, [Validators.min(0)]],
-      maxSelections: [1, [Validators.required, Validators.min(1)]],
-      required: [false],
-      sortOrder: [index],
-      options: this.fb.array([])
-    }));
-    // Auto-open the new group
-    const s = new Set(this.openGroups());
-    s.add(index);
-    this.openGroups.set(s);
-  }
-
-  removeGroup(index: number) {
-    this.formArray.removeAt(index);
-    // Re-map open groups: shift indices above removed down by 1
-    const s = new Set<number>();
-    this.openGroups().forEach(i => {
-      if (i < index) s.add(i);
-      else if (i > index) s.add(i - 1);
-    });
-    this.openGroups.set(s);
-  }
-
-  onRequiredChange(gi: number) {
-    const grp = this.formArray.at(gi);
-    if (grp.get('required')?.value && (grp.get('minSelections')?.value ?? 0) < 1) {
-      grp.get('minSelections')!.setValue(1);
-    }
-  }
-
-  addOption(groupIndex: number) {
-    const options = this.getOptions(this.formArray.at(groupIndex));
-    options.push(this.fb.group({
-      name: ['', [Validators.required, Validators.maxLength(100)]],
-      priceAdjustment: [0],
-      variantId: [null],
-      variantName: [''],
-      isDefault: [false],
-      sortOrder: [options.length]
-    }));
-  }
-
-  removeOption(groupIndex: number, optionIndex: number) {
-    this.getOptions(this.formArray.at(groupIndex)).removeAt(optionIndex);
+  clearVariant() {
+    this.currentOption?.patchValue({ variantId: null, variantName: '' });
   }
 }

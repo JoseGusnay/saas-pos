@@ -198,15 +198,19 @@ import { QueryNodeComponent } from '../../../../core/components/query-node/query
                   </div>
                   <div class="data-card__detail">
                     <ng-icon name="lucideHash"></ng-icon>
-                    <span>{{ product.variants?.length || 0 }} Variante(s)</span>
+                    <span>{{ product.variantCount ?? product.variants?.length ?? 0 }} Variante(s)</span>
                   </div>
                   <div class="data-card__detail">
                     <ng-icon name="lucideBarcode"></ng-icon>
-                    <span>SKU: {{ product.variants?.[0]?.sku || 'N/A' }}</span>
+                    <span>SKU: {{ getMainSku(product) }}</span>
                   </div>
                   <div class="data-card__detail data-card__price">
                     <ng-icon name="lucideDollarSign"></ng-icon>
-                    <span>Desde {{ (getMinPrice(product) || 0) | currency }}</span>
+                    @if (product.type === 'RAW_MATERIAL') {
+                      <span>Materia Prima</span>
+                    } @else {
+                      <span>Desde {{ getMinPrice(product) | currency }}</span>
+                    }
                   </div>
                   <div class="data-card__detail data-card__footer-info">
                     <ng-icon name="lucideClock"></ng-icon>
@@ -236,17 +240,22 @@ import { QueryNodeComponent } from '../../../../core/components/query-node/query
                  <div class="row-stats" style="flex: 1; display: flex; justify-content: space-around;">
                    <div class="stat-group">
                      <span class="stat-label">SKU Principal</span>
-                     <span class="stat-value">{{ product.variants?.[0]?.sku || 'N/A' }}</span>
+                     <span class="stat-value">{{ getMainSku(product) }}</span>
                    </div>
                    <div class="stat-group">
                      <span class="stat-label">Variantes</span>
-                     <span class="stat-value">{{ product.variants?.length || 0 }}</span>
+                     <span class="stat-value">{{ product.variantCount ?? product.variants?.length ?? 0 }}</span>
                    </div>
                    <div class="stat-group">
-                     <span class="stat-label">Desde</span>
-                     <span class="stat-value" style="color: var(--color-success-text); font-weight: var(--font-weight-bold);">
-                       {{ (getMinPrice(product) || 0) | currency }}
-                     </span>
+                     @if (product.type === 'RAW_MATERIAL') {
+                       <span class="stat-label">Tipo</span>
+                       <span class="stat-value">Materia Prima</span>
+                     } @else {
+                       <span class="stat-label">Desde</span>
+                       <span class="stat-value" style="color: var(--color-success-text); font-weight: var(--font-weight-bold);">
+                         {{ getMinPrice(product) | currency }}
+                       </span>
+                     }
                    </div>
                  </div>
                  <div class="row-status" style="margin-left: 1rem;">
@@ -452,8 +461,11 @@ export class ProductsListComponent {
   }
 
   getMinPrice(product: any): number {
-    if (!product.variants || product.variants.length === 0) return 0;
-    return Math.min(...product.variants.map((v: any) => parseFloat(v.salePrice) || 0));
+    return product.minSalePrice ?? 0;
+  }
+
+  getMainSku(product: any): string {
+    return product.mainSku || product.variants?.[0]?.sku || 'N/A';
   }
 
   readonly response = toSignal(

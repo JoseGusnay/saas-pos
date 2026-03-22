@@ -4,7 +4,8 @@
   background: var(--color-bg-surface);
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-lg);
-  overflow: hidden;
+  // Sin overflow: hidden para no cortar dropdowns absolutamente posicionados.
+  // Los elementos con fondo propio (kicker) manejan su border-radius individualmente.
 
   &__kicker {
     display: flex;
@@ -18,6 +19,7 @@
     color: var(--color-text-muted);
     border-bottom: 1px solid var(--color-border-light);
     background: var(--color-bg-canvas);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 
     ng-icon { font-size: 13px; }
   }

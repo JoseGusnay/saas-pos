@@ -17,13 +17,14 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule, ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
-import { 
-  lucideChevronDown, 
-  lucideCheck, 
-  lucideSearch, 
-  lucideLoader2, 
+import {
+  lucideChevronDown,
+  lucideCheck,
+  lucideSearch,
+  lucideLoader2,
   lucideX,
-  lucideInbox
+  lucideInbox,
+  lucidePlus
 } from '@ng-icons/lucide';
 import { 
   Observable, 
@@ -46,13 +47,14 @@ import { SkeletonComponent } from '../skeleton/skeleton';
       useExisting: forwardRef(() => SearchSelectComponent),
       multi: true
     },
-    provideIcons({ 
-      lucideChevronDown, 
-      lucideCheck, 
-      lucideSearch, 
-      lucideLoader2, 
+    provideIcons({
+      lucideChevronDown,
+      lucideCheck,
+      lucideSearch,
+      lucideLoader2,
       lucideX,
-      lucideInbox
+      lucideInbox,
+      lucidePlus
     })
   ],
   template: `
@@ -162,6 +164,13 @@ import { SkeletonComponent } from '../skeleton/skeleton';
               }
             }
           </div>
+
+          @if (createNewLabel) {
+            <button type="button" class="create-new-btn" (click)="onCreateNew()">
+              <ng-icon name="lucidePlus"></ng-icon>
+              {{ createNewLabel }}
+            </button>
+          }
         </div>
       }
     </div>
@@ -258,6 +267,30 @@ import { SkeletonComponent } from '../skeleton/skeleton';
       .check-icon { font-size: 14px; color: var(--color-primary); }
     }
 
+    .create-new-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      width: 100%;
+      padding: 10px 12px;
+      border: none;
+      border-top: 1px solid var(--color-border-light);
+      background: var(--color-bg-canvas);
+      color: var(--color-accent-primary);
+      font-size: 13px;
+      font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background 0.15s;
+      flex-shrink: 0;
+      border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+
+      ng-icon { font-size: 14px; }
+
+      &:hover { background: rgba(79, 70, 229, 0.06); }
+    }
+
     @keyframes spin { from { transform: rotate(0); } to { transform: rotate(360deg); } }
     @keyframes slideInUp {
       from { opacity: 0; transform: translateY(8px) scale(0.98); }
@@ -272,8 +305,10 @@ export class SearchSelectComponent implements AfterViewInit, ControlValueAccesso
   @Input() required = false;
   @Input() multiple = false;
   @Input() searchFn?: (query: string, page: number) => Observable<{ data: SearchSelectOption[], hasMore: boolean }>;
+  @Input() createNewLabel?: string;
 
   @Output() selectionChange = new EventEmitter<SearchSelectOption | SearchSelectOption[] | null>();
+  @Output() createNew = new EventEmitter<void>();
 
   @ViewChild('searchInput') searchInputElement?: ElementRef<HTMLInputElement>;
 
@@ -390,6 +425,7 @@ export class SearchSelectComponent implements AfterViewInit, ControlValueAccesso
       const spaceBelow = window.innerHeight - rect.bottom;
       const menuMaxHeight = 320;
       const openUp = spaceBelow < menuMaxHeight && rect.top > spaceBelow;
+      const maxHeight = this.createNewLabel ? '270px' : '320px';
       this.menuStyle.set({
         position: 'fixed',
         width: `${rect.width}px`,
@@ -398,6 +434,7 @@ export class SearchSelectComponent implements AfterViewInit, ControlValueAccesso
           ? { bottom: `${window.innerHeight - rect.top + 4}px`, top: 'auto' }
           : { top: `${rect.bottom + 4}px`, bottom: 'auto' }),
         zIndex: '9999',
+        maxHeight,
       });
     }
     this.isOpen.set(true);
@@ -457,6 +494,8 @@ export class SearchSelectComponent implements AfterViewInit, ControlValueAccesso
 
   onSearchInput(event: any) { this.searchSubject.next(event.target.value); }
   resetSearch() { this.searchQuery.set(''); this.searchSubject.next(''); }
+
+  onCreateNew() { this.close(); this.createNew.emit(); }
 
   private setupSearch() {
     this.searchSubject.pipe(

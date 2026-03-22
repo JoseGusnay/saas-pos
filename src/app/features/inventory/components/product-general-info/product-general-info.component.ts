@@ -15,10 +15,14 @@ import { ToggleSwitchComponent } from '../../../../shared/components/ui/toggle-s
 import { FieldInputComponent } from '../../../../shared/components/ui/field-input/field-input';
 import { ProductTypeSelectorComponent } from '../product-type-selector/product-type-selector';
 import { AttributeConfiguratorComponent } from '../attribute-configurator/attribute-configurator.component';
+import { CategoryDrawerComponent } from '../category-drawer/category-drawer.component';
+import { BrandDrawerComponent } from '../brand-drawer/brand-drawer.component';
 import { CategoryService } from '../../../../core/services/category.service';
 import { BrandService } from '../../../../core/services/brand.service';
 import { SearchSelectOption } from '../../../../shared/models/search-select.models';
 import { CategoryAttributeType } from '../../models/product.model';
+import { Category } from '../../../../core/models/category.models';
+import { Brand } from '../../../../core/models/brand.models';
 
 @Component({
   selector: 'app-product-general-info',
@@ -27,6 +31,7 @@ import { CategoryAttributeType } from '../../models/product.model';
   imports: [
     CommonModule, ReactiveFormsModule, NgIconComponent,
     SearchSelectComponent, ToggleSwitchComponent, FieldInputComponent,
+    CategoryDrawerComponent, BrandDrawerComponent,
     ProductTypeSelectorComponent, AttributeConfiguratorComponent
   ],
   providers: [
@@ -64,6 +69,10 @@ export class ProductGeneralInfoComponent {
     this.fg.get('isActive')!.valueChanges,
     { initialValue: this.fg.get('isActive')?.value ?? true }
   );
+  // ── Quick-create drawers ──────────────────────────────────────────────────
+  catCreateOpen   = signal(false);
+  brandCreateOpen = signal(false);
+
   // ── Internal option tracking ─────────────────────────────────────────────
   _catOption   = signal<SearchSelectOption | undefined>(undefined);
   _brandOption = signal<SearchSelectOption | undefined>(undefined);
@@ -94,25 +103,45 @@ export class ProductGeneralInfoComponent {
     this.attributesChange.emit(attrs);
   }
 
+  onOpenCategoryCreate() { this.catCreateOpen.set(true); }
+
+  onCategoryCreated(cat: Category) {
+    const opt: SearchSelectOption = { label: cat.name, value: cat.id, icon: 'lucideFolder' };
+    this.fg.get('categoryId')!.setValue(cat.id);
+    this._catOption.set(opt);
+    this.categoryOptionChange.emit(opt);
+    this.catCreateOpen.set(false);
+  }
+
+  onOpenBrandCreate() { this.brandCreateOpen.set(true); }
+
+  onBrandCreated(brand: Brand) {
+    const opt: SearchSelectOption = { label: brand.name, value: brand.id };
+    this.fg.get('brandId')!.setValue(brand.id);
+    this._brandOption.set(opt);
+    this.brandOptionChange.emit(opt);
+    this.brandCreateOpen.set(false);
+  }
+
   // ── Search functions (inyectan el servicio directamente) ─────────────────
   searchCategoriesFn = (query: string, page: number) =>
     this.categorySvc.findAll({
-      search: query, page, limit: 15,
+      search: query, page, limit: 8,
       filterModel: { status: { filterType: 'text', type: 'equals', filter: 'ACTIVE' } }
     }).pipe(
       map(res => ({
         data: res.data.map((c: any) => ({ label: c.name, value: c.id, icon: 'lucideFolder' } as SearchSelectOption)),
-        hasMore: res.data.length === 15
+        hasMore: res.data.length === 8
       }))
     );
 
   searchBrandsFn = (query: string, page: number) =>
-    this.brandSvc.findAll({ search: query, page, limit: 15 }).pipe(
+    this.brandSvc.findAll({ search: query, page, limit: 8 }).pipe(
       map((res: any) => {
         const items = Array.isArray(res) ? res : (res.data ?? []);
         return {
           data: items.map((b: any) => ({ label: b.name, value: b.id } as SearchSelectOption)),
-          hasMore: items.length === 15
+          hasMore: items.length === 8
         };
       })
     );

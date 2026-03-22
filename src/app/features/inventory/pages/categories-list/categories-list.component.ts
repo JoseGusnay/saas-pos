@@ -59,7 +59,7 @@ import { FilterNode, FilterGroup, FilterField, FilterRule } from '../../../../co
 
 // Componentes del Módulo
 import { CategoriesAdvancedFilters } from '../../components/categories-advanced-filters/categories-advanced-filters';
-import { CategoryFormComponent } from '../../components/category-form/category-form.component';
+import { CategoryDrawerComponent } from '../../components/category-drawer/category-drawer.component';
 import { CategoryDetailComponent } from '../../components/category-detail/category-detail.component';
 import { CategoryImportModalComponent } from '../../components/category-import-modal/category-import-modal';
 
@@ -70,7 +70,7 @@ import { CategoryImportModalComponent } from '../../components/category-import-m
     CommonModule, 
     FormsModule,
     NgIconComponent,
-    CategoryFormComponent,
+    CategoryDrawerComponent,
     SkeletonComponent,
     PageHeaderComponent,
     ListToolbarComponent,
@@ -284,55 +284,12 @@ import { CategoryImportModalComponent } from '../../components/category-import-m
         (pageChange)="currentPage.set($event)"
       ></app-pagination>
 
-      <app-drawer 
-        [isOpen]="isDrawerOpen()" 
-        [title]="isEditing() ? 'Editar Categoría' : 'Nueva Categoría'"
-        [allowClose]="!catForm.isSubmitting()"
-        (close)="onDrawerClose()"
-        size="md">
-        <div drawerBody>
-          <app-category-form #catForm (saved)="onCategorySaved()"></app-category-form>
-        </div>
-        <div drawerFooter class="drawer-footer-actions">
-           <app-form-button 
-             label="Cancelar" 
-             variant="secondary" 
-             [disabled]="catForm.isSubmitting()"
-             (click)="onDrawerClose()"
-           ></app-form-button>
-           <app-form-button 
-             [label]="isEditing() ? 'Actualizar' : 'Guardar'"
-             icon="lucideSave"
-             [loading]="catForm.isSubmitting()"
-             [disabled]="catForm.categoryForm.invalid"
-             (click)="catForm.onSubmit()"
-           ></app-form-button>
-        </div>
-      </app-drawer>
-
-      <!-- Modal de Confirmación de Salida -->
-      <app-modal 
-        [isOpen]="isConfirmationModalOpen()" 
-        [title]="'Cambios sin guardar'"
-        (close)="onCancelExit()">
-        
-        <div modalBody>
-          Tienes cambios en el formulario que no has guardado. ¿Estás seguro de que quieres salir? Se perderán todos los datos ingresados.
-        </div>
-
-        <div modalFooter class="modal-footer-actions">
-          <app-form-button
-            label="Continuar Editando"
-            variant="secondary"
-            (click)="onCancelExit()"
-          ></app-form-button>
-          <app-form-button
-            label="Salir sin Guardar"
-            variant="danger"
-            (click)="onConfirmExit()"
-          ></app-form-button>
-        </div>
-      </app-modal>
+      <app-category-drawer
+        [isOpen]="catDrawerOpen()"
+        [category]="catDrawerCategory() ?? undefined"
+        (saved)="onCategorySaved($event)"
+        (close)="catDrawerOpen.set(false)"
+      ></app-category-drawer>
 
       <!-- Modal de Confirmación de Eliminación -->
       <app-modal 
@@ -389,20 +346,18 @@ export class CategoriesListComponent {
   currentPage = signal(1);
   pageSize = signal(12);
 
-  isDrawerOpen = signal(false);
-  isEditing = signal(false);
-  isDetailOpen = signal(false);
-  selectedCategory = signal<Category | null>(null);
-  isHistoryOpen = signal(false);
-  isHistoryLoading = signal(false);
+  catDrawerOpen     = signal(false);
+  catDrawerCategory = signal<Category | null>(null);
+  isDetailOpen      = signal(false);
+  selectedCategory  = signal<Category | null>(null);
+  isHistoryOpen     = signal(false);
+  isHistoryLoading  = signal(false);
   isDeleteModalOpen = signal(false);
-  isDeleting = signal(false);
-  
-  categoryLogs = signal<any[]>([]);
-  categoryToDelete = signal<Category | null>(null);
-  isConfirmationModalOpen = signal(false);
+  isDeleting        = signal(false);
 
-  @ViewChild('catForm') categoryFormRef?: CategoryFormComponent;
+  categoryLogs     = signal<any[]>([]);
+  categoryToDelete = signal<Category | null>(null);
+
   @ViewChild('importModal') importModal!: CategoryImportModalComponent;
 
   private readonly response = toSignal(
@@ -499,9 +454,8 @@ export class CategoriesListComponent {
   }
 
   onAddCategory() {
-    this.isEditing.set(false);
-    this.isDrawerOpen.set(true);
-    setTimeout(() => this.categoryFormRef?.resetForm(), 0);
+    this.catDrawerCategory.set(null);
+    this.catDrawerOpen.set(true);
   }
 
   onShowDetail(cat: Category) {
@@ -511,9 +465,8 @@ export class CategoriesListComponent {
 
   onEditCategory(cat: Category) {
     this.isDetailOpen.set(false);
-    this.isEditing.set(true);
-    this.isDrawerOpen.set(true);
-    setTimeout(() => this.categoryFormRef?.setCategory(cat), 0);
+    this.catDrawerCategory.set(cat);
+    this.catDrawerOpen.set(true);
   }
 
   handleActionClick(action: ActionItem, cat: Category) {
@@ -555,37 +508,12 @@ export class CategoriesListComponent {
     });
   }
 
-  onDrawerClose() {
-    if (this.categoryFormRef?.hasUnsavedChanges()) {
-      this.isConfirmationModalOpen.set(true);
-    } else {
-      this.closeDrawer();
-    }
-  }
-
-  onConfirmExit() {
-    this.isConfirmationModalOpen.set(false);
-    this.closeDrawer();
-  }
-
-  onCancelExit() {
-    this.isConfirmationModalOpen.set(false);
-  }
-
-  private closeDrawer() {
-    this.isDrawerOpen.set(false);
-    this.categoryFormRef?.resetForm();
-  }
-
-  onSortChange(event: { field: string, order: 'asc' | 'desc' }) {
-    // Current pagination implementation might need adjustment for backend sorting
-    // but we can pass it through a refresh trigger or similar if service supports it
-    // For now, let's just log or implement if service expects it
+  onSortChange(_event: { field: string, order: 'asc' | 'desc' }) {
     this.refreshTrigger.update(v => v + 1);
   }
 
-  onCategorySaved() {
-    this.isDrawerOpen.set(false);
+  onCategorySaved(_cat: Category) {
+    this.catDrawerOpen.set(false);
     this.refreshTrigger.update(v => v + 1);
   }
 

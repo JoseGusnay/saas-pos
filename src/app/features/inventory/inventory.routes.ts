@@ -12,6 +12,11 @@ export const INVENTORY_ROUTES: Routes = [
     data: { breadcrumb: 'Marcas' }
   },
   {
+    path: 'unidades',
+    loadComponent: () => import('./pages/units-list/units-list.component').then(m => m.UnitsListComponent),
+    data: { breadcrumb: 'Unidades de Medida' }
+  },
+  {
     path: 'presentaciones',
     loadComponent: () => import('./pages/presentations-list/presentations-list.component').then(m => m.PresentationsListComponent),
     data: { breadcrumb: 'Presentaciones' }

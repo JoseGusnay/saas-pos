@@ -2,11 +2,11 @@ import {
   Component, ChangeDetectionStrategy, inject, signal, input, computed,
   OnInit, DestroyRef
 } from '@angular/core';
-import { ControlValueAccessor, NgControl } from '@angular/forms';
+import { ControlValueAccessor, NgControl, TouchedChangeEvent } from '@angular/forms';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import { lucideAlertCircle, lucideHash, lucideSearch, lucideUser, lucideMail, lucidePhone, lucideLock } from '@ng-icons/lucide';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { startWith } from 'rxjs';
+import { filter, startWith } from 'rxjs';
 
 type InputType = 'text' | 'number' | 'email' | 'tel' | 'password';
 
@@ -244,11 +244,11 @@ export class FieldInputComponent implements ControlValueAccessor, OnInit {
   private _onTouched = () => {};
 
   // ── Error state (OnPush friendly) ─────────────────────────────────────────
-  private _status = signal<string>('VALID');
+  private _status  = signal<string>('VALID');
+  private _touched = signal(false);
 
   showError = computed(() => {
-    this._status(); // rastrear cambios
-    return !!(this.ngCtrl?.control?.invalid && this.ngCtrl?.control?.touched);
+    return this._status() !== 'VALID' && this._touched();
   });
 
   errorMessage = computed(() => {
@@ -274,6 +274,12 @@ export class FieldInputComponent implements ControlValueAccessor, OnInit {
         startWith(ctrl.status),
         takeUntilDestroyed(this.destroyRef)
       ).subscribe(s => this._status.set(s));
+
+      // Reaccionar a markAllAsTouched() / markAsTouched() que no emiten statusChanges
+      ctrl.events.pipe(
+        filter(e => e instanceof TouchedChangeEvent),
+        takeUntilDestroyed(this.destroyRef)
+      ).subscribe(e => this._touched.set((e as TouchedChangeEvent).touched));
     }
   }
 

@@ -323,7 +323,7 @@ export class CategoryFormComponent {
   private categoryService = inject(CategoryService);
   private toastService = inject(ToastService);
 
-  @Output() saved = new EventEmitter<void>();
+  @Output() saved = new EventEmitter<Category>();
 
   category = signal<Category | null>(null);
   editingCategoryId = computed(() => this.category()?.id);
@@ -416,9 +416,9 @@ export class CategoryFormComponent {
       : this.categoryService.create(cleanData);
 
     request$.subscribe({
-      next: () => {
+      next: (category) => {
         this.toastService.success(`Categoría ${id ? 'actualizada' : 'creada'} correctamente`);
-        this.saved.emit();
+        this.saved.emit(category);
         this.isSubmitting.set(false);
         this.resetForm();
       },

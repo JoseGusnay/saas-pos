@@ -81,7 +81,7 @@
           }
 
           <div class="pdp__hero-meta">
-            @if (p.variants.length > 0) {
+            @if (p.variants.length > 0 && p.type !== 'RAW_MATERIAL') {
               <div class="pdp__hero-stat">
                 <span class="pdp__hero-stat-label">Desde</span>
                 <span class="pdp__hero-stat-value">{{ minPrice() | currency }}</span>
@@ -93,6 +93,18 @@
                   <span class="pdp__hero-stat-value">{{ maxPrice() | currency }}</span>
                 </div>
               }
+              <div class="pdp__hero-stat-sep"></div>
+            }
+            @if (p.type === 'RAW_MATERIAL' && p.variants[0]?.baseUnitAbbreviation) {
+              <div class="pdp__hero-stat">
+                <span class="pdp__hero-stat-label">Unidad Base</span>
+                <span class="pdp__hero-stat-value">{{ p.variants[0].baseUnitAbbreviation }}</span>
+              </div>
+              <div class="pdp__hero-stat-sep"></div>
+              <div class="pdp__hero-stat">
+                <span class="pdp__hero-stat-label">Costo Unitario</span>
+                <span class="pdp__hero-stat-value">{{ p.variants[0].costPrice | currency }}</span>
+              </div>
               <div class="pdp__hero-stat-sep"></div>
             }
             <div class="pdp__hero-stat">
@@ -303,6 +315,14 @@
                               }
                             </div>
                             <div class="pdp__v-attrs">
+                              @if (variant.baseUnitAbbreviation) {
+                                <span class="pdp__v-attr-chip">
+                                  {{ variant.baseUnitAbbreviation }}
+                                  @if (variant.conversionFactor && variant.conversionFactor !== 1) {
+                                    × {{ variant.conversionFactor }}
+                                  }
+                                </span>
+                              }
                               @for (av of variant.attributeValues; track av.attributeTypeId) {
                                 <span class="pdp__v-attr-chip">
                                   {{ av.attributeTypeName ?? av.attributeType?.name }}: {{ av.valueText ?? av.valueNumber }}

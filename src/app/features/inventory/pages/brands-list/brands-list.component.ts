@@ -17,7 +17,7 @@ import { Brand } from '../../../../core/models/brand.models';
 import { QueryMapper } from '../../../../core/utils/query-mapper.util';
 
 import { DrawerComponent } from '../../../../shared/components/ui/drawer/drawer';
-import { BrandFormComponent } from './components/brand-form/brand-form.component';
+import { BrandDrawerComponent } from '../../components/brand-drawer/brand-drawer.component';
 import { DatelineComponent, DatelineItem } from '../../../../shared/components/ui/dateline/dateline.component';
 import { FormButtonComponent } from '../../../../shared/components/ui/form-button/form-button';
 
@@ -44,7 +44,7 @@ import { SpinnerComponent } from '../../../../shared/components/ui/spinner/spinn
     SkeletonComponent,
     EmptyStateComponent,
     DrawerComponent,
-    BrandFormComponent,
+    BrandDrawerComponent,
     DatelineComponent,
     ModalComponent,
     SpinnerComponent,
@@ -226,48 +226,12 @@ import { SpinnerComponent } from '../../../../shared/components/ui/spinner/spinn
         (pageChange)="currentPage.set($event)"
       ></app-pagination>
 
-      <app-drawer 
-        [isOpen]="isDrawerOpen()" 
-        [title]="isEditing() ? 'Editar Marca' : 'Nueva Marca'"
-        [allowClose]="!(brandForm?.isSubmitting?.() ?? false)"
-        (close)="onDrawerClose()"
-        size="md">
-        <div drawerBody>
-          <app-brand-form 
-            #brandForm
-            (saved)="onBrandSaved()" 
-            (cancelled)="onDrawerClose()">
-          </app-brand-form>
-        </div>
-        <div drawerFooter class="drawer-footer-actions">
-          <app-form-button label="Cancelar" variant="secondary" [disabled]="brandForm?.isSubmitting?.() ?? false" (click)="onDrawerClose()"></app-form-button>
-          <app-form-button
-            [label]="isEditing() ? 'Actualizar Marca' : 'Guardar Marca'"
-            loadingLabel="Guardando..."
-            icon="lucideSave"
-            [loading]="brandForm?.isSubmitting?.() ?? false"
-            [disabled]="brandForm?.brandForm?.invalid ?? true"
-            type="button"
-            (click)="brandForm?.onSubmit()"
-          ></app-form-button>
-        </div>
-      </app-drawer>
-
-      <app-modal [isOpen]="isConfirmationModalOpen()" title="Cambios sin guardar" (close)="onCancelExit()">
-        <div modalBody>Tienes cambios sin guardar. ¿Estás seguro de que quieres salir?</div>
-        <div modalFooter class="modal-footer-actions">
-          <app-form-button
-            label="Continuar Editando"
-            variant="secondary"
-            (click)="onCancelExit()"
-          ></app-form-button>
-          <app-form-button
-            label="Salir sin Guardar"
-            variant="danger"
-            (click)="onConfirmExit()"
-          ></app-form-button>
-        </div>
-      </app-modal>
+      <app-brand-drawer
+        [isOpen]="brandDrawerOpen()"
+        [brand]="brandDrawerBrand() ?? undefined"
+        (saved)="onBrandSaved($event)"
+        (close)="brandDrawerOpen.set(false)"
+      ></app-brand-drawer>
 
       <app-modal [isOpen]="isDeleteModalOpen()" title="Confirmar Eliminación" (close)="onCancelDelete()">
         <div modalBody>¿Estás seguro de eliminar la marca "{{ brandToDelete()?.name }}"?</div>
@@ -353,8 +317,8 @@ export class BrandsListComponent {
   viewModePreference = signal<'grid' | 'list'>('grid');
   isMobile = signal(false);
   viewMode = computed(() => this.isMobile() ? 'grid' : this.viewModePreference());
-  isDrawerOpen = signal(false);
-  isConfirmationModalOpen = signal(false);
+  brandDrawerOpen  = signal(false);
+  brandDrawerBrand = signal<Brand | null>(null);
   sortField = signal('createdAt');
   sortOrder = signal<'ASC' | 'DESC'>('DESC');
   isDeleteModalOpen = signal(false);
@@ -372,7 +336,6 @@ export class BrandsListComponent {
   activeTab = signal('Todas');
   brandTabs = [{ label: 'Todas', value: 'Todas' }, { label: 'Activas', value: 'Activas' }, { label: 'Inactivas', value: 'Inactivas' }];
   
-  @ViewChild('brandForm') brandFormRef?: BrandFormComponent;
   @ViewChild('importModal') importModal!: BrandImportModalComponent;
 
   filterTree = signal<FilterGroup>({ type: 'group', id: 'root', logicalOperator: 'AND', children: [] });
@@ -453,20 +416,19 @@ export class BrandsListComponent {
     });
   }
 
-  onAddBrand() { this.isEditing.set(false); this.isDrawerOpen.set(true); setTimeout(() => this.brandFormRef?.resetForm(), 0); }
+  onAddBrand() { this.brandDrawerBrand.set(null); this.brandDrawerOpen.set(true); }
   
   onShowDetail(brand: Brand) {
     this.selectedBrand.set(brand);
     this.isDetailOpen.set(true);
   }
 
-  onEditBrand(b: Brand) { 
-    this.isDetailOpen.set(false);
-    this.isEditing.set(true); 
-    this.isDrawerOpen.set(true); 
-    setTimeout(() => this.brandFormRef?.setBrand(b), 0); 
-  }
   isEditing = signal(false);
+  onEditBrand(b: Brand) {
+    this.isDetailOpen.set(false);
+    this.brandDrawerBrand.set(b);
+    this.brandDrawerOpen.set(true);
+  }
 
   handleActionClick(action: ActionItem, brand: Brand) {
     if (action.id === 'edit') this.onEditBrand(brand);
@@ -483,13 +445,9 @@ export class BrandsListComponent {
     });
   }
 
-  onDrawerClose() { if (this.brandFormRef?.hasUnsavedChanges()) this.isConfirmationModalOpen.set(true); else this.closeDrawer(); }
-  onConfirmExit() { this.isConfirmationModalOpen.set(false); this.closeDrawer(); }
-  onCancelExit() { this.isConfirmationModalOpen.set(false); }
   onCancelDelete() { this.isDeleteModalOpen.set(false); }
-  private closeDrawer() { this.isDrawerOpen.set(false); this.brandFormRef?.resetForm(); }
 
-  onBrandSaved() { this.isDrawerOpen.set(false); this.refreshTrigger.update(v => v + 1); }
+  onBrandSaved(_brand: Brand) { this.brandDrawerOpen.set(false); this.refreshTrigger.update(v => v + 1); }
 
   openAdvancedFilters() {
     this.modalService.open(

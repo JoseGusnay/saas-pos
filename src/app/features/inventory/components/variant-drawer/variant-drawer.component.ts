@@ -15,16 +15,18 @@ import { SearchSelectOption } from '../../../../shared/models/search-select.mode
 import { FormButtonComponent } from '../../../../shared/components/ui/form-button/form-button';
 import { BarcodeFieldComponent } from '../../../../shared/components/ui/barcode-field/barcode-field.component';
 import { RecipeBuilderComponent } from '../recipe-builder/recipe-builder.component';
+import { UnitDrawerComponent } from '../unit-drawer/unit-drawer.component';
 import { PresentationService } from '../../../../core/services/presentation.service';
 import { TaxService } from '../../../../core/services/tax.service';
 import { UnitsService } from '../../../../core/services/units.service';
+import { Unit } from '../../../../core/models/unit.models';
 import { CategoryAttributeType } from '../../models/product.model';
 import { map } from 'rxjs';
 
 @Component({
   selector: 'app-variant-drawer',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, NgIconComponent, SearchSelectComponent, FormButtonComponent, BarcodeFieldComponent, RecipeBuilderComponent],
+  imports: [CommonModule, ReactiveFormsModule, NgIconComponent, SearchSelectComponent, FormButtonComponent, BarcodeFieldComponent, RecipeBuilderComponent, UnitDrawerComponent],
   providers: [
     provideIcons({
       lucideX, lucidePackage, lucideHash, lucideDollarSign,
@@ -151,7 +153,9 @@ import { map } from 'rxjs';
                   placeholder="Buscar unidad..."
                   [searchFn]="searchUnitsFn.bind(this)"
                   [initialOption]="initialUnitOption()"
+                  createNewLabel="Crear nueva unidad"
                   (selectionChange)="onUnitChange($event)"
+                  (createNew)="unitCreateOpen.set(true)"
                 ></app-search-select>
               </div>
               <div class="field">
@@ -340,6 +344,12 @@ import { map } from 'rxjs';
 
       </div>
     </div>
+
+    <app-unit-drawer
+      [isOpen]="unitCreateOpen()"
+      (saved)="onUnitCreated($event)"
+      (close)="unitCreateOpen.set(false)"
+    ></app-unit-drawer>
   `,
   styles: [`
     .drawer-overlay {
@@ -729,6 +739,7 @@ export class VariantDrawerComponent implements OnInit, OnDestroy {
   initialTaxOptions = signal<SearchSelectOption[]>([]);
   margin = signal<number | null>(null);
   imagePreview = signal<string | null>(null);
+  unitCreateOpen = signal(false);
 
   private priceSub?: Subscription;
 
@@ -805,6 +816,13 @@ export class VariantDrawerComponent implements OnInit, OnDestroy {
     if (!Array.isArray(event)) this.initialUnitOption.set(event ?? undefined);
   }
 
+  onUnitCreated(unit: Unit) {
+    const opt: SearchSelectOption = { value: unit.id, label: `${unit.name} (${unit.abbreviation})` };
+    this.form.patchValue({ baseUnitId: unit.id });
+    this.initialUnitOption.set(opt);
+    this.unitCreateOpen.set(false);
+  }
+
   onPresentationChange(event: SearchSelectOption | SearchSelectOption[] | null) {
     if (!Array.isArray(event)) this.initialPresentationOption.set(event ?? undefined);
   }
@@ -814,11 +832,11 @@ export class VariantDrawerComponent implements OnInit, OnDestroy {
     else if (!event) this.initialTaxOptions.set([]);
   }
 
-  searchUnitsFn(query: string) {
-    return this.unitsService.findAll({ search: query, onlyActive: true }).pipe(
+  searchUnitsFn(query: string, page: number) {
+    return this.unitsService.findAll({ search: query, page, limit: 8, onlyActive: true }).pipe(
       map(res => ({
         data: res.data.map((u: any) => ({ value: u.id, label: `${u.name} (${u.abbreviation})` })),
-        hasMore: false
+        hasMore: res.data.length === 8
       }))
     );
   }

@@ -9,10 +9,13 @@ import {
 } from '@angular/forms';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import {
-  lucidePlus, lucideTrash2, lucideFlaskConical, lucideSearch, lucideX, lucideAlertTriangle
+  lucidePlus, lucideTrash2, lucideFlaskConical, lucideSearch, lucideX, lucideAlertTriangle, lucidePencil
 } from '@ng-icons/lucide';
 import { ModalComponent } from '../../../../shared/components/ui/modal/modal';
 import { FieldInputComponent } from '../../../../shared/components/ui/field-input/field-input';
+import { DrawerComponent } from '../../../../shared/components/ui/drawer/drawer';
+import { UnitDrawerComponent } from '../unit-drawer/unit-drawer.component';
+import { Unit } from '../../../../core/models/unit.models';
 import {
   debounceTime, distinctUntilChanged, map, Subject, switchMap, of, takeUntil
 } from 'rxjs';
@@ -32,9 +35,9 @@ interface IngredientResult {
   selector: 'app-recipe-builder',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, ReactiveFormsModule, NgIconComponent, SearchSelectComponent, ModalComponent, FieldInputComponent],
+  imports: [CommonModule, ReactiveFormsModule, NgIconComponent, SearchSelectComponent, ModalComponent, FieldInputComponent, DrawerComponent, UnitDrawerComponent],
   providers: [
-    provideIcons({ lucidePlus, lucideTrash2, lucideFlaskConical, lucideSearch, lucideX, lucideAlertTriangle })
+    provideIcons({ lucidePlus, lucideTrash2, lucideFlaskConical, lucideSearch, lucideX, lucideAlertTriangle, lucidePencil })
   ],
   templateUrl: './recipe-builder.component.html',
   styleUrl: './recipe-builder.component.scss'
@@ -62,6 +65,14 @@ export class RecipeBuilderComponent implements OnInit, OnChanges, OnDestroy {
   ingredientUnitOptions = signal<Record<number, SearchSelectOption | undefined>>({});
   initialYieldUnitOption = signal<SearchSelectOption | undefined>(undefined);
 
+  // Ingredient drawer
+  ingredientDrawerOpen  = signal(false);
+  editingIngredientIndex = signal<number | null>(null);
+
+  // Unit quick-create
+  unitCreateOpen = signal(false);
+  unitCreateFor  = signal<'yield' | 'ingredient'>('yield');
+
   get enabled(): boolean {
     return this.recipeGroup.get('enabled')?.value;
   }
@@ -70,18 +81,40 @@ export class RecipeBuilderComponent implements OnInit, OnChanges, OnDestroy {
     return this.recipeGroup.get('ingredients') as FormArray;
   }
 
+  get editingIngredient(): FormGroup | null {
+    const i = this.editingIngredientIndex();
+    if (i === null || i >= this.ingredients.length) return null;
+    return this.asGroup(this.ingredients.at(i));
+  }
+
+  get editingIngredientName(): string {
+    const i = this.editingIngredientIndex();
+    if (i === null) return 'Ingrediente';
+    return this.ingredients.at(i)?.get('variantName')?.value || 'Ingrediente';
+  }
+
   asGroup(ctrl: AbstractControl): FormGroup {
     return ctrl as FormGroup;
   }
 
-  searchYieldUnitFn = (query: string) =>
-    this.unitsSvc.findAll({ search: query, onlyActive: true }).pipe(
+  openIngredientDrawer(index: number) {
+    this.editingIngredientIndex.set(index);
+    this.ingredientDrawerOpen.set(true);
+  }
+
+  closeIngredientDrawer() {
+    this.ingredientDrawerOpen.set(false);
+    this.editingIngredientIndex.set(null);
+  }
+
+  searchYieldUnitFn = (query: string, page: number) =>
+    this.unitsSvc.findAll({ search: query, page, limit: 8, onlyActive: true }).pipe(
       map(res => ({
         data: res.data.map((u: any) => ({
           value: u.id,
           label: `${u.name} (${u.abbreviation})`
         } as SearchSelectOption)),
-        hasMore: false
+        hasMore: res.data.length === 8
       }))
     );
 
@@ -213,12 +246,14 @@ export class RecipeBuilderComponent implements OnInit, OnChanges, OnDestroy {
     this.ingredients.push(this.fb.group({
       variantId: [r.variantId, Validators.required],
       variantName: [r.variantName !== r.productName ? `${r.productName} — ${r.variantName}` : r.productName],
-      quantity: [1, [Validators.required, Validators.min(0.0001)]],
+      quantity: [null, [Validators.required, Validators.min(0.0001)]],
       unitId: ['', Validators.required],
       unitName: [''],
       notes: ['']
     }));
+    const newIndex = this.ingredients.length - 1;
     this.clearIngredientSearch();
+    this.openIngredientDrawer(newIndex);
   }
 
   removeIngredient(index: number) {
@@ -248,14 +283,14 @@ export class RecipeBuilderComponent implements OnInit, OnChanges, OnDestroy {
     });
   }
 
-  searchIngredientUnitFn = (query: string) =>
-    this.unitsSvc.findAll({ search: query, onlyActive: true }).pipe(
+  searchIngredientUnitFn = (query: string, page: number) =>
+    this.unitsSvc.findAll({ search: query, page, limit: 8, onlyActive: true }).pipe(
       map(res => ({
         data: res.data.map((u: any) => ({
           value: u.id,
           label: `${u.name} (${u.abbreviation})`
         } as SearchSelectOption)),
-        hasMore: false
+        hasMore: res.data.length === 8
       }))
     );
 
@@ -285,5 +320,25 @@ export class RecipeBuilderComponent implements OnInit, OnChanges, OnDestroy {
 
       this.cdr.markForCheck();
     });
+  }
+
+  openUnitCreate(context: 'yield' | 'ingredient') {
+    this.unitCreateFor.set(context);
+    this.unitCreateOpen.set(true);
+  }
+
+  onUnitCreated(unit: Unit) {
+    const opt: SearchSelectOption = { value: unit.id, label: `${unit.name} (${unit.abbreviation})` };
+    if (this.unitCreateFor() === 'yield') {
+      this.recipeGroup.get('yieldUnitId')!.setValue(unit.id);
+      this.initialYieldUnitOption.set(opt);
+    } else {
+      const i = this.editingIngredientIndex();
+      if (i !== null) {
+        this.onIngredientUnitChange(i, opt);
+      }
+    }
+    this.unitCreateOpen.set(false);
+    this.cdr.markForCheck();
   }
 }

@@ -33,6 +33,8 @@
             placeholder="kg, lt, porciones…"
             [searchFn]="searchYieldUnitFn"
             [initialOption]="initialYieldUnitOption()"
+            createNewLabel="Crear nueva unidad"
+            (createNew)="openUnitCreate('yield')"
           ></app-search-select>
         </div>
       </div>
@@ -113,36 +115,25 @@
         }
 
         @for (ingCtrl of ingredients.controls; track $index; let i = $index) {
-          <div class="rb__ingredient" [formGroup]="asGroup(ingCtrl)">
+          <div class="rb__ingredient">
             <div class="rb__ingredient-info">
               <span class="rb__ingredient-name">{{ ingCtrl.get('variantName')?.value }}</span>
+              @if (ingCtrl.get('quantity')?.value && ingCtrl.get('unitName')?.value) {
+                <span class="rb__ingredient-summary">
+                  {{ ingCtrl.get('quantity')?.value }} {{ ingCtrl.get('unitName')?.value }}
+                </span>
+              } @else {
+                <span class="rb__ingredient-summary rb__ingredient-summary--pending">Sin configurar</span>
+              }
             </div>
-
-            <div class="rb__ingredient-qty">
-              <input
-                type="number"
-                class="rb__qty-input"
-                formControlName="quantity"
-                min="0.0001"
-                step="0.001"
-                placeholder="Cant."
-                title="Cantidad"
-              >
+            <div class="rb__ingredient-actions">
+              <button type="button" class="rb__ingredient-edit" (click)="openIngredientDrawer(i)" title="Editar">
+                <ng-icon name="lucidePencil"></ng-icon>
+              </button>
+              <button type="button" class="rb__ingredient-remove" (click)="removeIngredient(i)" title="Quitar">
+                <ng-icon name="lucideTrash2"></ng-icon>
+              </button>
             </div>
-
-            <div class="rb__ingredient-unit">
-              <app-search-select
-                formControlName="unitId"
-                placeholder="Unidad…"
-                [searchFn]="searchIngredientUnitFn"
-                [initialOption]="getIngredientUnitOption(i)"
-                (selectionChange)="onIngredientUnitChange(i, $event)"
-              ></app-search-select>
-            </div>
-
-            <button type="button" class="rb__ingredient-remove" (click)="removeIngredient(i)" title="Quitar">
-              <ng-icon name="lucideTrash2"></ng-icon>
-            </button>
           </div>
         }
       </div>
@@ -151,6 +142,52 @@
   }
 
 </div>
+
+<!-- Ingredient drawer -->
+<app-drawer
+  [isOpen]="ingredientDrawerOpen()"
+  [title]="editingIngredientName"
+  size="sm"
+  (close)="closeIngredientDrawer()"
+>
+  @if (editingIngredient; as grp) {
+    <div drawerBody class="rb__drawer-body" [formGroup]="grp">
+      <app-field-input
+        formControlName="quantity"
+        label="Cantidad"
+        type="number"
+        placeholder="Ej: 500"
+        [required]="true"
+        [min]="0.0001"
+        [step]="0.001"
+        [errorMessages]="{ required: 'Cantidad requerida', min: 'Debe ser mayor a 0' }"
+      ></app-field-input>
+
+      <div class="pff">
+        <label class="pff__label">Unidad <span class="pff__req">*</span></label>
+        <app-search-select
+          formControlName="unitId"
+          placeholder="kg, lt, porciones…"
+          [searchFn]="searchIngredientUnitFn"
+          [initialOption]="getIngredientUnitOption(editingIngredientIndex()!)"
+          createNewLabel="Crear nueva unidad"
+          (selectionChange)="onIngredientUnitChange(editingIngredientIndex()!, $event)"
+          (createNew)="openUnitCreate('ingredient')"
+        ></app-search-select>
+      </div>
+    </div>
+  }
+  <div drawerFooter>
+    <button type="button" class="rb__drawer-btn" (click)="closeIngredientDrawer()">Listo</button>
+  </div>
+</app-drawer>
+
+<!-- Drawer: crear unidad rápida -->
+<app-unit-drawer
+  [isOpen]="unitCreateOpen()"
+  (saved)="onUnitCreated($event)"
+  (close)="unitCreateOpen.set(false)"
+></app-unit-drawer>
 
 <!-- Modal confirmación desactivar receta -->
 <app-modal

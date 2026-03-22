@@ -66,6 +66,12 @@ export interface Product {
   isActive: boolean;
   isSellable?: boolean;
   isPurchasable?: boolean;
+  // Campos resumen presentes en el listado
+  variantCount?: number;
+  minSalePrice?: number;
+  maxSalePrice?: number;
+  mainSku?: string | null;
+  // Campos detalle
   variants: ProductVariant[];
   comboItems?: ComboItem[];
   modifierGroups?: ModifierGroup[];
