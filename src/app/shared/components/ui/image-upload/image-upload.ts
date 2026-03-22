@@ -76,6 +76,7 @@ import { lucideImage, lucideX, lucideUpload } from '@ng-icons/lucide';
         display: block;
         width: 100%;
         aspect-ratio: 4 / 3;
+        max-height: 280px;
         border: 2px dashed var(--color-border-light);
         border-radius: var(--radius-lg);
         overflow: hidden;
@@ -83,6 +84,17 @@ import { lucideImage, lucideX, lucideUpload } from '@ng-icons/lucide';
         transition: border-color var(--transition-base), background-color var(--transition-base);
         background-color: var(--color-bg-canvas);
         position: relative;
+
+        @media (max-width: 860px) {
+          aspect-ratio: 16 / 7;
+          max-height: 180px;
+        }
+
+        @media (max-width: 480px) {
+          aspect-ratio: unset;
+          height: 140px;
+          max-height: 140px;
+        }
 
         &:hover {
           border-color: var(--color-text-muted);

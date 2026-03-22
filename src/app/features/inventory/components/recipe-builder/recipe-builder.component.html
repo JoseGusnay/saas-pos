@@ -117,7 +117,7 @@
         @for (ingCtrl of ingredients.controls; track $index; let i = $index) {
           <div class="rb__ingredient">
             <div class="rb__ingredient-info">
-              <span class="rb__ingredient-name">{{ ingCtrl.get('variantName')?.value }}</span>
+              <span class="rb__ingredient-name" [title]="ingCtrl.get('variantName')?.value">{{ ingCtrl.get('variantName')?.value }}</span>
               @if (ingCtrl.get('quantity')?.value && ingCtrl.get('unitName')?.value) {
                 <span class="rb__ingredient-summary">
                   {{ ingCtrl.get('quantity')?.value }} {{ ingCtrl.get('unitName')?.value }}

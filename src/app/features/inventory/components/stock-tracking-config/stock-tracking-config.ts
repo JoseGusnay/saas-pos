@@ -80,6 +80,10 @@ import { FieldInputComponent } from '../../../../shared/components/ui/field-inpu
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 12px;
+
+        @media (max-width: 600px) {
+          grid-template-columns: 1fr;
+        }
       }
     }
   `]

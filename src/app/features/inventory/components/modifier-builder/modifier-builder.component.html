@@ -234,6 +234,9 @@
                 }
               </div>
             }
+            @if (!optSearching() && optResults().length === 0 && optQuery().length >= 2) {
+              <span class="mb__opt-searching">Sin resultados para "{{ optQuery() }}"</span>
+            }
           </div>
         } @else {
           <button type="button" class="mb__opt-link-btn" (click)="openOptSearch()">

@@ -528,10 +528,7 @@ export class ProductFormPageComponent implements OnInit {
       this.step.set(1);
       return;
     }
-    // Si el tipo vino pre-seteado, volver a la pantalla de selección de tipo
-    if (this.typePreset() && !this.isEditing()) {
-      this.router.navigate(['/inventario/productos/nuevo']);
-    } else {
+    {
       this.router.navigate(['/inventario/productos']);
     }
   }

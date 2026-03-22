@@ -6,7 +6,7 @@
       <div class="pfp__header-left">
         <button type="button" class="pfp__back-btn" [disabled]="isSubmitting()" (click)="goBack()">
           <ng-icon name="lucideArrowLeft"></ng-icon>
-          {{ step() === 2 ? 'Paso anterior' : 'Cancelar' }}
+          <span class="pfp__back-label">{{ step() === 2 ? 'Paso anterior' : 'Cancelar' }}</span>
         </button>
 
         <div class="pfp__title-group">

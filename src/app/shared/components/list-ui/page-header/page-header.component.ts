@@ -32,6 +32,8 @@ export interface PageHeaderTab {
       </div>
       
       <div class="page-header__actions">
+        <ng-content select="[headerActions]"></ng-content>
+
         @if (secondaryCtaText) {
           <button class="btn btn-ghost btn-sm page-header__cta" (click)="secondaryCtaClick.emit()">
             @if (secondaryCtaIcon) {
@@ -40,7 +42,7 @@ export interface PageHeaderTab {
             <span>{{ secondaryCtaText }}</span>
           </button>
         }
-        
+
         @if (ctaText) {
           <button class="btn btn-primary btn-sm page-header__cta" (click)="ctaClick.emit()">
             @if (ctaIcon) {

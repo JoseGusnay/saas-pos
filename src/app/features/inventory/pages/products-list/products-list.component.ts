@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal, ViewChild } from '@angular/core';
+import { Component, computed, inject, signal, ViewChild, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
@@ -21,7 +21,7 @@ import { FormButtonComponent } from '../../../../shared/components/ui/form-butto
 
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import { ActionItem, ActionsMenuComponent } from '../../../../shared/components/ui/actions-menu/actions-menu';
-import { lucidePlus, lucideSave, lucidePencil, lucideTrash2, lucideDownload, lucideHistory, lucidePlusCircle, lucideRefreshCw, lucideTrash, lucideGlobe, lucideSearch, lucideCheckCircle2, lucideXCircle, lucideCloudDownload, lucideFileText, lucideInbox, lucideTag, lucideDollarSign, lucideChevronDown, lucideHash, lucideBarcode, lucideClock, lucidePackage, lucideX, lucideWrench } from '@ng-icons/lucide';
+import { lucidePlus, lucideSave, lucidePencil, lucideTrash2, lucideDownload, lucideHistory, lucidePlusCircle, lucideRefreshCw, lucideTrash, lucideGlobe, lucideSearch, lucideCheckCircle2, lucideXCircle, lucideCloudDownload, lucideFileText, lucideInbox, lucideTag, lucideDollarSign, lucideChevronDown, lucideHash, lucideBarcode, lucideClock, lucidePackage, lucideX, lucideWrench, lucideLeaf, lucideGift } from '@ng-icons/lucide';
 import { ToastService } from '../../../../core/services/toast.service';
 import { SkeletonComponent } from '../../../../shared/components/ui/skeleton/skeleton';
 import { EmptyStateComponent } from '../../../../shared/components/ui/empty-state/empty-state';
@@ -53,7 +53,7 @@ import { QueryNodeComponent } from '../../../../core/components/query-node/query
     NgIconComponent
   ],
   providers: [
-    provideIcons({ lucidePlus, lucideSave, lucidePencil, lucideTrash2, lucideDownload, lucideHistory, lucidePlusCircle, lucideRefreshCw, lucideTrash, lucideGlobe, lucideSearch, lucideCheckCircle2, lucideXCircle, lucideCloudDownload, lucideFileText, lucideInbox, lucideTag, lucideDollarSign, lucideChevronDown, lucideHash, lucideBarcode, lucideClock, lucidePackage, lucideX, lucideWrench })
+    provideIcons({ lucidePlus, lucideSave, lucidePencil, lucideTrash2, lucideDownload, lucideHistory, lucidePlusCircle, lucideRefreshCw, lucideTrash, lucideGlobe, lucideSearch, lucideCheckCircle2, lucideXCircle, lucideCloudDownload, lucideFileText, lucideInbox, lucideTag, lucideDollarSign, lucideChevronDown, lucideHash, lucideBarcode, lucideClock, lucidePackage, lucideX, lucideWrench, lucideLeaf, lucideGift })
   ],
   template: `
     <div class="products-page">
@@ -61,14 +61,42 @@ import { QueryNodeComponent } from '../../../../core/components/query-node/query
         title="Catálogo de Productos"
         [tabs]="productTabs"
         [activeTab]="activeTab()"
-        ctaText="Nuevo Producto"
-        ctaIcon="lucidePlus"
         secondaryCtaText="Importar"
         secondaryCtaIcon="lucideDownload"
         (tabChange)="onTabChange($event)"
-        (ctaClick)="onFullAddProduct()"
         (secondaryCtaClick)="importModal.open()"
-      ></app-page-header>
+      >
+        <div headerActions class="ptd">
+          <button
+            class="btn btn-primary btn-sm ptd__trigger"
+            (click)="typeDropdownOpen.set(!typeDropdownOpen()); $event.stopPropagation()"
+          >
+            <ng-icon name="lucidePlus"></ng-icon>
+            <span>Nuevo Producto</span>
+            <ng-icon
+              name="lucideChevronDown"
+              class="ptd__chevron"
+              [class.ptd__chevron--open]="typeDropdownOpen()"
+            ></ng-icon>
+          </button>
+
+          @if (typeDropdownOpen()) {
+            <div class="ptd__menu">
+              @for (item of typeMenuItems; track item.value) {
+                <button class="ptd__item" (click)="onSelectType(item.value)">
+                  <div class="ptd__item-icon ptd__item-icon--{{ item.colorClass }}">
+                    <ng-icon [name]="item.icon"></ng-icon>
+                  </div>
+                  <div class="ptd__item-text">
+                    <span class="ptd__item-label">{{ item.label }}</span>
+                    <span class="ptd__item-desc">{{ item.description }}</span>
+                  </div>
+                </button>
+              }
+            </div>
+          }
+        </div>
+      </app-page-header>
 
       <!-- Type filter chips -->
       <div class="products-page__type-chips">
@@ -372,6 +400,23 @@ export class ProductsListComponent {
     { value: 'RAW_MATERIAL', label: 'Materia Prima', icon: 'lucideInbox' },
   ];
   
+  typeDropdownOpen = signal(false);
+
+  readonly typeMenuItems = [
+    { value: 'PHYSICAL',     label: 'Físico',        description: 'Con inventario, stock y presentaciones.', icon: 'lucidePackage', colorClass: 'blue'   },
+    { value: 'SERVICE',      label: 'Servicio',       description: 'Sin inventario. Se cobra por tiempo o acto.', icon: 'lucideWrench',  colorClass: 'purple' },
+    { value: 'COMBO',        label: 'Combo',          description: 'Bundle de productos o servicios existentes.', icon: 'lucideGift',    colorClass: 'orange' },
+    { value: 'RAW_MATERIAL', label: 'Materia Prima',  description: 'Ingrediente interno usado en recetas.', icon: 'lucideLeaf',    colorClass: 'green'  },
+  ];
+
+  @HostListener('document:click')
+  onDocumentClick() { this.typeDropdownOpen.set(false); }
+
+  onSelectType(type: string) {
+    this.typeDropdownOpen.set(false);
+    this.router.navigate(['/inventario/productos/crear'], { queryParams: { tipo: type } });
+  }
+
   isDeleteModalOpen = signal(false);
   isDeleting = signal(false);
   productToDelete = signal<any | null>(null);
@@ -573,7 +618,7 @@ export class ProductsListComponent {
   onSortChange(ev: any) { this.sortField.set(ev.field); this.sortOrder.set(ev.order.toUpperCase()); this.currentPage.set(1); }
   
   onFullAddProduct() {
-      this.router.navigate(['/inventario/productos/nuevo']);
+    this.typeDropdownOpen.set(true);
   }
   
   onShowDetail(product: any) {

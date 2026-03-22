@@ -110,6 +110,10 @@
   overflow-y: auto;
   padding: 1.5rem;
 
+  @media (max-width: 600px) {
+    padding: 1rem;
+  }
+
   /* Scrollbar custom */
   &::-webkit-scrollbar {
     width: 4px;

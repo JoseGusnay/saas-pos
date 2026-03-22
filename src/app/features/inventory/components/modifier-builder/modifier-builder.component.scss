@@ -23,7 +23,9 @@
     border-radius: var(--radius-md);
     transition: border-color var(--transition-fast);
 
-    &:hover { border-color: var(--color-accent-primary); }
+    &:hover {
+      border-color: var(--color-accent-primary);
+    }
   }
 
   &__group-card-info {
@@ -88,7 +90,9 @@
       color: var(--color-danger-text);
       border-color: transparent;
 
-      ng-icon { font-size: 11px; }
+      ng-icon {
+        font-size: 11px;
+      }
     }
   }
 
@@ -115,7 +119,9 @@
     cursor: pointer;
     transition: all var(--transition-fast);
 
-    ng-icon { font-size: 12px; }
+    ng-icon {
+      font-size: 12px;
+    }
 
     &:hover {
       border-color: var(--color-accent-primary);
@@ -162,7 +168,9 @@
     font-family: inherit;
     transition: all var(--transition-fast);
 
-    ng-icon { font-size: 14px; }
+    ng-icon {
+      font-size: 14px;
+    }
 
     &:hover {
       border-color: var(--color-accent-primary);
@@ -176,7 +184,7 @@
     display: flex;
     flex-direction: column;
     gap: 20px;
-    padding: 24px;
+    // padding: 24px;
   }
 
   &__drawer-footer {
@@ -227,7 +235,9 @@
     cursor: pointer;
     transition: all var(--transition-fast);
 
-    &:hover { background: var(--color-bg-hover); }
+    &:hover {
+      background: var(--color-bg-hover);
+    }
 
     &--ghost {
       display: inline-flex;
@@ -237,7 +247,9 @@
       border-color: transparent;
       color: var(--color-text-secondary);
 
-      ng-icon { font-size: 14px; }
+      ng-icon {
+        font-size: 14px;
+      }
 
       &:hover {
         background: var(--color-bg-hover);
@@ -255,7 +267,7 @@
 
   &__selections-row {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
     gap: 12px;
   }
 
@@ -267,7 +279,10 @@
     font-size: var(--font-size-xs);
     color: var(--color-danger-text);
 
-    ng-icon { font-size: 12px; flex-shrink: 0; }
+    ng-icon {
+      font-size: 12px;
+      flex-shrink: 0;
+    }
   }
 
   // ── Options section ──────────────────────────────────────────────────────────
@@ -308,9 +323,13 @@
     font-family: inherit;
     transition: background var(--transition-fast);
 
-    ng-icon { font-size: 12px; }
+    ng-icon {
+      font-size: 12px;
+    }
 
-    &:hover { background: rgba(79, 70, 229, 0.06); }
+    &:hover {
+      background: rgba(79, 70, 229, 0.06);
+    }
   }
 
   &__options-empty {
@@ -327,7 +346,11 @@
       color: var(--color-danger-text);
       font-style: normal;
       font-weight: var(--font-weight-medium);
-      ng-icon { font-size: 13px; flex-shrink: 0; }
+
+      ng-icon {
+        font-size: 13px;
+        flex-shrink: 0;
+      }
     }
   }
 
@@ -342,9 +365,13 @@
     border-radius: var(--radius-sm);
     transition: border-color var(--transition-fast);
 
-    &:hover { border-color: var(--color-border-light); }
+    &:hover {
+      border-color: var(--color-border-light);
+    }
 
-    &--invalid { border-color: var(--color-danger-text); }
+    &--invalid {
+      border-color: var(--color-danger-text);
+    }
   }
 
   &__opt-card-info {
@@ -425,7 +452,10 @@
     color: var(--color-accent-primary);
     font-size: var(--font-size-sm);
 
-    ng-icon { font-size: 13px; flex-shrink: 0; }
+    ng-icon {
+      font-size: 13px;
+      flex-shrink: 0;
+    }
   }
 
   &__opt-variant-name {
@@ -451,8 +481,13 @@
     border-radius: var(--radius-sm);
     flex-shrink: 0;
 
-    &:hover { color: var(--color-danger-text); }
-    ng-icon { font-size: 12px; }
+    &:hover {
+      color: var(--color-danger-text);
+    }
+
+    ng-icon {
+      font-size: 12px;
+    }
   }
 
   &__opt-search-wrap {
@@ -473,7 +508,9 @@
     outline: none;
     box-sizing: border-box;
 
-    &::placeholder { color: var(--color-text-muted); }
+    &::placeholder {
+      color: var(--color-text-muted);
+    }
   }
 
   &__opt-searching {
@@ -510,11 +547,18 @@
     color: var(--color-text-main);
     transition: background var(--transition-fast);
 
-    &:hover { background: var(--color-bg-hover); }
+    &:hover {
+      background: var(--color-bg-hover);
+    }
   }
 
-  &__opt-result-product { font-weight: var(--font-weight-medium); }
-  &__opt-result-variant { color: var(--color-text-muted); }
+  &__opt-result-product {
+    font-weight: var(--font-weight-medium);
+  }
+
+  &__opt-result-variant {
+    color: var(--color-text-muted);
+  }
 
   &__opt-link-btn {
     display: flex;
@@ -532,7 +576,9 @@
     cursor: pointer;
     transition: all var(--transition-fast);
 
-    ng-icon { font-size: 14px; }
+    ng-icon {
+      font-size: 14px;
+    }
 
     &:hover {
       border-color: var(--color-accent-primary);

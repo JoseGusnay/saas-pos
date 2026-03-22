@@ -65,28 +65,35 @@ import { UnitDrawerComponent } from '../../components/unit-drawer/unit-drawer.co
           @for (n of [1,2,3,4,5,6]; track n) {
             @if (viewMode() === 'grid') {
               <div class="data-card skeleton-card">
-                <header class="data-card__header">
-                  <div class="data-card__title-container">
-                    <app-skeleton width="140px" height="1.25rem"></app-skeleton>
-                    <app-skeleton width="50px" height="18px" radius="999px" style="margin-top:4px"></app-skeleton>
+                <header class="data-card__header sk-header">
+                  <div class="data-card__title-container sk-title-container">
+                    <app-skeleton width="140px" height="1rem"></app-skeleton>
+                    <app-skeleton width="56px" height="18px" radius="999px"></app-skeleton>
                   </div>
-                  <app-skeleton width="32px" height="32px" shape="circle"></app-skeleton>
+                  <app-skeleton width="28px" height="28px" shape="circle"></app-skeleton>
                 </header>
-                <div class="data-card__body">
-                  <app-skeleton width="80px" height="0.875rem"></app-skeleton>
+                <div class="data-card__body sk-body">
+                  <div class="sk-detail">
+                    <app-skeleton width="14px" height="14px" radius="3px"></app-skeleton>
+                    <app-skeleton width="60px" height="0.8125rem"></app-skeleton>
+                  </div>
+                  <div class="sk-detail">
+                    <app-skeleton width="14px" height="14px" radius="3px"></app-skeleton>
+                    <app-skeleton width="90px" height="0.8125rem"></app-skeleton>
+                  </div>
                 </div>
               </div>
             } @else {
               <div class="unit-row-item skeleton-row">
                 <div class="row-main">
-                  <app-skeleton width="44px" height="44px" radius="8px"></app-skeleton>
-                  <div class="unit-info">
-                    <app-skeleton width="140px" height="1rem"></app-skeleton>
-                    <app-skeleton width="80px" height="0.875rem" style="margin-top:6px"></app-skeleton>
+                  <app-skeleton width="44px" height="44px" radius="10px"></app-skeleton>
+                  <div class="unit-info sk-unit-info">
+                    <app-skeleton width="140px" height="0.875rem"></app-skeleton>
+                    <app-skeleton width="80px" height="0.75rem"></app-skeleton>
                   </div>
                 </div>
-                <app-skeleton width="70px" height="24px" radius="99px"></app-skeleton>
-                <app-skeleton width="32px" height="32px" shape="circle"></app-skeleton>
+                <app-skeleton width="64px" height="22px" radius="999px"></app-skeleton>
+                <app-skeleton width="28px" height="28px" shape="circle"></app-skeleton>
               </div>
             }
           }
@@ -179,8 +186,14 @@ import { UnitDrawerComponent } from '../../components/unit-drawer/unit-drawer.co
     .units-page__list { display: flex; flex-direction: column; gap: 0.75rem; }
     .units-page__empty { grid-column: 1 / -1; display: flex; justify-content: center; width: 100%; padding: 4rem 1rem; }
 
-    .skeleton-card { height: 160px; pointer-events: none; background: var(--color-bg-surface); border-radius: var(--radius-lg); border: 1px solid var(--color-border-light); padding: 1.5rem; }
+    .skeleton-card { pointer-events: none; background: var(--color-bg-surface); border-radius: var(--radius-lg); border: 1px solid var(--color-border-light); padding: 20px; }
     .skeleton-row { pointer-events: none; }
+
+    .sk-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+    .sk-title-container { display: flex; flex-direction: column; gap: 6px; }
+    .sk-body { display: flex; flex-direction: column; gap: 10px; }
+    .sk-detail { display: flex; align-items: center; gap: 8px; }
+    .sk-unit-info { display: flex; flex-direction: column; gap: 5px; }
 
     .unit-row-item {
       display: flex; align-items: center; justify-content: space-between;
@@ -197,7 +210,7 @@ import { UnitDrawerComponent } from '../../components/unit-drawer/unit-drawer.co
       background: var(--color-primary-subtle); color: var(--color-accent-primary);
       letter-spacing: 0.02em;
     }
-    .unit-info { display: flex; flex-direction: column; }
+    .unit-info { display: flex; flex-direction: column; gap: 5px; }
     .unit-name { font-weight: var(--font-weight-semibold); color: var(--color-text-main); }
     .unit-sub { font-size: var(--font-size-sm); color: var(--color-text-muted); }
 

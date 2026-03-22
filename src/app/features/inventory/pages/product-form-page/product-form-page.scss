@@ -10,7 +10,10 @@
   min-height: 100%;
   background: var(--color-bg-canvas);
 
-  &--loading { opacity: 0.6; pointer-events: none; }
+  &--loading {
+    opacity: 0.6;
+    pointer-events: none;
+  }
 
   // ─── Header ───────────────────────────────────────────────────────────────
   &__header {
@@ -18,9 +21,20 @@
     align-items: center;
     justify-content: space-between;
     gap: 16px;
-    padding: 0 24px;
+    // padding: 0 24px;
     background: transparent;
     min-height: 60px;
+
+
+    @media (max-width: 768px) {
+      // padding: 0 16px;
+      gap: 10px;
+    }
+
+    @media (max-width: 480px) {
+      // padding: 0 12px;
+      min-height: 52px;
+    }
   }
 
   &__header-left {
@@ -28,6 +42,11 @@
     align-items: center;
     gap: 16px;
     min-width: 0;
+    flex: 1;
+
+    @media (max-width: 640px) {
+      gap: 8px;
+    }
   }
 
   &__back-btn {
@@ -45,15 +64,27 @@
     transition: var(--transition-fast);
     white-space: nowrap;
     font-family: inherit;
+    flex-shrink: 0;
 
-    ng-icon { font-size: 15px; }
+    ng-icon {
+      font-size: 15px;
+    }
 
     &:hover:not(:disabled) {
       background: var(--color-bg-hover);
       color: var(--color-text-main);
     }
 
-    &:disabled { opacity: 0.4; cursor: not-allowed; }
+    &:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+  }
+
+  &__back-label {
+    @media (max-width: 480px) {
+      display: none;
+    }
   }
 
   &__title-group {
@@ -61,6 +92,10 @@
     align-items: center;
     gap: 12px;
     min-width: 0;
+
+    @media (max-width: 640px) {
+      gap: 8px;
+    }
   }
 
   &__title {
@@ -69,12 +104,22 @@
     color: var(--color-text-main);
     margin: 0;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    @media (max-width: 640px) {
+      font-size: var(--font-size-base);
+    }
   }
 
   &__step-pills {
     display: flex;
     align-items: center;
     gap: 6px;
+
+    @media (max-width: 520px) {
+      display: none;
+    }
   }
 
   &__pill {
@@ -108,7 +153,10 @@
     background: var(--color-border-light);
     color: var(--color-text-muted);
 
-    .pfp__pill--active & { background: #4F46E5; color: #fff; }
+    .pfp__pill--active & {
+      background: #4F46E5;
+      color: #fff;
+    }
   }
 
   &__pill-sep {
@@ -117,28 +165,65 @@
     background: var(--color-border-light);
   }
 
-  &__header-actions { flex-shrink: 0; }
+  &__header-actions {
+    flex-shrink: 0;
+  }
 
   // ─── Body ─────────────────────────────────────────────────────────────────
   &__body {
     flex: 1;
-    padding: 28px 24px 40px;
+    padding: 28px 0;
+
+    @media (max-width: 768px) {
+      padding: 20px 0;
+    }
+
+    @media (max-width: 480px) {
+      padding: 16px 0;
+    }
   }
 
   &__layout {
     display: grid;
     grid-template-columns: 1fr 300px;
     gap: 24px;
-    max-width: 1100px;
+    max-width: 1200px;
     margin: 0 auto;
 
-    @media (max-width: 960px) {
+    @media (max-width: 1280px) {
       grid-template-columns: 1fr;
+      gap: 16px;
     }
   }
 
-  &__main  { display: flex; flex-direction: column; gap: 20px; }
-  &__aside { display: flex; flex-direction: column; gap: 20px; }
+  &__main {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  &__aside {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+
+    @media (max-width: 1280px) {
+      flex-direction: row;
+      flex-wrap: wrap;
+
+      >section {
+        flex: 1 1 240px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      flex-direction: column;
+
+      >section {
+        flex: none;
+      }
+    }
+  }
 
   // ─── Variants Step ────────────────────────────────────────────────────────
   &__variants-header {
@@ -147,6 +232,11 @@
     justify-content: space-between;
     gap: 16px;
     margin-bottom: 16px;
+
+    @media (max-width: 560px) {
+      flex-direction: column;
+      gap: 10px;
+    }
   }
 
   &__variants-title {
@@ -179,21 +269,28 @@
     transition: var(--transition-base);
     flex-shrink: 0;
 
-    ng-icon { font-size: 14px; }
+    ng-icon {
+      font-size: 14px;
+    }
 
-    &:hover { opacity: 0.88; transform: translateY(-1px); }
+    &:hover {
+      opacity: 0.88;
+      transform: translateY(-1px);
+    }
   }
 
   &__variants-table-wrap {
     background: var(--color-bg-surface);
     border: 1px solid var(--color-border-light);
     border-radius: var(--radius-lg);
-    overflow: hidden;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   &__variants-table {
     width: 100%;
     border-collapse: collapse;
+    min-width: 520px; // evita que la tabla se aplaste en móvil
 
     th {
       padding: 10px 16px;
@@ -206,7 +303,9 @@
       border-bottom: 1px solid var(--color-border-light);
       text-align: left;
 
-      &.text-right { text-align: right; }
+      &.text-right {
+        text-align: right;
+      }
     }
 
     td {
@@ -215,11 +314,18 @@
       font-size: var(--font-size-sm);
       vertical-align: middle;
 
-      &.text-right { text-align: right; }
+      &.text-right {
+        text-align: right;
+      }
     }
 
-    tr:last-child td { border-bottom: none; }
-    tr:hover td { background: var(--color-bg-hover); }
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:hover td {
+      background: var(--color-bg-hover);
+    }
   }
 
   &__v-name {
@@ -241,7 +347,9 @@
     color: var(--color-text-main);
   }
 
-  &__v-cost { color: var(--color-text-muted); }
+  &__v-cost {
+    color: var(--color-text-muted);
+  }
 
   &__v-actions {
     display: flex;
@@ -265,9 +373,13 @@
     background: var(--color-bg-surface);
     color: var(--color-text-main);
 
-    ng-icon { font-size: 13px; }
+    ng-icon {
+      font-size: 13px;
+    }
 
-    &--edit:hover { background: var(--color-bg-hover); }
+    &--edit:hover {
+      background: var(--color-bg-hover);
+    }
 
     &--delete {
       color: var(--color-danger-text);
@@ -275,7 +387,9 @@
       background: transparent;
       padding: 5px;
 
-      &:hover { background: var(--color-danger-bg); }
+      &:hover {
+        background: var(--color-danger-bg);
+      }
     }
   }
 
@@ -291,9 +405,14 @@
     color: var(--color-text-muted);
     text-align: center;
 
-    ng-icon { font-size: 32px; }
+    ng-icon {
+      font-size: 32px;
+    }
 
-    p { margin: 0; font-size: var(--font-size-sm); }
+    p {
+      margin: 0;
+      font-size: var(--font-size-sm);
+    }
 
     .pfp__add-variant-btn {
       margin-top: 4px;
@@ -302,7 +421,11 @@
       font-size: var(--font-size-xs);
       padding: 6px 14px;
 
-      &:hover { opacity: 1; transform: none; background: var(--color-border-light); }
+      &:hover {
+        opacity: 1;
+        transform: none;
+        background: var(--color-border-light);
+      }
     }
   }
 
