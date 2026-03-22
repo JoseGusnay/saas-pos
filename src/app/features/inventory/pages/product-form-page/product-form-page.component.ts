@@ -665,8 +665,36 @@ export class ProductFormPageComponent implements OnInit {
   saveDrawerVariant(form: FormGroup) {
     form.markAllAsTouched();
     if (form.invalid) return;
+
+    if (this.isDuplicateVariant(form)) {
+      this.toastSvc.error('Ya existe una variante con la misma presentación y atributos');
+      return;
+    }
+
     if (this.editingVariantIndex() === null) this.variants.push(form);
     this.closeDrawer();
+  }
+
+  private isDuplicateVariant(form: FormGroup): boolean {
+    const editingIndex = this.editingVariantIndex();
+    const newKey = this.variantKey(form.value);
+
+    return this.variants.controls.some((ctrl, i) => {
+      if (i === editingIndex) return false;
+      return this.variantKey(ctrl.value) === newKey;
+    });
+  }
+
+  private variantKey(v: any): string {
+    const presentationId = v.presentationId || '';
+    const attrs = this.categoryAttributes()
+      .map(cat => {
+        const val = v.attributes?.[cat.attributeTypeId];
+        return `${cat.attributeTypeId}:${val ?? ''}`;
+      })
+      .sort()
+      .join('|');
+    return `${presentationId}::${attrs}`;
   }
 
   handleDrawerClose() {
