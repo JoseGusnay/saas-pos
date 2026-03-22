@@ -68,6 +68,7 @@ import { lucideImage, lucideX, lucideUpload } from '@ng-icons/lucide';
     .iu {
       position: relative;
       width: 100%;
+      padding: .25rem;
 
       &--disabled { opacity: 0.6; pointer-events: none; }
 

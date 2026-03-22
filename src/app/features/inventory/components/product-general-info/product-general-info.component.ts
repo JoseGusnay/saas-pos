@@ -39,26 +39,31 @@ import { Brand } from '../../../../core/models/brand.models';
   ],
   viewProviders: [{ provide: ControlContainer, useFactory: () => inject(ControlContainer, { skipSelf: true }) }],
   templateUrl: './product-general-info.component.html',
+  styles: [`
+   .pfc__type-locked {
+    margin-bottom: 1rem;
+   }
+  `]
 })
 export class ProductGeneralInfoComponent {
   private categorySvc = inject(CategoryService);
-  private brandSvc    = inject(BrandService);
+  private brandSvc = inject(BrandService);
   private fg = inject(ControlContainer).control as FormGroup;
 
   // ── Signal inputs ────────────────────────────────────────────────────────
-  typePreset              = input(false);
-  isEditing               = input(false);
-  showBrand               = input(false);
-  showSellable            = input(true);
-  showPurchasable         = input(true);
-  initialCategoryOption   = input<SearchSelectOption | undefined>(undefined);
-  initialBrandOption      = input<SearchSelectOption | undefined>(undefined);
+  typePreset = input(false);
+  isEditing = input(false);
+  showBrand = input(false);
+  showSellable = input(true);
+  showPurchasable = input(true);
+  initialCategoryOption = input<SearchSelectOption | undefined>(undefined);
+  initialBrandOption = input<SearchSelectOption | undefined>(undefined);
   initialCategoryAttributes = input<CategoryAttributeType[]>([]);
 
   // ── Signal outputs ───────────────────────────────────────────────────────
-  categoryOptionChange  = output<SearchSelectOption | undefined>();
-  brandOptionChange     = output<SearchSelectOption | undefined>();
-  attributesChange      = output<CategoryAttributeType[]>();
+  categoryOptionChange = output<SearchSelectOption | undefined>();
+  brandOptionChange = output<SearchSelectOption | undefined>();
+  attributesChange = output<CategoryAttributeType[]>();
 
   // ── Reactive form values (for OnPush template conditions) ────────────────
   categoryIdValue = toSignal(
@@ -70,20 +75,20 @@ export class ProductGeneralInfoComponent {
     { initialValue: this.fg.get('isActive')?.value ?? true }
   );
   // ── Quick-create drawers ──────────────────────────────────────────────────
-  catCreateOpen   = signal(false);
+  catCreateOpen = signal(false);
   brandCreateOpen = signal(false);
 
   // ── Internal option tracking ─────────────────────────────────────────────
-  _catOption   = signal<SearchSelectOption | undefined>(undefined);
+  _catOption = signal<SearchSelectOption | undefined>(undefined);
   _brandOption = signal<SearchSelectOption | undefined>(undefined);
 
   constructor() {
     effect(() => { const o = this.initialCategoryOption(); if (o) this._catOption.set(o); });
-    effect(() => { const o = this.initialBrandOption();    if (o) this._brandOption.set(o); });
+    effect(() => { const o = this.initialBrandOption(); if (o) this._brandOption.set(o); });
   }
 
   // ── Getters for error state (used in template) ───────────────────────────
-  get nameCtrl()     { return this.fg.get('name'); }
+  get nameCtrl() { return this.fg.get('name'); }
   get categoryCtrl() { return this.fg.get('categoryId'); }
 
   // ── Event handlers ───────────────────────────────────────────────────────

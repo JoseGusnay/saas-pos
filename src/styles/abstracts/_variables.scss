@@ -14,6 +14,7 @@
     /* 2. Colores Primarios (Marcas y Acentos) */
     --color-accent-primary: #111111; // Principalmente botones CTA, iconos activos
     --color-accent-hover: #000000; // Oscurecimiento sutil en hover
+    --color-accent-primary-text: #FFFFFF; // Texto sobre accent-primary
 
     /* 3. Colores de Texto (Jerarquía Tópica) */
     --color-text-main: #111111; // Texto principal (Casi negro, más suave para la vista)
@@ -73,6 +74,7 @@
     /* Acentos */
     --color-accent-primary: #FFFFFF;
     --color-accent-hover: #EAEAEA;
+    --color-accent-primary-text: #111111; // Texto sobre accent-primary
 
     /* Textos */
     --color-text-main: #EDEDED;

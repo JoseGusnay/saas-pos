@@ -317,7 +317,7 @@ export class ProductFormPageComponent implements OnInit {
       (g.options ?? []).map((o: any) => this.fb.group({
         id: [o.id ?? null],
         name: [o.name ?? '', [Validators.required, Validators.maxLength(100)]],
-        priceAdjustment: [o.priceAdjustment ?? 0],
+        priceAdjustment: [this.round2(o.priceAdjustment ?? 0)],
         variantId: [o.variantId ?? null],
         variantName: [o.variantName && o.productName && o.variantName !== o.productName
           ? `${o.productName} — ${o.variantName}`
@@ -585,7 +585,7 @@ export class ProductFormPageComponent implements OnInit {
       (existing?.ingredients ?? []).map((ing: any) => this.fb.group({
         variantId: [ing.variantId, Validators.required],
         variantName: [ing.variantName ?? ''],
-        quantity: [ing.quantity, [Validators.required, Validators.min(0.0001)]],
+        quantity: [this.round2(ing.quantity), [Validators.required, Validators.min(0.0001)]],
         unitId: [ing.unitId, Validators.required],
         unitName: [ing.unitAbbreviation ?? ''],
         notes: [ing.notes ?? '']
@@ -593,7 +593,7 @@ export class ProductFormPageComponent implements OnInit {
     );
     return this.fb.group({
       enabled: [!!existing],
-      yield: [existing?.yield ?? null, [Validators.min(0.0001)]],
+      yield: [this.round2(existing?.yield ?? null), [Validators.min(0.0001)]],
       yieldUnitId: [existing?.yieldUnitId ?? ''],
       notes: [existing?.notes ?? ''],
       ingredients
