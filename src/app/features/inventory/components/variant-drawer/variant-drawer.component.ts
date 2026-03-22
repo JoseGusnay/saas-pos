@@ -21,12 +21,14 @@ import { TaxService } from '../../../../core/services/tax.service';
 import { UnitsService } from '../../../../core/services/units.service';
 import { Unit } from '../../../../core/models/unit.models';
 import { CategoryAttributeType } from '../../models/product.model';
+import { ToggleSwitchComponent } from '../../../../shared/components/ui/toggle-switch/toggle-switch';
+import { StockTrackingConfigComponent } from '../stock-tracking-config/stock-tracking-config';
 import { map } from 'rxjs';
 
 @Component({
   selector: 'app-variant-drawer',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, NgIconComponent, SearchSelectComponent, FormButtonComponent, BarcodeFieldComponent, RecipeBuilderComponent, UnitDrawerComponent],
+  imports: [CommonModule, ReactiveFormsModule, NgIconComponent, SearchSelectComponent, FormButtonComponent, BarcodeFieldComponent, RecipeBuilderComponent, UnitDrawerComponent, ToggleSwitchComponent, StockTrackingConfigComponent],
   providers: [
     provideIcons({
       lucideX, lucidePackage, lucideHash, lucideDollarSign,
@@ -123,16 +125,13 @@ import { map } from 'rxjs';
               }
 
               <!-- Variante activa -->
-              <label class="toggle-row">
-                <div class="toggle-switch-sm" [class.on]="form.get('isActive')?.value"
-                  (click)="form.get('isActive')?.setValue(!form.get('isActive')?.value)">
-                  <span class="toggle-thumb-sm"></span>
+              <div class="pff__toggle-row" (click)="isActiveToggle.toggle()">
+                <div class="pff__toggle-info">
+                  <span class="pff__toggle-label">Variante activa</span>
+                  <small class="pff__toggle-hint">Las variantes inactivas no aparecen en el punto de venta</small>
                 </div>
-                <div>
-                  <span class="toggle-label">Variante activa</span>
-                  <small>Las variantes inactivas no aparecen en el punto de venta</small>
-                </div>
-              </label>
+                <app-toggle-switch #isActiveToggle formControlName="isActive" size="sm" (click)="$event.stopPropagation()"></app-toggle-switch>
+              </div>
 
               <!-- Imagen de variante -->
               <div class="field">
@@ -236,58 +235,7 @@ import { map } from 'rxjs';
           @if (!isService) {
             <div class="section-card">
               <div class="section-kicker"><ng-icon name="lucideBoxes"></ng-icon> Trazabilidad</div>
-              <div class="form-stack">
-                <label class="toggle-row">
-                  <div class="toggle-switch-sm" [class.on]="form.get('stockTrackable')?.value"
-                    (click)="toggleStockTrackable()">
-                    <span class="toggle-thumb-sm"></span>
-                  </div>
-                  <div>
-                    <span class="toggle-label">Rastrear stock</span>
-                    <small>Descuenta unidades al vender y permite gestionar inventario</small>
-                  </div>
-                </label>
-
-                @if (form.get('stockTrackable')?.value) {
-                  <label class="toggle-row">
-                    <div class="toggle-switch-sm" [class.on]="form.get('trackLots')?.value"
-                      (click)="form.get('trackLots')?.setValue(!form.get('trackLots')?.value)">
-                      <span class="toggle-thumb-sm"></span>
-                    </div>
-                    <div>
-                      <span class="toggle-label">Manejo de lotes</span>
-                      <small>Permite identificar cada entrada de mercancía por lote</small>
-                    </div>
-                  </label>
-                  <label class="toggle-row">
-                    <div class="toggle-switch-sm" [class.on]="form.get('trackExpiry')?.value"
-                      (click)="form.get('trackExpiry')?.setValue(!form.get('trackExpiry')?.value)">
-                      <span class="toggle-thumb-sm"></span>
-                    </div>
-                    <div>
-                      <span class="toggle-label">Manejo de caducidad</span>
-                      <small>Controla fechas de vencimiento y alertas de expiración</small>
-                    </div>
-                  </label>
-
-                  <div class="stock-limits">
-                    <div class="field">
-                      <label>Stock mínimo <span class="optional">Opcional</span></label>
-                      <input type="number" formControlName="minimumStock" min="0" placeholder="Ej: 5">
-                      <small class="field-hint">Alerta cuando el stock baje de este valor</small>
-                    </div>
-                    <div class="field" [class.error]="form.hasError('minExceedsMax') && form.get('maximumStock')?.touched">
-                      <label>Stock máximo <span class="optional">Opcional</span></label>
-                      <input type="number" formControlName="maximumStock" min="0" placeholder="Ej: 100">
-                      @if (form.hasError('minExceedsMax') && form.get('maximumStock')?.touched) {
-                        <small class="err-msg"><ng-icon name="lucideAlertCircle"></ng-icon> El máximo debe ser mayor al mínimo</small>
-                      } @else {
-                        <small class="field-hint">Techo para reorden automático</small>
-                      }
-                    </div>
-                  </div>
-                }
-              </div>
+              <app-stock-tracking-config></app-stock-tracking-config>
             </div>
           }
 
@@ -302,21 +250,24 @@ import { map } from 'rxjs';
               }
             </div>
 
-            <div [class.pricing-split]="!isRawMaterial">
+            <div class="pfc__pricing-row">
               @if (!isRawMaterial) {
-                <div class="price-field" [class.error]="form.get('salePrice')?.invalid && form.get('salePrice')?.touched">
-                  <label>PVP (Final) *</label>
-                  <div class="price-input">
-                    <span class="currency">$</span>
-                    <input type="number" formControlName="salePrice" step="0.01">
+                <div class="pff" [class.pff--error]="form.get('salePrice')?.invalid && form.get('salePrice')?.touched">
+                  <label class="pff__label">Precio de Venta <span class="pff__req">*</span></label>
+                  <div class="pff__price-wrap">
+                    <span class="pff__currency">$</span>
+                    <input class="pff__price-input" type="number" formControlName="salePrice" step="0.01" placeholder="0.00">
                   </div>
+                  @if (form.get('salePrice')?.invalid && form.get('salePrice')?.touched) {
+                    <small class="pff__error"><ng-icon name="lucideAlertCircle"></ng-icon> Precio de venta requerido.</small>
+                  }
                 </div>
               }
-              <div class="price-field">
-                <label>Costo Neto</label>
-                <div class="price-input">
-                  <span class="currency">$</span>
-                  <input type="number" formControlName="costPrice" step="0.01">
+              <div class="pff">
+                <label class="pff__label">Costo Neto <span class="pff__optional">Opcional</span></label>
+                <div class="pff__price-wrap">
+                  <span class="pff__currency">$</span>
+                  <input class="pff__price-input" type="number" formControlName="costPrice" step="0.01" placeholder="0.00">
                 </div>
               </div>
             </div>
@@ -468,22 +419,24 @@ import { map } from 'rxjs';
     }
 
     .section-kicker {
-      font-size: 11px;
-      font-weight: 800;
+      font-size: var(--font-size-xs);
+      font-weight: var(--font-weight-semibold);
       text-transform: uppercase;
       letter-spacing: 0.05em;
       color: var(--color-text-muted);
       display: flex;
       align-items: center;
       gap: 0.5rem;
-      padding-bottom: 0.75rem;
+      padding: 0.75rem 0;
       border-bottom: 1px solid var(--color-border-subtle);
+
+      ng-icon { font-size: 13px; }
     }
 
     .section-optional {
       margin-left: 4px;
       font-size: 9px;
-      font-weight: 500;
+      font-weight: var(--font-weight-regular);
       text-transform: none;
       letter-spacing: 0;
       color: var(--color-text-muted);
@@ -492,15 +445,15 @@ import { map } from 'rxjs';
 
     .margin-badge {
       margin-left: auto;
-      font-size: 10px;
-      font-weight: 700;
-      padding: 2px 8px;
+      font-size: 11px;
+      font-weight: var(--font-weight-semibold);
+      padding: 1px 7px;
       border-radius: 999px;
       text-transform: none;
       letter-spacing: 0;
-      &.margin--good { background: color-mix(in srgb, #22c55e 15%, transparent); color: #16a34a; }
-      &.margin--warn { background: color-mix(in srgb, #f59e0b 15%, transparent); color: #d97706; }
-      &.margin--loss { background: color-mix(in srgb, #ef4444 15%, transparent); color: #dc2626; }
+      &.margin--good { background: var(--color-success-bg); color: var(--color-success-text); }
+      &.margin--warn { background: rgba(251, 191, 36, 0.12); color: #D97706; }
+      &.margin--loss { background: var(--color-danger-bg); color: var(--color-danger-text); }
     }
 
     .form-stack { display: flex; flex-direction: column; gap: 1.25rem; }
@@ -508,33 +461,38 @@ import { map } from 'rxjs';
     .field {
       display: flex;
       flex-direction: column;
-      gap: 0.375rem;
+      gap: 6px;
       label {
-        font-size: 11px;
-        font-weight: 700;
-        text-transform: uppercase;
-        color: var(--color-text-muted);
+        font-size: var(--font-size-sm);
+        font-weight: var(--font-weight-medium);
+        color: var(--color-text-main);
         display: flex;
         align-items: center;
-        gap: 0.25rem;
+        flex-wrap: wrap;
+        gap: 4px;
       }
       input {
-        background: var(--color-bg-canvas);
+        width: 100%;
+        height: 40px;
+        padding: 0 12px;
+        background: var(--color-bg-surface);
         border: 1px solid var(--color-border-light);
         border-radius: var(--radius-md);
-        padding: 0.625rem 0.875rem;
-        font-size: var(--font-size-sm);
+        font-size: var(--font-size-base);
         color: var(--color-text-main);
-        width: 100%;
-        &:focus { outline: none; border-color: var(--color-accent-primary); }
+        font-family: inherit;
+        outline: none;
+        transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+        &::placeholder { color: var(--color-text-muted); }
+        &:focus { border-color: var(--color-accent-primary); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.08); }
       }
-      &.error input { border-color: var(--color-danger-text); }
-      .err-msg { font-size: 11px; color: var(--color-danger-text); display: flex; align-items: center; gap: 4px; }
+      &.error input { border-color: var(--color-danger-text); &:focus { box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.08); } }
+      .err-msg { font-size: var(--font-size-xs); color: var(--color-danger-text); display: flex; align-items: center; gap: 4px; }
     }
 
-    .unit-hint { font-weight: 400; text-transform: none; }
-    .optional { font-weight: 400; text-transform: none; color: var(--color-text-muted); font-size: 10px; }
-    .field-hint { font-size: 11px; color: var(--color-text-muted); }
+    .unit-hint { font-weight: var(--font-weight-regular); }
+    .optional { font-weight: var(--font-weight-regular); color: var(--color-text-muted); font-size: var(--font-size-xs); }
+    .field-hint { font-size: var(--font-size-xs); color: var(--color-text-muted); }
     .stock-limits { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
     .required-dot { color: var(--color-danger-text); }
 
@@ -551,18 +509,6 @@ import { map } from 'rxjs';
       align-items: flex-start;
       gap: 0.75rem;
       cursor: pointer;
-      .toggle-label {
-        font-size: var(--font-size-sm);
-        font-weight: 500;
-        color: var(--color-text-main);
-        display: block;
-      }
-      small {
-        font-size: 11px;
-        color: var(--color-text-muted);
-        margin-top: 2px;
-        display: block;
-      }
       input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; }
     }
 
@@ -620,62 +566,7 @@ import { map } from 'rxjs';
       }
     }
 
-    .toggle-switch-sm {
-      min-width: 32px;
-      height: 18px;
-      border-radius: 999px;
-      background: var(--color-border-light);
-      position: relative;
-      cursor: pointer;
-      transition: background 0.2s;
-      margin-top: 2px;
-      &.on { background: var(--color-accent-primary); }
-    }
 
-    .toggle-thumb-sm {
-      position: absolute;
-      top: 2px;
-      left: 2px;
-      width: 14px;
-      height: 14px;
-      border-radius: 50%;
-      background: var(--color-bg-surface);
-      transition: transform 0.2s;
-      .toggle-switch-sm.on & { transform: translateX(14px); }
-    }
-
-    .pricing-split {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1rem;
-    }
-
-    .price-field {
-      background: var(--color-bg-canvas);
-      border: 1px solid var(--color-border-light);
-      border-radius: var(--radius-lg);
-      padding: 1rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-      label { font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--color-text-muted); }
-      .price-input {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        .currency { font-size: 1.25rem; font-weight: 700; color: var(--color-text-muted); }
-        input {
-          background: transparent;
-          border: none;
-          font-size: 1.25rem;
-          font-weight: 800;
-          color: var(--color-text-main);
-          width: 100%;
-          padding: 0;
-          &:focus { outline: none; }
-        }
-      }
-    }
 
     .input-icon-wrap {
       position: relative;
@@ -807,18 +698,6 @@ export class VariantDrawerComponent implements OnInit, OnDestroy {
     const reader = new FileReader();
     reader.onload = e => this.imagePreview.set(e.target?.result as string);
     reader.readAsDataURL(file);
-  }
-
-  toggleStockTrackable() {
-    const ctrl = this.form.get('stockTrackable')!;
-    const next = !ctrl.value;
-    ctrl.setValue(next);
-    if (!next) {
-      this.form.get('trackLots')?.setValue(false);
-      this.form.get('trackExpiry')?.setValue(false);
-      this.form.get('minimumStock')?.setValue(null);
-      this.form.get('maximumStock')?.setValue(null);
-    }
   }
 
   cancel() {
