@@ -238,8 +238,7 @@ export class ProductQuickFormComponent implements OnInit {
           name: 'Principal',
           salePrice: Number(val.salePrice),
           costPrice: 0,
-          sku: val.sku || undefined,
-          unitsPerPack: 1
+          sku: val.sku || undefined
         }
       ]
     };

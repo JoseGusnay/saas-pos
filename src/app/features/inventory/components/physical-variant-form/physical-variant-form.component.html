@@ -1,0 +1,102 @@
+<!-- Atributos de categoría dinámicos -->
+@if (categoryAttributes().length > 0) {
+  <div class="pff__section-label">Características</div>
+  <div class="pff__row" formGroupName="attributes">
+    @for (cat of categoryAttributes(); track cat.attributeTypeId) {
+      <app-field-input
+        [formControlName]="cat.attributeTypeId"
+        [label]="cat.attributeType.unit ? cat.attributeType.name + ' (' + cat.attributeType.unit + ')' : cat.attributeType.name"
+        [type]="cat.attributeType.dataType === 'NUMBER' ? 'number' : 'text'"
+        [placeholder]="cat.attributeType.dataType === 'NUMBER' ? 'Ej: 750' : 'Ej: ' + cat.attributeType.name"
+        [required]="cat.isRequired"
+        [optional]="!cat.isRequired"
+      ></app-field-input>
+    }
+  </div>
+}
+
+<!-- Precio de venta + Costo -->
+<div class="pfc__pricing-row">
+  <div class="pff" [class.pff--error]="salePriceCtrl?.invalid && salePriceCtrl?.touched">
+    <label class="pff__label">
+      Precio de Venta <span class="pff__req">*</span>
+      @if (simpleMargin() !== null) {
+        <span class="pfc__margin-badge"
+          [class.pfc__margin-badge--good]="simpleMargin()! >= 20"
+          [class.pfc__margin-badge--warn]="simpleMargin()! > 0 && simpleMargin()! < 20"
+          [class.pfc__margin-badge--loss]="simpleMargin()! <= 0">
+          {{ simpleMargin()! <= 0 ? 'Pérdida' : 'Margen ' + (simpleMargin()! | number:'1.0-1') + '%' }}
+        </span>
+      }
+    </label>
+    <div class="pff__price-wrap">
+      <span class="pff__currency">$</span>
+      <input type="number" class="pff__price-input" formControlName="salePrice" step="0.01" min="0" placeholder="0.00">
+    </div>
+    @if (salePriceCtrl?.invalid && salePriceCtrl?.touched) {
+      <small class="pff__error">
+        <ng-icon name="lucideAlertCircle"></ng-icon>
+        Precio de venta requerido.
+      </small>
+    }
+  </div>
+
+  <app-field-input
+    formControlName="costPrice"
+    label="Costo Neto"
+    type="number"
+    placeholder="0.00"
+    prefix="$"
+    [optional]="true"
+    [step]="0.01"
+    [min]="0"
+  ></app-field-input>
+</div>
+
+<!-- Impuestos -->
+<div class="pff">
+  <label class="pff__label">Impuestos <span class="pff__optional">Opcional</span></label>
+  <app-search-select
+    formControlName="taxIds"
+    placeholder="Seleccionar impuestos…"
+    searchPlaceholder="Buscar impuestos…"
+    [multiple]="true"
+    [searchFn]="searchTaxesFn"
+    [initialOptions]="_taxOptions()"
+    (selectionChange)="onTaxChange($event)"
+  ></app-search-select>
+</div>
+
+<!-- Presentación -->
+<div class="pff">
+  <label class="pff__label">Presentación <span class="pff__optional">Opcional</span></label>
+  <app-search-select
+    formControlName="presentationId"
+    placeholder="Ej: Unidad, Caja x12, Botella…"
+    searchPlaceholder="Buscar presentación…"
+    [searchFn]="searchPresentationsFn"
+    [initialOption]="_presentationOption()"
+    (selectionChange)="onPresentationChange($event)"
+  ></app-search-select>
+</div>
+
+<!-- SKU + Código de barras -->
+<div class="pff__row">
+  <app-field-input
+    formControlName="sku"
+    label="SKU"
+    placeholder="Ej: CAM-ROJO-XL"
+    prefixIcon="lucideHash"
+    [optional]="true"
+  ></app-field-input>
+  <app-barcode-field
+    formControlName="barcode"
+    label="Código de Barras"
+    [optional]="true"
+    [productName]="productName()"
+    [salePrice]="salePriceCtrl?.value"
+  ></app-barcode-field>
+</div>
+
+<!-- Control de stock -->
+<app-stock-tracking-config></app-stock-tracking-config>

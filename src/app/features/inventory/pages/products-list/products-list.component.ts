@@ -21,7 +21,7 @@ import { FormButtonComponent } from '../../../../shared/components/ui/form-butto
 
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import { ActionItem, ActionsMenuComponent } from '../../../../shared/components/ui/actions-menu/actions-menu';
-import { lucidePlus, lucideSave, lucidePencil, lucideTrash2, lucideDownload, lucideHistory, lucidePlusCircle, lucideRefreshCw, lucideTrash, lucideGlobe, lucideSearch, lucideCheckCircle2, lucideXCircle, lucideCloudDownload, lucideFileText, lucideInbox, lucideTag, lucideDollarSign, lucideChevronDown, lucideHash, lucideBarcode, lucideClock, lucidePackage } from '@ng-icons/lucide';
+import { lucidePlus, lucideSave, lucidePencil, lucideTrash2, lucideDownload, lucideHistory, lucidePlusCircle, lucideRefreshCw, lucideTrash, lucideGlobe, lucideSearch, lucideCheckCircle2, lucideXCircle, lucideCloudDownload, lucideFileText, lucideInbox, lucideTag, lucideDollarSign, lucideChevronDown, lucideHash, lucideBarcode, lucideClock, lucidePackage, lucideX, lucideWrench } from '@ng-icons/lucide';
 import { ToastService } from '../../../../core/services/toast.service';
 import { SkeletonComponent } from '../../../../shared/components/ui/skeleton/skeleton';
 import { EmptyStateComponent } from '../../../../shared/components/ui/empty-state/empty-state';
@@ -53,7 +53,7 @@ import { QueryNodeComponent } from '../../../../core/components/query-node/query
     NgIconComponent
   ],
   providers: [
-    provideIcons({ lucidePlus, lucideSave, lucidePencil, lucideTrash2, lucideDownload, lucideHistory, lucidePlusCircle, lucideRefreshCw, lucideTrash, lucideGlobe, lucideSearch, lucideCheckCircle2, lucideXCircle, lucideCloudDownload, lucideFileText, lucideInbox, lucideTag, lucideDollarSign, lucideChevronDown, lucideHash, lucideBarcode, lucideClock, lucidePackage })
+    provideIcons({ lucidePlus, lucideSave, lucidePencil, lucideTrash2, lucideDownload, lucideHistory, lucidePlusCircle, lucideRefreshCw, lucideTrash, lucideGlobe, lucideSearch, lucideCheckCircle2, lucideXCircle, lucideCloudDownload, lucideFileText, lucideInbox, lucideTag, lucideDollarSign, lucideChevronDown, lucideHash, lucideBarcode, lucideClock, lucidePackage, lucideX, lucideWrench })
   ],
   template: `
     <div class="products-page">
@@ -69,6 +69,25 @@ import { QueryNodeComponent } from '../../../../core/components/query-node/query
         (ctaClick)="onFullAddProduct()"
         (secondaryCtaClick)="importModal.open()"
       ></app-page-header>
+
+      <!-- Type filter chips -->
+      <div class="products-page__type-chips">
+        @for (chip of typeChips; track chip.value) {
+          <button
+            class="type-chip"
+            [class.type-chip--active]="typeFilter() === chip.value"
+            (click)="onTypeFilter(chip.value)"
+          >
+            <ng-icon [name]="chip.icon"></ng-icon>
+            {{ chip.label }}
+          </button>
+        }
+        @if (typeFilter()) {
+          <button class="type-chip type-chip--clear" (click)="typeFilter.set(null)">
+            <ng-icon name="lucideX"></ng-icon>
+          </button>
+        }
+      </div>
 
       <app-list-toolbar
         searchPlaceholder="Buscar por nombre, SKU, código de barras..."
@@ -172,9 +191,10 @@ import { QueryNodeComponent } from '../../../../core/components/query-node/query
                     <ng-icon name="lucideTag"></ng-icon>
                     <span>{{ product.category?.name || 'Varios' }} • {{ product.brand?.name || 'Sin Marca' }}</span>
                   </div>
-                  <div class="data-card__detail">
-                    <ng-icon name="lucidePackage"></ng-icon>
-                    <span>Tipo: {{ product.type || 'Físico' }}</span>
+                  <div class="data-card__type-badge">
+                    <span [class]="'type-badge type-badge--' + typeColor(product.type)">
+                      {{ typeLabel(product.type) }}
+                    </span>
                   </div>
                   <div class="data-card__detail">
                     <ng-icon name="lucideHash"></ng-icon>
@@ -210,6 +230,9 @@ import { QueryNodeComponent } from '../../../../core/components/query-node/query
                        </span>
                     </div>
                  </div>
+                 <span [class]="'type-badge type-badge--' + typeColor(product.type)" style="flex-shrink: 0;">
+                   {{ typeLabel(product.type) }}
+                 </span>
                  <div class="row-stats" style="flex: 1; display: flex; justify-content: space-around;">
                    <div class="stat-group">
                      <span class="stat-label">SKU Principal</span>
@@ -331,6 +354,14 @@ export class ProductsListComponent {
   viewModePreference = signal<'grid' | 'list'>('grid');
   isMobile = signal(false);
   viewMode = computed(() => this.isMobile() ? 'grid' : this.viewModePreference());
+  typeFilter = signal<string | null>(null);
+
+  readonly typeChips = [
+    { value: 'PHYSICAL',     label: 'Físico',       icon: 'lucidePackage' },
+    { value: 'SERVICE',      label: 'Servicio',      icon: 'lucideWrench' },
+    { value: 'COMBO',        label: 'Combo',         icon: 'lucideTag' },
+    { value: 'RAW_MATERIAL', label: 'Materia Prima', icon: 'lucideInbox' },
+  ];
   
   isDeleteModalOpen = signal(false);
   isDeleting = signal(false);
@@ -432,6 +463,7 @@ export class ProductsListComponent {
       search: this.searchQuery(),
       filterModel: QueryMapper.toAgGridFilterModel(this.filterTree()),
       tab: this.activeTab(),
+      typeFilter: this.typeFilter(),
       sortField: this.sortField(),
       sortOrder: this.sortOrder(),
       refresh: this.refreshTrigger()
@@ -503,6 +535,25 @@ export class ProductsListComponent {
       case 'IMPORT': return 'Importación';
       default: return action;
     }
+  }
+
+  onTypeFilter(value: string) {
+    this.typeFilter.set(this.typeFilter() === value ? null : value);
+    this.currentPage.set(1);
+  }
+
+  typeLabel(type: string): string {
+    const map: Record<string, string> = {
+      PHYSICAL: 'Físico', SERVICE: 'Servicio', COMBO: 'Combo', RAW_MATERIAL: 'M. Prima'
+    };
+    return map[type] ?? type;
+  }
+
+  typeColor(type: string): string {
+    const map: Record<string, string> = {
+      PHYSICAL: 'blue', SERVICE: 'purple', COMBO: 'orange', RAW_MATERIAL: 'green'
+    };
+    return map[type] ?? 'gray';
   }
 
   onTabChange(tab: string) { this.activeTab.set(tab); this.currentPage.set(1); }

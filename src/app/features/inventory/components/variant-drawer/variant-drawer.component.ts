@@ -14,15 +14,17 @@ import { SearchSelectComponent } from '../../../../shared/components/ui/search-s
 import { SearchSelectOption } from '../../../../shared/models/search-select.models';
 import { FormButtonComponent } from '../../../../shared/components/ui/form-button/form-button';
 import { BarcodeFieldComponent } from '../../../../shared/components/ui/barcode-field/barcode-field.component';
+import { RecipeBuilderComponent } from '../recipe-builder/recipe-builder.component';
 import { PresentationService } from '../../../../core/services/presentation.service';
 import { TaxService } from '../../../../core/services/tax.service';
+import { UnitsService } from '../../../../core/services/units.service';
 import { CategoryAttributeType } from '../../models/product.model';
 import { map } from 'rxjs';
 
 @Component({
   selector: 'app-variant-drawer',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, NgIconComponent, SearchSelectComponent, FormButtonComponent, BarcodeFieldComponent],
+  imports: [CommonModule, ReactiveFormsModule, NgIconComponent, SearchSelectComponent, FormButtonComponent, BarcodeFieldComponent, RecipeBuilderComponent],
   providers: [
     provideIcons({
       lucideX, lucidePackage, lucideHash, lucideDollarSign,
@@ -95,14 +97,6 @@ import { map } from 'rxjs';
                     (selectionChange)="onPresentationChange($event)"
                   ></app-search-select>
                 </div>
-
-                <div class="field" [class.error]="form.get('unitsPerPack')?.invalid && form.get('unitsPerPack')?.touched">
-                  <label>Unidades por empaque *</label>
-                  <input type="number" formControlName="unitsPerPack" min="1">
-                  @if (form.get('unitsPerPack')?.invalid && form.get('unitsPerPack')?.touched) {
-                    <small class="err-msg"><ng-icon name="lucideAlertCircle"></ng-icon> Mínimo 1.</small>
-                  }
-                </div>
               }
 
               @if (isService) {
@@ -142,6 +136,28 @@ import { map } from 'rxjs';
                 </label>
                 <input [id]="'variant-img-' + index" type="file" accept="image/*" hidden
                   (change)="onImageSelected($event)">
+              </div>
+            </div>
+          </div>
+
+          <!-- Section: Base Unit -->
+          <div class="section-card">
+            <div class="section-kicker"><ng-icon name="lucideLayers"></ng-icon> Unidad de Medida <span class="section-optional">Opcional</span></div>
+            <div class="form-stack">
+              <div class="field">
+                <label>Unidad Base <span class="optional">Ej: kg, lt, und</span></label>
+                <app-search-select
+                  formControlName="baseUnitId"
+                  placeholder="Buscar unidad..."
+                  [searchFn]="searchUnitsFn.bind(this)"
+                  [initialOption]="initialUnitOption()"
+                  (selectionChange)="onUnitChange($event)"
+                ></app-search-select>
+              </div>
+              <div class="field">
+                <label>Factor de Conversión <span class="optional">Unidades por paquete base</span></label>
+                <input type="number" formControlName="conversionFactor" min="0.0001" step="0.001" placeholder="Ej: 1, 10, 0.5">
+                <small class="field-hint">Entero para unidades contables (UNIT), decimal para peso o volumen.</small>
               </div>
             </div>
           </div>
@@ -285,6 +301,18 @@ import { map } from 'rxjs';
             </div>
           </div>
 
+          <!-- Section: Recipe -->
+          @if (!isService) {
+            <div class="section-card">
+              <div class="section-kicker">
+                <ng-icon name="lucideZap"></ng-icon> Receta
+                <span class="section-optional">Opcional</span>
+              </div>
+              @if (form.get('recipe')) {
+                <app-recipe-builder [recipeGroup]="$any(form.get('recipe'))"></app-recipe-builder>
+              }
+            </div>
+          }
 
         </div>
 
@@ -411,6 +439,16 @@ import { map } from 'rxjs';
       gap: 0.5rem;
       padding-bottom: 0.75rem;
       border-bottom: 1px solid var(--color-border-subtle);
+    }
+
+    .section-optional {
+      margin-left: 4px;
+      font-size: 9px;
+      font-weight: 500;
+      text-transform: none;
+      letter-spacing: 0;
+      color: var(--color-text-muted);
+      opacity: 0.7;
     }
 
     .margin-badge {
@@ -675,6 +713,7 @@ export class VariantDrawerComponent implements OnInit, OnDestroy {
 
   private presentationService = inject(PresentationService);
   private taxService = inject(TaxService);
+  private unitsService = inject(UnitsService);
 
   readonly durationPresets = [15, 30, 45, 60, 90, 120];
 
@@ -686,6 +725,7 @@ export class VariantDrawerComponent implements OnInit, OnDestroy {
   }
 
   initialPresentationOption = signal<SearchSelectOption | undefined>(undefined);
+  initialUnitOption = signal<SearchSelectOption | undefined>(undefined);
   initialTaxOptions = signal<SearchSelectOption[]>([]);
   margin = signal<number | null>(null);
   imagePreview = signal<string | null>(null);
@@ -736,6 +776,14 @@ export class VariantDrawerComponent implements OnInit, OnDestroy {
   }
 
   private loadInitialOptions() {
+    const baseUnitId = this.form.get('baseUnitId')?.value;
+    if (baseUnitId) {
+      this.unitsService.findAll({ onlyActive: false }).subscribe(res => {
+        const u = res.data.find((x: any) => x.id === baseUnitId);
+        if (u) this.initialUnitOption.set({ value: u.id, label: `${u.name} (${u.abbreviation})` });
+      });
+    }
+
     const presentationId = this.form.get('presentationId')?.value;
     if (presentationId) {
       this.presentationService.findAll({}).subscribe(res => {
@@ -753,6 +801,10 @@ export class VariantDrawerComponent implements OnInit, OnDestroy {
     }
   }
 
+  onUnitChange(event: SearchSelectOption | SearchSelectOption[] | null) {
+    if (!Array.isArray(event)) this.initialUnitOption.set(event ?? undefined);
+  }
+
   onPresentationChange(event: SearchSelectOption | SearchSelectOption[] | null) {
     if (!Array.isArray(event)) this.initialPresentationOption.set(event ?? undefined);
   }
@@ -760,6 +812,15 @@ export class VariantDrawerComponent implements OnInit, OnDestroy {
   onTaxSelectionChange(event: SearchSelectOption | SearchSelectOption[] | null) {
     if (Array.isArray(event)) this.initialTaxOptions.set(event);
     else if (!event) this.initialTaxOptions.set([]);
+  }
+
+  searchUnitsFn(query: string) {
+    return this.unitsService.findAll({ search: query, onlyActive: true }).pipe(
+      map(res => ({
+        data: res.data.map((u: any) => ({ value: u.id, label: `${u.name} (${u.abbreviation})` })),
+        hasMore: false
+      }))
+    );
   }
 
   searchPresentationsFn(query: string) {

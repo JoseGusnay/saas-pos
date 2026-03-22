@@ -1,0 +1,130 @@
+<!-- ══ Selector de tipo (solo en creación, no preset) ══ -->
+@if (!typePreset() && !isEditing()) {
+  <section class="pfc">
+    <div class="pfc__kicker">
+      <ng-icon name="lucidePackage"></ng-icon>
+      Tipo de Producto
+    </div>
+    <app-product-type-selector formControlName="type"></app-product-type-selector>
+  </section>
+}
+
+@if (isEditing()) {
+  <div class="pfc__type-locked">
+    <ng-icon name="lucideInfo"></ng-icon>
+    El tipo no puede modificarse después de la creación.
+  </div>
+}
+
+<!-- ══ Información General ══ -->
+<section class="pfc">
+  <div class="pfc__kicker">
+    <ng-icon name="lucideTag"></ng-icon>
+    Información General
+  </div>
+
+  <div class="pfc__fields">
+
+    <!-- Nombre -->
+    <app-field-input
+      formControlName="name"
+      label="Nombre del Producto"
+      placeholder="Ej: Coca-Cola 350ml, Corte de cabello…"
+      [required]="true"
+      [errorMessages]="{ required: 'Nombre requerido', minlength: 'Mínimo 2 caracteres' }"
+    ></app-field-input>
+
+    <!-- Descripción -->
+    <app-field-input
+      formControlName="description"
+      label="Descripción"
+      placeholder="Descripción visible en el catálogo y punto de venta…"
+      [optional]="true"
+      [multiline]="true"
+      [rows]="3"
+    ></app-field-input>
+
+    <!-- Categoría + Marca -->
+    <div class="pff__row" [class.pff__row--single]="!showBrand()">
+      <div class="pff" [class.pff--error]="categoryCtrl?.invalid && categoryCtrl?.touched">
+        <label class="pff__label">Categoría <span class="pff__req">*</span></label>
+        <app-search-select
+          formControlName="categoryId"
+          placeholder="Seleccionar categoría…"
+          searchPlaceholder="Buscar categorías…"
+          [searchFn]="searchCategoriesFn"
+          [initialOption]="_catOption()"
+          (selectionChange)="onCatChange($event)"
+        ></app-search-select>
+        @if (categoryCtrl?.invalid && categoryCtrl?.touched) {
+          <small class="pff__error">
+            <ng-icon name="lucideAlertCircle"></ng-icon>
+            Selecciona una categoría.
+          </small>
+        }
+      </div>
+
+      @if (showBrand()) {
+        <div class="pff">
+          <label class="pff__label">
+            Marca
+            <span class="pff__optional">Opcional</span>
+          </label>
+          <app-search-select
+            formControlName="brandId"
+            placeholder="Seleccionar marca…"
+            searchPlaceholder="Buscar marcas…"
+            [searchFn]="searchBrandsFn"
+            [initialOption]="_brandOption()"
+            (selectionChange)="onBrandChange($event)"
+          ></app-search-select>
+        </div>
+      }
+    </div>
+
+    <!-- Atributos de categoría -->
+    @if (categoryIdValue()) {
+      <app-attribute-configurator
+        [categoryId]="categoryIdValue()"
+        [initialAttributes]="initialCategoryAttributes()"
+        (attributesChange)="onAttributesChange($event)"
+      ></app-attribute-configurator>
+    }
+
+    <!-- Estado activo -->
+    <div class="pff__status-row">
+      <div class="pff__status-info">
+        <span class="pff__status-label">Estado del Producto</span>
+        <span class="pff__status-sub">
+          {{ isActiveValue()
+              ? 'Activo — visible en catálogo y POS.'
+              : 'Inactivo — oculto en catálogo y POS.' }}
+        </span>
+      </div>
+      <app-toggle-switch formControlName="isActive"></app-toggle-switch>
+    </div>
+
+    <!-- Se vende -->
+    @if (showSellable()) {
+      <div class="pff__status-row">
+        <div class="pff__status-info">
+          <span class="pff__status-label">Se vende</span>
+          <span class="pff__status-sub">Aparece en el POS y puede añadirse a ventas.</span>
+        </div>
+        <app-toggle-switch formControlName="isSellable"></app-toggle-switch>
+      </div>
+    }
+
+    <!-- Se compra -->
+    @if (showPurchasable()) {
+      <div class="pff__status-row">
+        <div class="pff__status-info">
+          <span class="pff__status-label">Se compra</span>
+          <span class="pff__status-sub">Puede incluirse en órdenes de compra.</span>
+        </div>
+        <app-toggle-switch formControlName="isPurchasable"></app-toggle-switch>
+      </div>
+    }
+
+  </div>
+</section>

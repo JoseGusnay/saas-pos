@@ -19,7 +19,7 @@
     padding: 8px 12px;
     border-radius: var(--radius-md);
     color: var(--color-text-muted);
-    font-size: var(--font-size-sm);
+    font-size: var(--font-size-base);
     font-weight: var(--font-weight-medium);
     transition: var(--transition-base);
     border: none;
@@ -31,9 +31,14 @@
 
     &--active {
         background-color: var(--color-bg-active);
-        color: var(--color-text-main);
-        font-weight: var(--font-weight-semibold);
-        position: relative; // Fundamental para anclar el pseudo-elemento
+        color: #4F46E5;
+        position: relative;
+
+        // Mantener indigo en hover — anula el mixin que tiene mayor especificidad
+        &:hover {
+            background-color: rgba(79, 70, 229, 0.11);
+            color: #4F46E5;
+        }
 
         // Indicador de "Píldora" lateral (Estilo Linear/Vercel)
         &::before {
@@ -44,8 +49,22 @@
             transform: translateY(-50%);
             width: 3px;
             height: 16px;
-            background-color: var(--color-text-main); // Alto contraste
+            background-color: #4F46E5;
             border-radius: 0 4px 4px 0;
+        }
+
+        // Dark mode: indigo más claro para contraste sobre fondo oscuro
+        [data-theme="dark"] & {
+            color: #818CF8;
+
+            &:hover {
+                background-color: rgba(129, 140, 248, 0.18);
+                color: #818CF8;
+            }
+
+            &::before {
+                background-color: #818CF8;
+            }
         }
     }
 

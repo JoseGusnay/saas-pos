@@ -1,4 +1,24 @@
-.barcode-field { width: 100%; }
+.barcode-field {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bf__label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-main);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.bf__optional {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  font-weight: var(--font-weight-regular);
+}
 
 .barcode-input-row {
   display: flex;
@@ -21,7 +41,7 @@
 
     input {
       width: 100%;
-      padding: 8px 12px 8px 32px;
+      padding: 0.625rem 0.875rem 0.625rem 32px;
       border: 1px solid var(--color-border-light);
       border-radius: var(--radius-md);
       background: var(--color-bg-surface);

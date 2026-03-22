@@ -28,6 +28,11 @@ export const INVENTORY_ROUTES: Routes = [
   },
   {
     path: 'productos/nuevo',
+    loadComponent: () => import('./pages/product-type-page/product-type-page.component').then(m => m.ProductTypePageComponent),
+    data: { breadcrumb: 'Nuevo Producto' }
+  },
+  {
+    path: 'productos/crear',
     loadComponent: () => import('./pages/product-form-page/product-form-page.component').then(m => m.ProductFormPageComponent),
     data: { breadcrumb: 'Nuevo Producto' }
   },

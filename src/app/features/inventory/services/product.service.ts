@@ -2,7 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { environment } from '../../../../environments/environment';
-import { CreateProductPayload, Product } from '../models/product.model';
+import { CreateProductPayload, Product, VariantBranchPrice, ProductBranchSetting } from '../models/product.model';
 
 @Injectable({
   providedIn: 'root'
@@ -29,6 +29,10 @@ export class ProductService {
        const currentFilters = filters.filterModel ? { ...filters.filterModel } : {};
        currentFilters.isActive = { filterType: 'boolean', type: 'equals', filter: isActive };
        params = params.set('filterModel', JSON.stringify(currentFilters));
+    }
+
+    if (filters?.typeFilter) {
+      params = params.set('type', filters.typeFilter);
     }
 
     return this.http.get<any>(this.apiUrl, { params }).pipe(
@@ -71,5 +75,43 @@ export class ProductService {
 
   getLogs(id: string): Observable<any[]> {
     return this.http.get<any[]>(`${this.apiUrl}/${id}/logs`);
+  }
+
+  getProductBranches(productId: string): Observable<ProductBranchSetting[]> {
+    return this.http.get<any>(`${this.apiUrl}/${productId}/branches`)
+      .pipe(map(res => res.data ?? res));
+  }
+
+  upsertProductBranch(productId: string, branchId: string, payload: { isAvailable: boolean }): Observable<ProductBranchSetting> {
+    return this.http.put<any>(`${this.apiUrl}/${productId}/branches/${branchId}`, payload)
+      .pipe(map(res => res.data ?? res));
+  }
+
+  deleteProductBranch(productId: string, branchId: string): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${productId}/branches/${branchId}`);
+  }
+
+  getVariantPrices(productId: string, variantId: string): Observable<VariantBranchPrice[]> {
+    return this.http.get<any>(`${this.apiUrl}/${productId}/variants/${variantId}/prices`)
+      .pipe(map(res => res.data ?? res));
+  }
+
+  upsertVariantPrice(productId: string, variantId: string, branchId: string, payload: { salePrice: number; isActive?: boolean }): Observable<VariantBranchPrice> {
+    return this.http.put<any>(`${this.apiUrl}/${productId}/variants/${variantId}/prices/${branchId}`, payload)
+      .pipe(map(res => res.data ?? res));
+  }
+
+  deleteVariantPrice(productId: string, variantId: string, branchId: string): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${productId}/variants/${variantId}/prices/${branchId}`);
+  }
+
+  searchVariants(search: string, excludeProductId?: string, types?: string[], stockTrackable?: boolean): Observable<{ variantId: string; variantName: string; productName: string; sku?: string; salePrice: number; imageUrl?: string }[]> {
+    let params = new HttpParams().set('search', search).set('limit', '15');
+    if (excludeProductId) params = params.set('excludeProductId', excludeProductId);
+    if (types?.length) params = params.set('types', types.join(','));
+    if (stockTrackable) params = params.set('stockTrackable', 'true');
+    return this.http.get<any>(`${this.apiUrl}/variants/search`, { params }).pipe(
+      map(res => res.data ?? res)
+    );
   }
 }

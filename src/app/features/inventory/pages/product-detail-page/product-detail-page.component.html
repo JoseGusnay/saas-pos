@@ -1,208 +1,776 @@
-<div class="detail-page">
-  <!-- Loading State -->
-  @if (isLoading() && !product()) {
-    <div class="detail-page__loading">
-      <app-spinner></app-spinner>
-      <p>Cargando información del producto...</p>
-    </div>
-  }
+<!-- Loading -->
+@if (isLoading() && !product()) {
+  <div class="pdp__loading">
+    <app-spinner></app-spinner>
+    <span>Cargando producto...</span>
+  </div>
+}
 
-  <!-- Error State -->
-  @if (error()) {
-    <div class="detail-page__error">
-      <ng-icon name="lucideAlertCircle"></ng-icon>
-      <h3>Ups, algo salió mal</h3>
-      <p>{{ error() }}</p>
-      <button class="btn btn-primary" routerLink="/inventario/productos">
-        Volver al Catálogo
-      </button>
-    </div>
-  }
+<!-- Error -->
+@if (error()) {
+  <div class="pdp__error">
+    <ng-icon name="lucideAlertCircle"></ng-icon>
+    <h3>No se pudo cargar el producto</h3>
+    <p>{{ error() }}</p>
+    <button class="pdp__error-btn" (click)="goBack()">
+      <ng-icon name="lucideArrowLeft"></ng-icon>
+      Volver al catálogo
+    </button>
+  </div>
+}
 
-  <!-- Main Content -->
-  @if (product(); as p) {
-    <div class="detail-page__container">
-      
-      <!-- Minimalist Header -->
-      <header class="detail-header">
-        <div class="detail-header__top">
-          <nav class="breadcrumb">
-            <a routerLink="/inventario/productos" class="breadcrumb__link">Catálogo</a>
-            <span class="breadcrumb__separator">/</span>
-            <span class="breadcrumb__current">{{ p.name }}</span>
-          </nav>
-          
-          <div class="detail-header__actions">
-            <button class="btn-vercel btn-vercel--secondary" [routerLink]="['/inventario/productos', p.id, 'editar']">
-              <ng-icon name="lucidePencil"></ng-icon>
-              Editar
-            </button>
-          </div>
-        </div>
+<!-- Main Content -->
+@if (product(); as p) {
+  <div class="pdp">
 
-        <div class="detail-header__main">
-          <div class="detail-header__title-group">
-            <h1 class="detail-header__title">{{ p.name }}</h1>
-            <div class="detail-header__id-container" (click)="copyToClipboard(p.id)">
-              <code class="product-id">{{ p.id }}</code>
-              <ng-icon [name]="isCopied() ? 'lucideCheck' : 'lucideCopy'" [class.is-copied]="isCopied()"></ng-icon>
-            </div>
-            <div class="detail-header__badges">
-              <span class="badge" [class.badge--active]="p.isActive" [class.badge--inactive]="!p.isActive">
-                {{ p.isActive ? 'Activo' : 'Inactivo' }}
-              </span>
-              <span class="badge badge--outline">{{ p.category?.name || 'Sin Categoría' }}</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Vercel Style Tabs -->
-        <nav class="detail-tabs">
-          <button 
-            class="detail-tabs__item" 
-            [class.is-active]="activeTab() === 'summary'"
-            (click)="onTabChange('summary')">
-            <ng-icon name="lucideInfo"></ng-icon>
-            Resumen
+    <!-- ═══ HEADER ═══ -->
+    <header class="pdp__header">
+      <div class="pdp__header-top">
+        <nav class="pdp__breadcrumb">
+          <button class="pdp__breadcrumb-back" (click)="goBack()">
+            <ng-icon name="lucideArrowLeft"></ng-icon>
           </button>
-          <button 
-            class="detail-tabs__item" 
-            [class.is-active]="activeTab() === 'inventory'"
-            (click)="onTabChange('inventory')">
-            <ng-icon name="lucidePackage"></ng-icon>
-            Inventario
-          </button>
-          <button 
-            class="detail-tabs__item" 
-            [class.is-active]="activeTab() === 'reports'"
-            (click)="onTabChange('reports')">
-            <ng-icon name="lucideBarChart3"></ng-icon>
-            Reportes
-          </button>
-          <div class="detail-tabs__slider" [style.transform]="'translateX(' + (activeTab() === 'summary' ? 0 : activeTab() === 'inventory' ? 100 : 200) + '%)'"></div>
+          <span class="pdp__breadcrumb-sep">/</span>
+          <a class="pdp__breadcrumb-link" (click)="goBack()">Productos</a>
+          <span class="pdp__breadcrumb-sep">/</span>
+          <span class="pdp__breadcrumb-current">{{ p.name }}</span>
         </nav>
-      </header>
 
-      <main class="detail-content">
-        <!-- Summary Tab -->
-        @if (activeTab() === 'summary') {
-          <section class="tab-panel tab-panel--summary">
-            <div class="summary-grid">
-              <div class="summary-card product-visual">
-                <div class="product-image-container">
-                  @if (p.imageUrl) {
-                    <img [src]="p.imageUrl" [alt]="p.name" class="product-image">
-                  } @else {
-                    <div class="product-image-placeholder">
-                      <ng-icon name="lucidePackage"></ng-icon>
-                    </div>
-                  }
-                </div>
-              </div>
+        <div class="pdp__header-actions">
+          <button class="pdp__action-btn pdp__action-btn--secondary"
+            [routerLink]="['/inventario/productos', p.id, 'editar']">
+            <ng-icon name="lucidePencil"></ng-icon>
+            Editar
+          </button>
+        </div>
+      </div>
 
-              <div class="summary-details">
-                <div class="summary-card">
-                  <h3 class="card-title">Información General</h3>
-                  <div class="info-grid">
-                    <div class="info-item">
-                      <dt>Tipo de Producto</dt>
-                      <dd>{{ p.type || 'FÍSICO' }}</dd>
-                    </div>
-                    <div class="info-item">
-                      <dt>Marca</dt>
-                      <dd>{{ p.brand?.name || 'No especificada' }}</dd>
-                    </div>
-                    <div class="info-item info-item--full">
-                      <dt>Descripción</dt>
-                      <dd class="description">{{ p.description || 'Sin descripción disponible.' }}</dd>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="summary-card">
-                  <h3 class="card-title">Auditoría</h3>
-                  <div class="info-grid">
-                    <div class="info-item">
-                      <dt><ng-icon name="lucideClock"></ng-icon> Creado el</dt>
-                      <dd>{{ p.createdAt | date:'medium' }}</dd>
-                    </div>
-                    <div class="info-item">
-                      <dt><ng-icon name="lucideClock"></ng-icon> Última modificación</dt>
-                      <dd>{{ p.updatedAt | date:'medium' }}</dd>
-                    </div>
-                  </div>
-                </div>
-              </div>
+      <!-- Hero row -->
+      <div class="pdp__hero">
+        <div class="pdp__hero-image">
+          @if (p.imageUrl) {
+            <img [src]="p.imageUrl" [alt]="p.name" class="pdp__hero-img">
+          } @else {
+            <div class="pdp__hero-placeholder" [class]="'pdp__hero-placeholder--' + typeColorClass()">
+              <ng-icon [name]="typeIcon()"></ng-icon>
             </div>
-          </section>
+          }
+        </div>
+
+        <div class="pdp__hero-content">
+          <div class="pdp__hero-badges">
+            <span class="pdp__badge" [class]="'pdp__badge--' + typeColorClass()">
+              <ng-icon [name]="typeIcon()"></ng-icon>
+              {{ typeLabel() }}
+            </span>
+            <span class="pdp__badge" [class]="p.isActive ? 'pdp__badge--success' : 'pdp__badge--muted'">
+              {{ p.isActive ? 'Activo' : 'Inactivo' }}
+            </span>
+            @if (p.category?.name) {
+              <span class="pdp__badge pdp__badge--outline">
+                <ng-icon name="lucideTag"></ng-icon>
+                {{ p.category!.name }}
+              </span>
+            }
+          </div>
+
+          <h1 class="pdp__hero-title">{{ p.name }}</h1>
+
+          @if (p.description) {
+            <p class="pdp__hero-desc">{{ p.description }}</p>
+          }
+
+          <div class="pdp__hero-meta">
+            @if (p.variants.length > 0) {
+              <div class="pdp__hero-stat">
+                <span class="pdp__hero-stat-label">Desde</span>
+                <span class="pdp__hero-stat-value">{{ minPrice() | currency }}</span>
+              </div>
+              @if (minPrice() !== maxPrice()) {
+                <div class="pdp__hero-stat-sep"></div>
+                <div class="pdp__hero-stat">
+                  <span class="pdp__hero-stat-label">Hasta</span>
+                  <span class="pdp__hero-stat-value">{{ maxPrice() | currency }}</span>
+                </div>
+              }
+              <div class="pdp__hero-stat-sep"></div>
+            }
+            <div class="pdp__hero-stat">
+              <span class="pdp__hero-stat-label">Variantes</span>
+              <span class="pdp__hero-stat-value">{{ p.variants.length }}</span>
+            </div>
+          </div>
+
+          <!-- ID copiable -->
+          <button class="pdp__id-copy" (click)="copyToClipboard(p.id)" title="Copiar ID">
+            <code>{{ p.id }}</code>
+            <ng-icon [name]="isCopied() ? 'lucideCheck' : 'lucideCopy'"
+              [class.pdp__id-copy-icon--copied]="isCopied()"></ng-icon>
+          </button>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <nav class="pdp__tabs">
+        <button class="pdp__tab" [class.pdp__tab--active]="activeTab() === 'summary'"
+          (click)="onTabChange('summary')">
+          <ng-icon name="lucideInfo"></ng-icon>
+          Resumen
+        </button>
+
+        @if (hasVariantsTab()) {
+          <button class="pdp__tab" [class.pdp__tab--active]="activeTab() === 'variants'"
+            (click)="onTabChange('variants')">
+            <ng-icon name="lucideBox"></ng-icon>
+            Variantes
+            <span class="pdp__tab-count">{{ p.variants.length }}</span>
+          </button>
         }
 
-        <!-- Inventory Tab -->
-        @if (activeTab() === 'inventory') {
-          <section class="tab-panel tab-panel--inventory">
-            <div class="inventory-card">
-              <div class="inventory-header">
-                <h3 class="card-title">Variantes de Producto</h3>
-                <span class="count-badge">{{ p.variants.length }} Presentaciones</span>
+        @if (hasComboTab()) {
+          <button class="pdp__tab" [class.pdp__tab--active]="activeTab() === 'combo'"
+            (click)="onTabChange('combo')">
+            <ng-icon name="lucideGift"></ng-icon>
+            Componentes
+            <span class="pdp__tab-count">{{ p.comboItems?.length ?? 0 }}</span>
+          </button>
+        }
+
+        @if (hasModifiersTab()) {
+          <button class="pdp__tab" [class.pdp__tab--active]="activeTab() === 'modifiers'"
+            (click)="onTabChange('modifiers')">
+            <ng-icon name="lucideSliders"></ng-icon>
+            Modificadores
+            <span class="pdp__tab-count">{{ p.modifierGroups?.length ?? 0 }}</span>
+          </button>
+        }
+
+        @if (hasPricesTab()) {
+          <button class="pdp__tab" [class.pdp__tab--active]="activeTab() === 'prices'"
+            (click)="onTabChange('prices')">
+            <ng-icon name="lucideDollarSign"></ng-icon>
+            Precios x Sucursal
+          </button>
+        }
+
+        <button class="pdp__tab" [class.pdp__tab--active]="activeTab() === 'visibility'"
+          (click)="onTabChange('visibility')">
+          <ng-icon name="lucideToggleLeft"></ng-icon>
+          Visibilidad
+        </button>
+
+        <button class="pdp__tab" [class.pdp__tab--active]="activeTab() === 'history'"
+          (click)="onTabChange('history')">
+          <ng-icon name="lucideHistory"></ng-icon>
+          Historial
+        </button>
+      </nav>
+    </header>
+
+    <!-- ═══ TAB CONTENT ═══ -->
+    <main class="pdp__content">
+
+      <!-- ── Summary Tab ── -->
+      @if (activeTab() === 'summary') {
+        <div class="pdp__tab-panel">
+          <div class="pdp__summary-grid">
+
+            <!-- Info general -->
+            <div class="pdp__card">
+              <h3 class="pdp__card-title">Información General</h3>
+              <dl class="pdp__info-list">
+                <div class="pdp__info-row">
+                  <dt>
+                    <ng-icon name="lucidePackage"></ng-icon>
+                    Tipo
+                  </dt>
+                  <dd>
+                    <span class="pdp__badge" [class]="'pdp__badge--' + typeColorClass()">
+                      {{ typeLabel() }}
+                    </span>
+                  </dd>
+                </div>
+
+                @if (p.category?.name) {
+                  <div class="pdp__info-row">
+                    <dt>
+                      <ng-icon name="lucideTag"></ng-icon>
+                      Categoría
+                    </dt>
+                    <dd>{{ p.category!.name }}</dd>
+                  </div>
+                }
+
+                @if (p.brand?.name) {
+                  <div class="pdp__info-row">
+                    <dt>
+                      <ng-icon name="lucideTag"></ng-icon>
+                      Marca
+                    </dt>
+                    <dd>{{ p.brand!.name }}</dd>
+                  </div>
+                }
+
+                @if (p.variants[0]?.sku) {
+                  <div class="pdp__info-row">
+                    <dt>
+                      <ng-icon name="lucideHash"></ng-icon>
+                      SKU Principal
+                    </dt>
+                    <dd><code class="pdp__code">{{ p.variants[0].sku }}</code></dd>
+                  </div>
+                }
+
+                @if (p.variants[0]?.barcode) {
+                  <div class="pdp__info-row">
+                    <dt>
+                      <ng-icon name="lucideBarcode"></ng-icon>
+                      Código de Barras
+                    </dt>
+                    <dd><code class="pdp__code">{{ p.variants[0].barcode }}</code></dd>
+                  </div>
+                }
+
+                <div class="pdp__info-row pdp__info-row--full">
+                  <dt>
+                    <ng-icon name="lucideInfo"></ng-icon>
+                    Descripción
+                  </dt>
+                  <dd class="pdp__desc-text">{{ p.description || 'Sin descripción.' }}</dd>
+                </div>
+              </dl>
+            </div>
+
+            <!-- Auditoría -->
+            <div class="pdp__card">
+              <h3 class="pdp__card-title">Auditoría</h3>
+              <dl class="pdp__info-list">
+                <div class="pdp__info-row">
+                  <dt>
+                    <ng-icon name="lucideClock"></ng-icon>
+                    Creado
+                  </dt>
+                  <dd>{{ p.createdAt | date:'dd MMM yyyy, HH:mm' }}</dd>
+                </div>
+                <div class="pdp__info-row">
+                  <dt>
+                    <ng-icon name="lucideClock"></ng-icon>
+                    Modificado
+                  </dt>
+                  <dd>{{ p.updatedAt | date:'dd MMM yyyy, HH:mm' }}</dd>
+                </div>
+              </dl>
+            </div>
+
+          </div>
+        </div>
+      }
+
+      <!-- ── Variants Tab ── -->
+      @if (activeTab() === 'variants') {
+        <div class="pdp__tab-panel">
+          <div class="pdp__card pdp__card--full">
+            <div class="pdp__card-header">
+              <h3 class="pdp__card-title">Variantes del Producto</h3>
+              <span class="pdp__count-badge">{{ p.variants.length }} variante{{ p.variants.length !== 1 ? 's' : '' }}</span>
+            </div>
+
+            <div class="pdp__table-wrap">
+              <table class="pdp__table">
+                <thead>
+                  <tr>
+                    <th>Variante</th>
+                    <th>SKU / Código</th>
+                    <th class="text-right">Ult. Compra</th>
+                    <th class="text-right">Costo</th>
+                    <th class="text-right">PVP</th>
+                    <th class="text-right">Margen</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (variant of p.variants; track variant.id) {
+                    <tr [class.pdp__tr--inactive]="!variant.isActive">
+                      <td>
+                        <div class="pdp__v-name-cell">
+                          @if (variant.imageUrl) {
+                            <img [src]="variant.imageUrl" [alt]="variant.name" class="pdp__v-thumb">
+                          }
+                          <div>
+                            <div class="pdp__v-name-row">
+                              <strong class="pdp__v-name">{{ variant.name || 'Variante única' }}</strong>
+                              @if (!variant.isActive) {
+                                <span class="pdp__badge pdp__badge--muted" style="font-size: 10px; padding: 1px 6px;">Inactiva</span>
+                              }
+                            </div>
+                            <div class="pdp__v-attrs">
+                              @for (av of variant.attributeValues; track av.attributeTypeId) {
+                                <span class="pdp__v-attr-chip">
+                                  {{ av.attributeTypeName ?? av.attributeType?.name }}: {{ av.valueText ?? av.valueNumber }}
+                                </span>
+                              }
+                              @if (variant.recipe) {
+                                <span class="pdp__v-attr-chip pdp__v-attr-chip--recipe">
+                                  <ng-icon name="lucideFlame"></ng-icon>
+                                  Receta
+                                </span>
+                              }
+                              @if (variant.stockTrackable) {
+                                <span class="pdp__v-attr-chip pdp__v-attr-chip--stock">Stock</span>
+                              }
+                              @if (variant.trackLots) {
+                                <span class="pdp__v-attr-chip pdp__v-attr-chip--stock">Lotes</span>
+                              }
+                              @if (variant.trackExpiry) {
+                                <span class="pdp__v-attr-chip pdp__v-attr-chip--stock">Vencimiento</span>
+                              }
+                              @if (variant.durationMinutes) {
+                                <span class="pdp__v-attr-chip">⏱ {{ variant.durationMinutes }} min</span>
+                              }
+                            </div>
+                            @if (variant.minimumStock != null || variant.maximumStock != null) {
+                              <div class="pdp__v-stock-limits">
+                                @if (variant.minimumStock != null) {
+                                  <span class="pdp__v-limit">Mín: {{ variant.minimumStock }}</span>
+                                }
+                                @if (variant.maximumStock != null) {
+                                  <span class="pdp__v-limit">Máx: {{ variant.maximumStock }}</span>
+                                }
+                              </div>
+                            }
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        @if (variant.sku) {
+                          <code class="pdp__code">{{ variant.sku }}</code>
+                        }
+                        @if (variant.barcode) {
+                          <div style="margin-top: 2px;">
+                            <code class="pdp__code" style="font-size: 10px; color: var(--color-text-muted);">{{ variant.barcode }}</code>
+                          </div>
+                        }
+                        @if (!variant.sku && !variant.barcode) {
+                          <span class="pdp__empty-val">—</span>
+                        }
+                      </td>
+                      <td class="text-right">
+                        @if (variant.lastPurchasePrice != null) {
+                          <span class="pdp__cost">{{ variant.lastPurchasePrice | currency }}</span>
+                        } @else {
+                          <span class="pdp__empty-val">—</span>
+                        }
+                      </td>
+                      <td class="text-right">
+                        <span class="pdp__cost">{{ variant.costPrice | currency }}</span>
+                      </td>
+                      <td class="text-right">
+                        <span class="pdp__price">{{ variant.salePrice | currency }}</span>
+                      </td>
+                      <td class="text-right">
+                        @if (variant.salePrice > 0) {
+                          <span class="pdp__margin"
+                            [class.pdp__margin--good]="((variant.salePrice - variant.costPrice) / variant.salePrice * 100) >= 20"
+                            [class.pdp__margin--warn]="((variant.salePrice - variant.costPrice) / variant.salePrice * 100) > 0 && ((variant.salePrice - variant.costPrice) / variant.salePrice * 100) < 20"
+                            [class.pdp__margin--loss]="((variant.salePrice - variant.costPrice) / variant.salePrice * 100) <= 0">
+                            {{ (variant.salePrice - variant.costPrice) / variant.salePrice * 100 | number:'1.0-1' }}%
+                          </span>
+                        } @else {
+                          <span class="pdp__empty-val">—</span>
+                        }
+                      </td>
+                    </tr>
+                  } @empty {
+                    <tr>
+                      <td colspan="6" class="pdp__table-empty">No hay variantes registradas.</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Recetas de producción -->
+          @for (variant of p.variants; track variant.id) {
+            @if (variant.recipe) {
+              <div class="pdp__card pdp__card--full" style="margin-top: 16px;">
+                <div class="pdp__card-header">
+                  <div>
+                    <h3 class="pdp__card-title">
+                      <ng-icon name="lucideFlame"></ng-icon>
+                      Receta — {{ variant.name || 'Variante única' }}
+                    </h3>
+                    <span class="pdp__mod-meta">
+                      Rinde {{ variant.recipe.yield }} {{ variant.recipe.yieldUnitAbbreviation }}
+                    </span>
+                  </div>
+                  <span class="pdp__count-badge">{{ variant.recipe.ingredients.length }} ingrediente{{ variant.recipe.ingredients.length !== 1 ? 's' : '' }}</span>
+                </div>
+                <div class="pdp__table-wrap">
+                  <table class="pdp__table">
+                    <thead>
+                      <tr>
+                        <th>Ingrediente</th>
+                        <th class="text-right">Cantidad</th>
+                        <th>Notas</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (ing of variant.recipe.ingredients; track ing.id) {
+                        <tr>
+                          <td>{{ ing.variantName }}</td>
+                          <td class="text-right">
+                            <strong>{{ ing.quantity }}</strong> {{ ing.unitAbbreviation }}
+                          </td>
+                          <td>
+                            @if (ing.notes) {
+                              <span class="pdp__note-text">{{ ing.notes }}</span>
+                            } @else {
+                              <span class="pdp__empty-val">—</span>
+                            }
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
               </div>
-              
-              <div class="table-container">
-                <table class="vercel-table">
+            }
+          }
+        </div>
+      }
+
+      <!-- ── Combo Tab ── -->
+      @if (activeTab() === 'combo') {
+        <div class="pdp__tab-panel">
+          <div class="pdp__card pdp__card--full">
+            <div class="pdp__card-header">
+              <h3 class="pdp__card-title">Componentes del Combo</h3>
+              <span class="pdp__count-badge">{{ p.comboItems?.length ?? 0 }} ítem{{ (p.comboItems?.length ?? 0) !== 1 ? 's' : '' }}</span>
+            </div>
+
+            @if (p.comboItems && p.comboItems.length > 0) {
+              <div class="pdp__table-wrap">
+                <table class="pdp__table">
                   <thead>
                     <tr>
-                      <th>Presentación</th>
-                      <th>SKU</th>
-                      <th>Código de Barras</th>
-                      <th class="text-right">Precio de Venta</th>
+                      <th>Variante</th>
+                      <th class="text-right">Cantidad</th>
                     </tr>
                   </thead>
                   <tbody>
-                    @for (variant of p.variants; track variant.id) {
+                    @for (item of p.comboItems; track item.variantId) {
                       <tr>
                         <td>
-                          <div class="variant-name">
-                            <strong>{{ variant.name || variant.presentation?.name || 'Sin Nombre' }}</strong>
-                            @if (variant.attributeValues?.length) {
-                              <span class="subtext">
-                                @for (av of variant.attributeValues; track av.attributeTypeId) {
-                                  {{ av.attributeType?.name }}: {{ av.valueText ?? av.valueNumber }}
-                                  @if (!$last) { · }
-                                }
-                              </span>
-                            }
+                          <div class="pdp__v-name-cell">
+                            <div class="pdp__combo-avatar">
+                              {{ item.variantName[0].toUpperCase() }}
+                            </div>
+                            <strong class="pdp__v-name">{{ item.variantName }}</strong>
                           </div>
                         </td>
-                        <td><code>{{ variant.sku || '---' }}</code></td>
-                        <td>{{ variant.barcode || '---' }}</td>
-                        <td class="text-right price">{{ variant.salePrice | currency }}</td>
+                        <td class="text-right">
+                          <span class="pdp__combo-qty">× {{ item.quantity }}</span>
+                        </td>
                       </tr>
-                    } @empty {
+                    }
+                  </tbody>
+                </table>
+              </div>
+            } @else {
+              <div class="pdp__table-empty" style="padding: 40px; text-align: center; color: var(--color-text-muted);">
+                No hay componentes configurados para este combo.
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- ── Modifiers Tab ── -->
+      @if (activeTab() === 'modifiers') {
+        <div class="pdp__tab-panel">
+          @for (group of p.modifierGroups; track group.id) {
+            <div class="pdp__card pdp__card--full" style="margin-bottom: 16px;">
+              <div class="pdp__card-header">
+                <div>
+                  <h3 class="pdp__card-title">{{ group.name }}</h3>
+                  <div class="pdp__mod-meta">
+                    @if (group.required) {
+                      <span class="pdp__badge pdp__badge--warning">Requerido</span>
+                    } @else {
+                      <span class="pdp__badge pdp__badge--muted">Opcional</span>
+                    }
+                    <span class="pdp__badge pdp__badge--outline">
+                      {{ group.minSelections }}–{{ group.maxSelections ?? '∞' }} selecciones
+                    </span>
+                  </div>
+                </div>
+                <span class="pdp__count-badge">{{ group.options.length }} opción{{ group.options.length !== 1 ? 'es' : '' }}</span>
+              </div>
+              <div class="pdp__table-wrap">
+                <table class="pdp__table">
+                  <thead>
+                    <tr>
+                      <th>Opción</th>
+                      <th class="text-right">Ajuste de precio</th>
+                      <th class="text-right">Por defecto</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (opt of group.options; track opt.id) {
                       <tr>
-                        <td colspan="4" class="empty-state">No hay variantes registradas.</td>
+                        <td>{{ opt.name }}</td>
+                        <td class="text-right">
+                          @if (opt.priceAdjustment === 0) {
+                            <span class="pdp__empty-val">Sin ajuste</span>
+                          } @else {
+                            <span [class.pdp__price]="opt.priceAdjustment > 0"
+                                  [class.pdp__cost]="opt.priceAdjustment < 0">
+                              {{ opt.priceAdjustment > 0 ? '+' : '' }}{{ opt.priceAdjustment | currency }}
+                            </span>
+                          }
+                        </td>
+                        <td class="text-right">
+                          @if (opt.isDefault) {
+                            <ng-icon name="lucideCheck" style="color: var(--color-success)"></ng-icon>
+                          } @else {
+                            <span class="pdp__empty-val">—</span>
+                          }
+                        </td>
                       </tr>
                     }
                   </tbody>
                 </table>
               </div>
             </div>
-          </section>
-        }
+          }
+        </div>
+      }
 
-        <!-- Reports Tab -->
-        @if (activeTab() === 'reports') {
-          <section class="tab-panel tab-panel--reports">
-            <div class="coming-soon-card">
-              <div class="coming-soon-icon">
-                <ng-icon name="lucideBarChart3"></ng-icon>
-              </div>
-              <h2>Módulo de Reportes</h2>
-              <p>Próximamente podrás visualizar analíticas detalladas de ventas, rotación de stock y tendencias para este producto.</p>
-              <div class="vercel-skeleton-chart"></div>
+      <!-- ── Prices Tab ── -->
+      @if (activeTab() === 'prices') {
+        <div class="pdp__tab-panel">
+          @if (pricesLoading()) {
+            <div class="pdp__loading pdp__loading--inline">
+              <app-spinner></app-spinner>
+              <span>Cargando precios por sucursal...</span>
             </div>
-          </section>
-        }
-      </main>
+          } @else {
+            @for (variant of p.variants; track variant.id) {
+              <div class="pdp__card pdp__card--full" style="margin-bottom: 16px;">
+                <div class="pdp__card-header">
+                  <div>
+                    <h3 class="pdp__card-title">{{ variant.name || 'Variante única' }}</h3>
+                    <div class="pdp__mod-meta">
+                      <span style="font-size: var(--font-size-xs); color: var(--color-text-muted);">
+                        Precio base: <strong>{{ variant.salePrice | currency }}</strong>
+                      </span>
+                    </div>
+                  </div>
+                  @if (addingVariantId() !== variant.id) {
+                    <button class="pdp__action-btn pdp__action-btn--secondary pdp__action-btn--sm"
+                      (click)="startAdd(variant.id)">
+                      <ng-icon name="lucidePlusCircle"></ng-icon>
+                      Agregar override
+                    </button>
+                  }
+                </div>
 
-    </div>
-  }
-</div>
+                <div class="pdp__table-wrap">
+                  <table class="pdp__table">
+                    <thead>
+                      <tr>
+                        <th>Sucursal</th>
+                        <th class="text-right">Precio override</th>
+                        <th class="text-right">Estado</th>
+                        <th class="text-right">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (price of pricesMap()[variant.id] ?? []; track price.branchId) {
+                        <tr>
+                          <td>{{ getBranchName(price.branchId) }}</td>
+                          <td class="text-right">
+                            @if (editingKey() === variant.id + '::' + price.branchId) {
+                              <input class="pdp__price-input" type="number" min="0.01" step="0.01"
+                                [value]="editingValue()"
+                                (input)="editingValue.set(+$any($event.target).value)">
+                            } @else {
+                              <span class="pdp__price">{{ price.salePrice | currency }}</span>
+                            }
+                          </td>
+                          <td class="text-right">
+                            <span class="pdp__badge"
+                              [class]="price.isActive ? 'pdp__badge--success' : 'pdp__badge--muted'">
+                              {{ price.isActive ? 'Activo' : 'Inactivo' }}
+                            </span>
+                          </td>
+                          <td class="text-right">
+                            @if (editingKey() === variant.id + '::' + price.branchId) {
+                              <button class="pdp__inline-btn pdp__inline-btn--save"
+                                (click)="confirmEdit(variant.id, price.branchId)" title="Guardar">
+                                <ng-icon name="lucideCheck"></ng-icon>
+                              </button>
+                              <button class="pdp__inline-btn" (click)="cancelEdit()" title="Cancelar">
+                                <ng-icon name="lucideX"></ng-icon>
+                              </button>
+                            } @else {
+                              <button class="pdp__inline-btn"
+                                (click)="startEdit(variant.id, price.branchId, price.salePrice)" title="Editar">
+                                <ng-icon name="lucidePencil"></ng-icon>
+                              </button>
+                              <button class="pdp__inline-btn pdp__inline-btn--danger"
+                                (click)="removePrice(variant.id, price.branchId)" title="Eliminar">
+                                <ng-icon name="lucideTrash"></ng-icon>
+                              </button>
+                            }
+                          </td>
+                        </tr>
+                      }
+
+                      @if (addingVariantId() === variant.id) {
+                        <tr class="pdp__add-price-row">
+                          <td>
+                            <select class="pdp__price-select"
+                              [value]="newBranchId()"
+                              (change)="newBranchId.set($any($event.target).value)">
+                              <option value="">Selecciona sucursal…</option>
+                              @for (branch of availableBranches(variant.id); track branch.id) {
+                                <option [value]="branch.id">{{ branch.name }}</option>
+                              }
+                            </select>
+                          </td>
+                          <td class="text-right">
+                            <input class="pdp__price-input" type="number" min="0.01" step="0.01"
+                              placeholder="0.00"
+                              [value]="newSalePrice()"
+                              (input)="newSalePrice.set(+$any($event.target).value)">
+                          </td>
+                          <td></td>
+                          <td class="text-right">
+                            <button class="pdp__inline-btn pdp__inline-btn--save"
+                              (click)="confirmAdd(variant.id)" title="Guardar">
+                              <ng-icon name="lucideCheck"></ng-icon>
+                            </button>
+                            <button class="pdp__inline-btn" (click)="cancelAdd()" title="Cancelar">
+                              <ng-icon name="lucideX"></ng-icon>
+                            </button>
+                          </td>
+                        </tr>
+                      }
+
+                      @if (!(pricesMap()[variant.id]?.length) && addingVariantId() !== variant.id) {
+                        <tr>
+                          <td colspan="4" class="pdp__table-empty">
+                            Sin overrides — se usa el precio base
+                            ({{ variant.salePrice | currency }}) en todas las sucursales.
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            }
+          }
+        </div>
+      }
+
+      <!-- ── Visibility Tab ── -->
+      @if (activeTab() === 'visibility') {
+        <div class="pdp__tab-panel">
+          @if (visibilityLoading()) {
+            <div class="pdp__loading pdp__loading--inline">
+              <app-spinner></app-spinner>
+              <span>Cargando visibilidad por sucursal...</span>
+            </div>
+          } @else {
+            <div class="pdp__card pdp__card--full">
+              <div class="pdp__card-header">
+                <h3 class="pdp__card-title">Visibilidad por sucursal</h3>
+                <span class="pdp__count-badge">{{ branches().length }} sucursal{{ branches().length !== 1 ? 'es' : '' }}</span>
+              </div>
+
+              <div class="pdp__table-wrap">
+                <table class="pdp__table">
+                  <thead>
+                    <tr>
+                      <th>Sucursal</th>
+                      <th class="text-right">Disponible en POS</th>
+                      <th class="text-right">Origen</th>
+                      <th class="text-right">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (branch of branches(); track branch.id) {
+                      <tr>
+                        <td>
+                          <div class="pdp__v-name-cell">
+                            <strong class="pdp__v-name">{{ branch.name }}</strong>
+                            @if (branch.isMain) {
+                              <span class="pdp__v-attr-chip">Principal</span>
+                            }
+                          </div>
+                        </td>
+                        <td class="text-right">
+                          <input type="checkbox" class="pdp__branch-check"
+                            [checked]="settingFor(branch.id)?.isAvailable ?? true"
+                            (change)="onBranchToggle(branch.id, $any($event.target).checked)">
+                        </td>
+                        <td class="text-right">
+                          @if (settingFor(branch.id)) {
+                            <span class="pdp__badge pdp__badge--outline">Explícito</span>
+                          } @else {
+                            <span class="pdp__badge pdp__badge--muted">Predeterminado</span>
+                          }
+                        </td>
+                        <td class="text-right">
+                          @if (settingFor(branch.id)) {
+                            <button class="pdp__inline-btn" (click)="resetBranchSetting(branch.id)"
+                              title="Restablecer a predeterminado">
+                              <ng-icon name="lucideRefreshCw"></ng-icon>
+                            </button>
+                          } @else {
+                            <span class="pdp__empty-val">—</span>
+                          }
+                        </td>
+                      </tr>
+                    } @empty {
+                      <tr>
+                        <td colspan="4" class="pdp__table-empty">No hay sucursales configuradas.</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- ── History Tab ── -->
+      @if (activeTab() === 'history') {
+        <div class="pdp__tab-panel">
+          @if (isHistoryLoading()) {
+            <div class="pdp__loading pdp__loading--inline">
+              <app-spinner></app-spinner>
+              <span>Cargando historial...</span>
+            </div>
+          } @else if (mappedLogs().length > 0) {
+            <div class="pdp__card pdp__card--full">
+              <h3 class="pdp__card-title" style="padding: 16px 20px; margin: 0; border-bottom: 1px solid var(--color-border-light);">Historial de Cambios</h3>
+              <div style="padding: 20px;">
+                <app-dateline [items]="mappedLogs()"></app-dateline>
+              </div>
+            </div>
+          } @else {
+            <div class="pdp__empty-history">
+              <ng-icon name="lucideHistory"></ng-icon>
+              <p>No hay registros de cambios para este producto.</p>
+            </div>
+          }
+        </div>
+      }
+
+    </main>
+  </div>
+}

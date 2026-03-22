@@ -1,0 +1,180 @@
+<div class="rb" [formGroup]="recipeGroup">
+
+  <!-- Toggle header -->
+  <div class="rb__toggle-row" (click)="toggleEnabled()">
+    <div class="rb__toggle-info">
+      <span class="rb__toggle-label">Tiene receta</span>
+      <span class="rb__toggle-sub">Define los ingredientes necesarios para producir esta variante</span>
+    </div>
+    <div class="rb__toggle-switch" [class.rb__toggle-switch--on]="enabled">
+      <span class="rb__toggle-thumb"></span>
+    </div>
+  </div>
+
+  @if (enabled) {
+    <div class="rb__body">
+
+      <!-- Yield -->
+      <div class="rb__yield-row">
+        <app-field-input
+          formControlName="yield"
+          label="Rendimiento"
+          type="number"
+          placeholder="Ej: 10"
+          [required]="true"
+          [min]="0.0001"
+          [step]="0.001"
+          [errorMessages]="{ required: 'Rendimiento requerido', min: 'Debe ser mayor a 0' }"
+        ></app-field-input>
+        <div class="rb__field rb__field--unit">
+          <label class="rb__label">Unidad de rendimiento <span class="rb__req">*</span></label>
+          <app-search-select
+            formControlName="yieldUnitId"
+            placeholder="kg, lt, porciones…"
+            [searchFn]="searchYieldUnitFn"
+            [initialOption]="initialYieldUnitOption()"
+          ></app-search-select>
+        </div>
+      </div>
+
+      <!-- Notes -->
+      <app-field-input
+        formControlName="notes"
+        label="Notas"
+        placeholder="Instrucciones de preparación o notas…"
+        [optional]="true"
+        [multiline]="true"
+        [rows]="2"
+      ></app-field-input>
+
+      <!-- Ingredients -->
+      <div class="rb__ingredients">
+        <div class="rb__ingredients-header">
+          <span class="rb__ingredients-title">Ingredientes</span>
+        </div>
+
+        <!-- Search for ingredient -->
+        <div class="rb__search-wrap">
+          <div class="rb__search-box" [class.rb__search-box--focus]="ingredientSearch().length > 0">
+            <ng-icon name="lucideSearch" class="rb__search-ic"></ng-icon>
+            <input
+              class="rb__search-input"
+              type="text"
+              placeholder="Buscar materia prima para agregar…"
+              [value]="ingredientSearch()"
+              (input)="onIngredientSearchInput($event)"
+              (blur)="onIngredientSearchBlur()"
+              autocomplete="off"
+            >
+            @if (ingredientSearch()) {
+              <button type="button" class="rb__search-clear" (click)="clearIngredientSearch()">
+                <ng-icon name="lucideX"></ng-icon>
+              </button>
+            }
+          </div>
+
+          @if (ingredientResults().length > 0) {
+            <div class="rb__dropdown">
+              @for (r of ingredientResults(); track r.variantId) {
+                <button
+                  type="button"
+                  class="rb__dropdown-item"
+                  [class.rb__dropdown-item--added]="isIngredientAdded(r.variantId)"
+                  (mousedown)="addIngredient(r)"
+                >
+                  <div class="rb__di-info">
+                    <span class="rb__di-name">{{ r.productName }}</span>
+                    @if (r.variantName !== r.productName) {
+                      <span class="rb__di-variant">{{ r.variantName }}</span>
+                    }
+                  </div>
+                  @if (r.sku) { <code class="rb__di-sku">{{ r.sku }}</code> }
+                  @if (isIngredientAdded(r.variantId)) {
+                    <span class="rb__di-added">Ya agregado</span>
+                  } @else {
+                    <ng-icon name="lucidePlus" class="rb__di-add-ic"></ng-icon>
+                  }
+                </button>
+              }
+            </div>
+          }
+
+          @if (isSearchingIngredients()) {
+            <div class="rb__search-status">Buscando…</div>
+          }
+          @if (noIngredientResults()) {
+            <div class="rb__search-status">Sin resultados para "{{ ingredientSearch() }}"</div>
+          }
+        </div>
+
+        <!-- Ingredients list -->
+        @if (ingredients.length === 0) {
+          <p class="rb__ingredients-empty">Agrega al menos un ingrediente usando el buscador.</p>
+        }
+
+        @for (ingCtrl of ingredients.controls; track $index; let i = $index) {
+          <div class="rb__ingredient" [formGroup]="asGroup(ingCtrl)">
+            <div class="rb__ingredient-info">
+              <span class="rb__ingredient-name">{{ ingCtrl.get('variantName')?.value }}</span>
+            </div>
+
+            <div class="rb__ingredient-qty">
+              <input
+                type="number"
+                class="rb__qty-input"
+                formControlName="quantity"
+                min="0.0001"
+                step="0.001"
+                placeholder="Cant."
+                title="Cantidad"
+              >
+            </div>
+
+            <div class="rb__ingredient-unit">
+              <app-search-select
+                formControlName="unitId"
+                placeholder="Unidad…"
+                [searchFn]="searchIngredientUnitFn"
+                [initialOption]="getIngredientUnitOption(i)"
+                (selectionChange)="onIngredientUnitChange(i, $event)"
+              ></app-search-select>
+            </div>
+
+            <button type="button" class="rb__ingredient-remove" (click)="removeIngredient(i)" title="Quitar">
+              <ng-icon name="lucideTrash2"></ng-icon>
+            </button>
+          </div>
+        }
+      </div>
+
+    </div>
+  }
+
+</div>
+
+<!-- Modal confirmación desactivar receta -->
+<app-modal
+  [isOpen]="showDisableConfirm()"
+  title="¿Desactivar receta?"
+  [allowClose]="true"
+  (close)="cancelDisableRecipe()"
+>
+  <div modalBody class="rb-confirm">
+    <div class="rb-confirm__icon">
+      <ng-icon name="lucideAlertTriangle"></ng-icon>
+    </div>
+    <p class="rb-confirm__text">
+      Al desactivar la receta se eliminarán
+      <strong>todos los ingredientes agregados</strong>.
+      Esta acción no se puede deshacer.
+    </p>
+  </div>
+  <div modalFooter class="rb-confirm__actions">
+    <button type="button" class="rb-confirm__btn rb-confirm__btn--cancel" (click)="cancelDisableRecipe()">
+      Cancelar
+    </button>
+    <button type="button" class="rb-confirm__btn rb-confirm__btn--confirm" (click)="confirmDisableRecipe()">
+      Sí, desactivar
+    </button>
+  </div>
+</app-modal>

@@ -1,119 +1,137 @@
-import { Component, computed, inject, signal, OnInit, OnDestroy, ViewChild } from '@angular/core';
+import {
+  Component,
+  inject,
+  signal,
+  OnInit,
+
+  ViewChild,
+  ChangeDetectionStrategy
+} from '@angular/core';
 import { trigger, transition, style, animate } from '@angular/animations';
 import { CommonModule } from '@angular/common';
-import {
-  FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators
-} from '@angular/forms';
+import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import {
-  lucideArrowLeft, lucideArrowRight, lucidePackage, lucideWrench, lucidePlus, lucideTrash2,
-  lucideTag, lucideFolder, lucideImage, lucideInfo, lucideCheck,
-  lucideLayers, lucideBox, lucideAlertCircle, lucideChevronRight,
-  lucideZap, lucideSettings2, lucideDollarSign, lucideHash,
-  lucideBarcode, lucideClock
+  lucideArrowLeft, lucideCheck, lucidePlus, lucideTrash2,
+  lucideChevronRight, lucideSettings2, lucideFolder,
+  lucideLayers, lucideGift, lucideLeaf,
+  lucideWrench, lucideZap, lucideInfo
 } from '@ng-icons/lucide';
+
 import { ProductService } from '../../services/product.service';
 import { CategoryService } from '../../../../core/services/category.service';
-import { BrandService } from '../../../../core/services/brand.service';
 import { TaxService } from '../../../../core/services/tax.service';
+import { UnitsService } from '../../../../core/services/units.service';
+import { PresentationService } from '../../../../core/services/presentation.service';
 import { FileStorageService } from '../../../../core/services/file-storage.service';
 import { ToastService } from '../../../../core/services/toast.service';
-import { VariantDrawerComponent } from '../../components/variant-drawer/variant-drawer.component';
-import { AttributeConfiguratorComponent } from '../../components/attribute-configurator/attribute-configurator.component';
-import { SearchSelectComponent } from '../../../../shared/components/ui/search-select/search-select';
-import { SearchSelectOption } from '../../../../shared/models/search-select.models';
-import { ModalComponent } from '../../../../shared/components/ui/modal/modal';
-import { FormButtonComponent } from '../../../../shared/components/ui/form-button/form-button';
-import { AsFormGroupPipe } from '../../../../shared/pipes/as-form-group.pipe';
-import { BarcodeFieldComponent } from '../../../../shared/components/ui/barcode-field/barcode-field.component';
-import { CategoryAttributeType, CreateProductPayload } from '../../models/product.model';
-import { map, Subscription, forkJoin, of } from 'rxjs';
 
+import { VariantDrawerComponent } from '../../components/variant-drawer/variant-drawer.component';
+import { ProductGeneralInfoComponent } from '../../components/product-general-info/product-general-info.component';
+import { PhysicalVariantFormComponent } from '../../components/physical-variant-form/physical-variant-form.component';
+import { ServiceVariantFormComponent } from '../../components/service-variant-form/service-variant-form.component';
+import { RawMaterialFormComponent } from '../../components/raw-material-form/raw-material-form.component';
+import { ComboBuilderComponent } from '../../components/combo-builder/combo-builder';
+import { ModifierBuilderComponent } from '../../components/modifier-builder/modifier-builder.component';
+import { RecipeBuilderComponent } from '../../components/recipe-builder/recipe-builder.component';
+
+import { ToggleSwitchComponent } from '../../../../shared/components/ui/toggle-switch/toggle-switch';
+import { ImageUploadComponent } from '../../../../shared/components/ui/image-upload/image-upload';
+import { SearchSelectComponent } from '../../../../shared/components/ui/search-select/search-select';
+import { FormButtonComponent } from '../../../../shared/components/ui/form-button/form-button';
+import { ModalComponent } from '../../../../shared/components/ui/modal/modal';
+import { FieldInputComponent } from '../../../../shared/components/ui/field-input/field-input';
+
+import { SearchSelectOption } from '../../../../shared/models/search-select.models';
+import { CategoryAttributeType, CreateProductPayload } from '../../models/product.model';
+import { forkJoin, of, map } from 'rxjs';
 
 @Component({
   selector: 'app-product-form-page',
   standalone: true,
-  templateUrl: './product-form-page.html',
-  styleUrls: ['./product-form-page.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     CommonModule,
     ReactiveFormsModule,
     NgIconComponent,
+    ProductGeneralInfoComponent,
+    PhysicalVariantFormComponent,
+    ServiceVariantFormComponent,
+    RawMaterialFormComponent,
+    ToggleSwitchComponent,
+    ImageUploadComponent,
+    FormButtonComponent,
+    ModalComponent,
     SearchSelectComponent,
     VariantDrawerComponent,
-    AttributeConfiguratorComponent,
-    ModalComponent,
-    FormButtonComponent,
-    BarcodeFieldComponent
+    ComboBuilderComponent,
+    ModifierBuilderComponent,
+    RecipeBuilderComponent,
+    FieldInputComponent
   ],
   providers: [
     provideIcons({
-      lucideArrowLeft, lucideArrowRight, lucidePackage, lucideWrench, lucidePlus, lucideTrash2,
-      lucideTag, lucideFolder, lucideImage, lucideInfo, lucideCheck,
-      lucideLayers, lucideBox, lucideAlertCircle, lucideChevronRight,
-      lucideZap, lucideSettings2, lucideDollarSign, lucideHash, lucideBarcode, lucideClock
+      lucideArrowLeft, lucideCheck, lucidePlus, lucideTrash2,
+      lucideFolder, lucideChevronRight, lucideSettings2,
+      lucideLayers, lucideGift, lucideLeaf,
+      lucideWrench, lucideZap, lucideInfo
     })
   ],
   animations: [
-    trigger('fadeSlide', [
+    trigger('fadeIn', [
       transition(':enter', [
-        style({ opacity: 0, transform: 'translateY(-10px)' }),
-        animate('250ms ease-out', style({ opacity: 1, transform: 'translateY(0)' }))
-      ]),
-      transition(':leave', [
-        animate('200ms ease-in', style({ opacity: 0, transform: 'translateY(-10px)' }))
+        style({ opacity: 0, transform: 'translateY(-6px)' }),
+        animate('200ms ease-out', style({ opacity: 1, transform: 'translateY(0)' }))
       ])
     ])
-  ]
+  ],
+  templateUrl: './product-form-page.html',
+  styleUrls: ['./product-form-page.scss']
 })
-export class ProductFormPageComponent implements OnInit, OnDestroy {
+export class ProductFormPageComponent implements OnInit {
   private fb = inject(FormBuilder);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private productSvc = inject(ProductService);
   private categorySvc = inject(CategoryService);
-  private brandSvc = inject(BrandService);
   private taxSvc = inject(TaxService);
+  private unitsSvc = inject(UnitsService);
+  private presentationSvc = inject(PresentationService);
   private fileSvc = inject(FileStorageService);
   private toastSvc = inject(ToastService);
 
-  // ── UI state ──────────────────────────────────────────────────────────────
+  // ── State ──────────────────────────────────────────────────────────────────
   isSubmitting = signal(false);
   isEditing = signal(false);
   productId = signal<string | null>(null);
+  isLoadingProduct = signal(false);
+  typePreset = signal(false); // true cuando el tipo viene de query param (ya elegido en pantalla anterior)
 
-  selectedCategoryOption = signal<SearchSelectOption | undefined>(undefined);
-  selectedBrandOption = signal<SearchSelectOption | undefined>(undefined);
-  initialTaxOptions = signal<SearchSelectOption[]>([]);
+  initialCategoryOption = signal<SearchSelectOption | undefined>(undefined);
+  initialBrandOption    = signal<SearchSelectOption | undefined>(undefined);
+  initialTaxOptions     = signal<SearchSelectOption[]>([]);
+  initialUnitOption     = signal<SearchSelectOption | undefined>(undefined);
+  initialPresentationOption = signal<SearchSelectOption | undefined>(undefined);
 
-  onTaxSelectionChange(event: SearchSelectOption | SearchSelectOption[] | null) {
-    if (Array.isArray(event)) this.initialTaxOptions.set(event);
-    else if (!event) this.initialTaxOptions.set([]);
-  }
-  imagePreview = signal<string | null>(null);
-  selectedImageFile = signal<File | null>(null);
+  imagePreviewUrl = signal<string | null>(null);
   imagePublicId = signal<string | null>(null);
+  selectedImageFile = signal<File | null>(null);
   isUploadingImage = signal(false);
   uploadProgressLabel = signal<string | null>(null);
 
-  // Category attributes — loaded by configurator or pre-loaded in edit mode
   categoryAttributes = signal<CategoryAttributeType[]>([]);
   initialCategoryAttributes = signal<CategoryAttributeType[]>([]);
-  simpleMargin = signal<number | null>(null);
 
-  private priceSub?: Subscription;
-
-  // Variants management drawer
   isDrawerOpen = signal(false);
   editingVariantIndex = signal<number | null>(null);
   draftVariantForm = signal<FormGroup | null>(null);
   isVariantExitModalOpen = signal(false);
   isVariantClearModalOpen = signal(false);
 
-  @ViewChild(VariantDrawerComponent) variantDrawer!: VariantDrawerComponent;
-
   step = signal<1 | 2>(1);
+
+  @ViewChild(VariantDrawerComponent) variantDrawer!: VariantDrawerComponent;
 
   // ── Form ──────────────────────────────────────────────────────────────────
   form!: FormGroup;
@@ -121,36 +139,23 @@ export class ProductFormPageComponent implements OnInit, OnDestroy {
   get typeCtrl() { return this.form.get('type')!; }
   get hasVariants() { return this.form.get('hasVariants')!; }
   get variants() { return this.form.get('variants') as FormArray; }
+  get comboItems() { return this.form.get('comboItems') as FormArray; }
+  get comboPriceModeCtrl() { return this.form.get('comboPriceMode')!; }
+  get modifierGroups() { return this.form.get('modifierGroups') as FormArray; }
   get simpleVariant() { return this.form.get('simpleVariant') as FormGroup; }
+  get isService() { return this.typeCtrl.value === 'SERVICE'; }
+  get isPhysical() { return this.typeCtrl.value === 'PHYSICAL'; }
+  get isCombo() { return this.typeCtrl.value === 'COMBO'; }
+  get isRawMaterial() { return this.typeCtrl.value === 'RAW_MATERIAL'; }
+  get isComboPriceFixed() { return this.comboPriceModeCtrl.value === 'FIXED'; }
+  get showVariantStep() { return this.hasVariants.value === true; }
 
-  get showVariantStep(): boolean { return this.form?.get('hasVariants')?.value === true; }
-  get isService(): boolean { return this.form?.get('type')?.value === 'SERVICE'; }
-
-  get step1Valid(): boolean {
-    if (!this.form) return false;
-    if (this.hasVariants.value) {
-      return this.basicFieldsValid();
-    }
-    return this.basicFieldsValid() && (this.simpleVariant.get('salePrice')?.valid ?? false);
-  }
-
-  readonly durationPresets = [15, 30, 45, 60, 90, 120];
-
-  durationLabel(minutes: number): string {
-    if (minutes < 60) return `${minutes} min`;
-    const h = Math.floor(minutes / 60);
-    const m = minutes % 60;
-    return m > 0 ? `${h}h ${m}min` : `${h}h`;
-  }
-
+  // ── Lifecycle ─────────────────────────────────────────────────────────────
   ngOnInit() {
     this.buildForm();
     this.checkEditMode();
   }
 
-  ngOnDestroy() {
-    this.priceSub?.unsubscribe();
-  }
 
   private checkEditMode() {
     const id = this.route.snapshot.params['id'];
@@ -158,78 +163,115 @@ export class ProductFormPageComponent implements OnInit, OnDestroy {
       this.isEditing.set(true);
       this.productId.set(id);
       this.loadProduct(id);
+      return;
+    }
+
+    // Tipo pre-seleccionado desde la pantalla de tipo
+    const tipoParam = this.route.snapshot.queryParams['tipo'];
+    if (tipoParam) {
+      this.typePreset.set(true);
+      this.typeCtrl.setValue(tipoParam, { emitEvent: true });
     }
   }
 
   private loadProduct(id: string) {
+    this.isLoadingProduct.set(true);
     this.productSvc.findOne(id).subscribe({
       next: (product) => {
-        // Load category attributes first, then patch form
         if (product.categoryId) {
           this.categorySvc.getCategoryAttributes(product.categoryId).subscribe({
             next: attrs => {
               this.categoryAttributes.set(attrs);
               this.initialCategoryAttributes.set(attrs);
               this.patchForm(product);
+              this.isLoadingProduct.set(false);
             },
-            error: () => this.patchForm(product)
+            error: () => {
+              this.patchForm(product);
+              this.isLoadingProduct.set(false);
+            }
           });
         } else {
           this.patchForm(product);
+          this.isLoadingProduct.set(false);
         }
       },
-      error: () => this.toastSvc.error('Error al cargar el producto')
+      error: () => {
+        this.toastSvc.error('Error al cargar el producto');
+        this.isLoadingProduct.set(false);
+      }
     });
   }
 
   private patchForm(p: any) {
-    const hasVariantsValue = p.variants?.length > 1 || (p.variants?.length === 1 && p.variants[0].name !== p.name);
+    const hasVariantsValue = p.variants?.length > 1 ||
+      (p.variants?.length === 1 && p.variants[0].name !== p.name);
+
+    // type y categoryId se parchean sin emitir para no disparar los valueChanges
+    // (typeCtrl fuerza isSellable/isPurchasable; categoryId lanza un fetch que limpia atributos)
+    this.form.get('type')!.setValue(p.type, { emitEvent: false });
+    this.form.get('categoryId')!.setValue(p.categoryId, { emitEvent: false });
 
     this.form.patchValue({
       name: p.name,
       description: p.description,
-      type: p.type,
-      categoryId: p.categoryId,
+      comboPriceMode: p.comboPriceMode ?? 'CALCULATED',
       brandId: p.brandId,
       isActive: p.isActive,
+      isSellable: p.isSellable ?? true,
+      isPurchasable: p.isPurchasable ?? true,
     });
 
-    // Seteamos hasVariants sin emitir evento para evitar el auto-avance al paso 2
     this.hasVariants.setValue(hasVariantsValue, { emitEvent: false });
     this.syncValidators();
 
-    if (p.category) {
-      this.selectedCategoryOption.set({ label: p.category.name, value: p.category.id, icon: 'lucideFolder' });
+    if (p.categoryId && p.categoryName) {
+      this.initialCategoryOption.set({ label: p.categoryName, value: p.categoryId, icon: 'lucideFolder' });
     }
-    if (p.brand) {
-      this.selectedBrandOption.set({ label: p.brand.name, value: p.brand.id, icon: 'lucideTag' });
+    if (p.brandId && p.brandName) {
+      this.initialBrandOption.set({ label: p.brandName, value: p.brandId });
     }
 
-    // Pre-cargar opciones de impuestos para el select múltiple (simple variant)
-    if (!this.hasVariants.value && p.variants?.length === 1) {
+    if (!hasVariantsValue && p.variants?.length === 1) {
+      const v0 = p.variants[0];
+      if (v0.baseUnitId) {
+        this.unitsSvc.findAll({ onlyActive: false }).subscribe(res => {
+          const u = res.data.find((x: any) => x.id === v0.baseUnitId);
+          if (u) this.initialUnitOption.set({ value: u.id, label: `${u.name} (${u.abbreviation})` });
+        });
+      }
       const taxIds = p.variants[0].variantTaxes?.map((vt: any) => vt.taxId) ?? [];
       if (taxIds.length) {
         this.taxSvc.findAllSimple().subscribe(taxes => {
           const matched = taxes.filter((t: any) => taxIds.includes(t.id));
-          this.initialTaxOptions.set(matched.map((t: any) => ({ value: t.id, label: `${t.name} (${t.percentage}%)` })));
+          this.initialTaxOptions.set(
+            matched.map((t: any) => ({ value: t.id, label: `${t.name} (${t.percentage}%)` }))
+          );
         });
       }
     }
-    if (p.imageUrl) this.imagePreview.set(p.imageUrl);
+
+    if (p.imageUrl) this.imagePreviewUrl.set(p.imageUrl);
     if (p.imagePublicId) this.imagePublicId.set(p.imagePublicId);
 
-    if (this.hasVariants.value) {
+    if (hasVariantsValue) {
       this.variants.clear();
-      p.variants.forEach((v: any) => {
-        this.variants.push(this.buildVariant(v.attributeValues, v));
-      });
+      p.variants.forEach((v: any) => this.variants.push(this.buildVariant(v.attributeValues, v)));
     } else if (p.variants?.length === 1) {
       const v = p.variants[0];
       this.rebuildSimpleVariantAttributes(this.categoryAttributes(), v.attributeValues ?? []);
+      if (v.presentationId) {
+        this.presentationSvc.findOne(v.presentationId).subscribe(p => {
+          this.initialPresentationOption.set({ value: p.id, label: p.name });
+        });
+      }
       this.simpleVariant.patchValue({
         id: v.id,
         sku: v.sku,
         barcode: v.barcode,
+        presentationId: v.presentationId ?? '',
+        baseUnitId: v.baseUnitId ?? '',
+        conversionFactor: v.conversionFactor ?? 1,
         costPrice: v.costPrice,
         salePrice: v.salePrice,
         taxIds: v.variantTaxes?.map((vt: any) => vt.taxId) || [],
@@ -240,7 +282,59 @@ export class ProductFormPageComponent implements OnInit, OnDestroy {
         minimumStock: v.minimumStock ?? null,
         maximumStock: v.maximumStock ?? null,
       });
+      // Restore recipe
+      if (v.recipe) {
+        const recipeGroup = this.buildRecipeGroup(v.recipe);
+        (this.simpleVariant as FormGroup).setControl('recipe', recipeGroup);
+      }
     }
+
+    // Restore modifier groups
+    if (p.modifierGroups?.length > 0) {
+      this.modifierGroups.clear();
+      p.modifierGroups.forEach((g: any) => this.modifierGroups.push(this.buildModGroupFG(g)));
+    }
+
+    // Restore combo items
+    if (p.type === 'COMBO' && p.comboItems?.length > 0) {
+      this.comboItems.clear();
+      p.comboItems.forEach((item: any) => {
+        this.comboItems.push(this.fb.group({
+          productVariantId: [item.variantId, Validators.required],
+          quantity: [item.quantity || 1, [Validators.required, Validators.min(1)]],
+          variantName: [item.variantName ?? ''],
+          productName: [item.productName ?? item.variantName ?? ''],
+          sku: [item.sku ?? ''],
+          salePrice: [item.salePrice ?? 0],
+          modifierGroups: this.fb.array((item.modifierGroups ?? []).map((g: any) => this.buildModGroupFG(g))),
+        }));
+      });
+    }
+  }
+
+  private buildModGroupFG(g: any): FormGroup {
+    const optionsArray = this.fb.array(
+      (g.options ?? []).map((o: any) => this.fb.group({
+        id: [o.id ?? null],
+        name: [o.name ?? '', [Validators.required, Validators.maxLength(100)]],
+        priceAdjustment: [o.priceAdjustment ?? 0],
+        variantId: [o.variantId ?? null],
+        variantName: [o.variantName && o.productName && o.variantName !== o.productName
+          ? `${o.productName} — ${o.variantName}`
+          : (o.productName ?? o.variantName ?? '')],
+        isDefault: [o.isDefault ?? false],
+        sortOrder: [o.sortOrder ?? 0]
+      }))
+    );
+    return this.fb.group({
+      id: [g.id ?? null],
+      name: [g.name ?? '', [Validators.required, Validators.maxLength(100)]],
+      minSelections: [g.minSelections ?? 0, [Validators.min(0)]],
+      maxSelections: [g.maxSelections ?? 1, [Validators.required, Validators.min(1)]],
+      required: [g.required ?? false],
+      sortOrder: [g.sortOrder ?? 0],
+      options: optionsArray
+    });
   }
 
   // ── Form builder ──────────────────────────────────────────────────────────
@@ -249,19 +343,26 @@ export class ProductFormPageComponent implements OnInit, OnDestroy {
       name: ['', [Validators.required, Validators.minLength(2)]],
       description: [''],
       type: ['PHYSICAL'],
+      comboPriceMode: ['CALCULATED'],
       categoryId: ['', Validators.required],
       brandId: [''],
       isActive: [true],
+      isSellable: [true],
+      isPurchasable: [true],
       hasVariants: [false],
       variants: this.fb.array([]),
+      comboItems: this.fb.array([]),
+      modifierGroups: this.fb.array([]),
       simpleVariant: this.fb.group({
         id: [null],
         sku: [''],
         barcode: [''],
-        costPrice: [0, [Validators.required, Validators.min(0)]],
+        presentationId: [''],
+        baseUnitId: [''],
+        conversionFactor: [1, [Validators.min(0.0001)]],
+        costPrice: [0, [Validators.min(0)]],
         salePrice: [null, [Validators.required, Validators.min(0.01)]],
         taxIds: [[]],
-        presentationId: [''],
         stockTrackable: [true],
         trackLots: [false],
         trackExpiry: [false],
@@ -269,52 +370,73 @@ export class ProductFormPageComponent implements OnInit, OnDestroy {
         minimumStock: [null],
         maximumStock: [null],
         isDefault: [true],
-        attributes: this.fb.group({})
+        attributes: this.fb.group({}),
+        recipe: this.buildRecipeGroup(null)
       })
     });
 
     this.hasVariants.valueChanges.subscribe(enabled => {
       if (!enabled && this.variants.length > 0 && this.variantsHaveData()) {
-        // Revert toggle visually and ask for confirmation
         this.hasVariants.setValue(true, { emitEvent: false });
         this.isVariantClearModalOpen.set(true);
         return;
       }
       this.applyHasVariantsChange(enabled);
     });
-    this.priceSub = this.simpleVariant.valueChanges.subscribe(v => {
-      const sale = Number(v.salePrice) || 0;
-      const cost = Number(v.costPrice) || 0;
-      this.simpleMargin.set(sale > 0 ? ((sale - cost) / sale) * 100 : null);
-    });
-    this.form.get('categoryId')!.valueChanges.subscribe(id => this.onCategorySelected(id));
+
     this.typeCtrl.valueChanges.subscribe(type => {
       if (type === 'SERVICE') {
-        // Limpiar campos exclusivos de PHYSICAL
-        this.simpleVariant.patchValue({
-          sku: '', barcode: '', trackLots: false, trackExpiry: false, stockTrackable: false
-        }, { emitEvent: false });
-        // SERVICE no tiene variantes — limpiar sin modal (cambio de intención explícito)
+        this.simpleVariant.patchValue(
+          { sku: '', barcode: '', presentationId: '', trackLots: false, trackExpiry: false, stockTrackable: false },
+          { emitEvent: false }
+        );
         if (this.hasVariants.value) {
           this.hasVariants.setValue(false, { emitEvent: false });
           this.variants.clear();
         }
-      } else {
-        // Limpiar campos exclusivos de SERVICE
+        this.form.patchValue({ isPurchasable: false }, { emitEvent: false });
+      } else if (type === 'COMBO') {
+        this.simpleVariant.patchValue(
+          { durationMinutes: null, stockTrackable: false, trackLots: false, trackExpiry: false, presentationId: '' },
+          { emitEvent: false }
+        );
+        this.form.patchValue({ isPurchasable: false }, { emitEvent: false });
+      } else if (type === 'RAW_MATERIAL') {
         this.simpleVariant.patchValue({ durationMinutes: null, stockTrackable: true }, { emitEvent: false });
+        this.form.patchValue({ isSellable: false }, { emitEvent: false });
+      } else {
+        this.simpleVariant.patchValue({ durationMinutes: null, stockTrackable: true }, { emitEvent: false });
+        this.form.patchValue({ isSellable: true, isPurchasable: true }, { emitEvent: false });
       }
       this.syncValidators();
     });
+
+    this.comboPriceModeCtrl.valueChanges.subscribe(() => this.syncValidators());
+
     this.syncValidators();
   }
 
   private syncValidators() {
-    if (this.hasVariants.value) {
+    const type = this.typeCtrl.value;
+    const hasVariants = this.hasVariants.value;
+    const salePriceCtrl = this.simpleVariant.get('salePrice')!;
+
+    if (hasVariants) {
       this.simpleVariant.disable();
       this.variants.enable();
     } else {
       this.simpleVariant.enable();
       this.variants.disable();
+
+      const needsSalePrice = type !== 'RAW_MATERIAL' &&
+        !(type === 'COMBO' && this.comboPriceModeCtrl.value === 'CALCULATED');
+
+      if (needsSalePrice) {
+        salePriceCtrl.setValidators([Validators.required, Validators.min(0.01)]);
+      } else {
+        salePriceCtrl.clearValidators();
+      }
+      salePriceCtrl.updateValueAndValidity({ emitEvent: false });
     }
   }
 
@@ -336,66 +458,7 @@ export class ProductFormPageComponent implements OnInit, OnDestroy {
     }
   }
 
-  confirmClearVariants() {
-    this.isVariantClearModalOpen.set(false);
-    this.hasVariants.setValue(false, { emitEvent: false });
-    this.applyHasVariantsChange(false);
-  }
-
-  cancelClearVariants() {
-    this.isVariantClearModalOpen.set(false);
-  }
-
-  buildVariant(existingAttrValues?: any[], existingVariant?: any): FormGroup {
-    // Build attributes sub-group dynamically from current category attributes
-    const attrsGroup: Record<string, any> = {};
-    for (const cat of this.categoryAttributes()) {
-      const attrId = cat.attributeTypeId;
-      const existing = existingAttrValues?.find((av: any) => av.attributeTypeId === attrId);
-      const value = existing
-        ? (cat.attributeType.dataType === 'NUMBER' ? existing.valueNumber : existing.valueText) ?? ''
-        : '';
-      const validators = cat.isRequired ? [Validators.required] : [];
-      attrsGroup[attrId] = [value, validators];
-    }
-
-    return this.fb.group({
-      id: [existingVariant?.id ?? null],
-      name: [existingVariant?.name ?? '', Validators.required],
-      sku: [existingVariant?.sku ?? ''],
-      barcode: [existingVariant?.barcode ?? ''],
-      presentationId: [existingVariant?.presentationId ?? ''],
-      unitsPerPack: [existingVariant?.unitsPerPack ?? 1, [Validators.required, Validators.min(1)]],
-      costPrice: [existingVariant?.costPrice ?? 0, [Validators.required, Validators.min(0)]],
-      salePrice: [existingVariant?.salePrice ?? null, [Validators.required, Validators.min(0)]],
-      stockTrackable: [existingVariant?.stockTrackable ?? true],
-      trackLots: [existingVariant?.trackLots ?? false],
-      trackExpiry: [existingVariant?.trackExpiry ?? false],
-      durationMinutes: [existingVariant?.durationMinutes ?? null],
-      minimumStock: [existingVariant?.minimumStock ?? null],
-      maximumStock: [existingVariant?.maximumStock ?? null],
-      taxIds: [existingVariant?.variantTaxes?.map((vt: any) => vt.taxId) ?? []],
-      imageUrl: [existingVariant?.imageUrl ?? null],
-      imagePublicId: [existingVariant?.imagePublicId ?? null],
-      imageFile: [null],
-      attributes: this.fb.group(attrsGroup),
-    });
-  }
-
-  // ── Category selection — carga los atributos guardados de la categoría ──
-  onCategorySelected(categoryId: string) {
-    if (!categoryId) {
-      this.categoryAttributes.set([]);
-      this.initialCategoryAttributes.set([]);
-      return;
-    }
-    this.categorySvc.getCategoryAttributes(categoryId).subscribe({
-      next: attrs => this.initialCategoryAttributes.set(attrs),
-      error: () => this.initialCategoryAttributes.set([])
-    });
-  }
-
-  // ── Attribute configurator output ─────────────────────────────────────────
+  // ── Category attributes ───────────────────────────────────────────────────
   onAttributesConfigured(attrs: CategoryAttributeType[]) {
     this.categoryAttributes.set(attrs);
     this.rebuildSimpleVariantAttributes(attrs);
@@ -413,32 +476,32 @@ export class ProductFormPageComponent implements OnInit, OnDestroy {
     }
   }
 
-  // ── Type selector ─────────────────────────────────────────────────────────
-  selectType(t: 'PHYSICAL' | 'SERVICE') {
-    this.typeCtrl.setValue(t);
+  // ── COMBO tax (inline, no child component) ────────────────────────────────
+  searchComboTaxesFn = (query: string) =>
+    this.taxSvc.findAllSimple().pipe(
+      map((taxes: any[]) => {
+        const filtered = taxes.filter(t => t.name.toLowerCase().includes(query.toLowerCase()));
+        return {
+          data: filtered.map(t => ({ value: t.id, label: `${t.name} (${t.percentage}%)` } as SearchSelectOption)),
+          hasMore: false
+        };
+      })
+    );
+
+  onComboTaxChange(event: SearchSelectOption | SearchSelectOption[] | null) {
+    if (Array.isArray(event)) this.initialTaxOptions.set(event);
+    else if (!event) this.initialTaxOptions.set([]);
   }
 
-  // ── Variant management ────────────────────────────────────────────────────
-  addVariant() {
-    this.draftVariantForm.set(this.buildVariant());
-    this.editingVariantIndex.set(null);
-    this.isDrawerOpen.set(true);
-  }
-
-  removeVariant(i: number) {
-    if (this.variants.length > 1) {
-      this.variants.removeAt(i);
-    }
-  }
-
-  // ── Image ─────────────────────────────────────────────────────────────────
-  onImageSelected(event: Event) {
-    const file = (event.target as HTMLInputElement).files?.[0];
-    if (!file) return;
+  // ── Image handling ─────────────────────────────────────────────────────────
+  onImageFileSelected(file: File) {
     this.selectedImageFile.set(file);
-    const reader = new FileReader();
-    reader.onload = e => this.imagePreview.set(e.target?.result as string);
-    reader.readAsDataURL(file);
+  }
+
+  onImageRemoved() {
+    this.selectedImageFile.set(null);
+    this.imagePreviewUrl.set(null);
+    this.imagePublicId.set(null);
   }
 
   // ── Navigation ────────────────────────────────────────────────────────────
@@ -451,6 +514,11 @@ export class ProductFormPageComponent implements OnInit, OnDestroy {
   goBack() {
     if (this.step() === 2) {
       this.step.set(1);
+      return;
+    }
+    // Si el tipo vino pre-seteado, volver a la pantalla de selección de tipo
+    if (this.typePreset() && !this.isEditing()) {
+      this.router.navigate(['/inventario/productos/nuevo']);
     } else {
       this.router.navigate(['/inventario/productos']);
     }
@@ -464,7 +532,72 @@ export class ProductFormPageComponent implements OnInit, OnDestroy {
     return ['name', 'categoryId'].every(c => this.form.get(c)?.valid);
   }
 
-  // ── Drawer ────────────────────────────────────────────────────────────────
+  // ── Variant management ────────────────────────────────────────────────────
+  buildVariant(existingAttrValues?: any[], existingVariant?: any): FormGroup {
+    const attrsGroup: Record<string, any> = {};
+    for (const cat of this.categoryAttributes()) {
+      const attrId = cat.attributeTypeId;
+      const existing = existingAttrValues?.find((av: any) => av.attributeTypeId === attrId);
+      const value = existing
+        ? (cat.attributeType.dataType === 'NUMBER' ? existing.valueNumber : existing.valueText) ?? ''
+        : '';
+      attrsGroup[attrId] = [value, cat.isRequired ? [Validators.required] : []];
+    }
+    return this.fb.group({
+      id: [existingVariant?.id ?? null],
+      name: [existingVariant?.name ?? '', Validators.required],
+      sku: [existingVariant?.sku ?? ''],
+      barcode: [existingVariant?.barcode ?? ''],
+      presentationId: [existingVariant?.presentationId ?? ''],
+      baseUnitId: [existingVariant?.baseUnitId ?? ''],
+      conversionFactor: [existingVariant?.conversionFactor ?? 1, [Validators.min(0.0001)]],
+      costPrice: [existingVariant?.costPrice ?? 0, [Validators.min(0)]],
+      salePrice: [existingVariant?.salePrice ?? null, [Validators.required, Validators.min(0)]],
+      stockTrackable: [existingVariant?.stockTrackable ?? true],
+      trackLots: [existingVariant?.trackLots ?? false],
+      trackExpiry: [existingVariant?.trackExpiry ?? false],
+      durationMinutes: [existingVariant?.durationMinutes ?? null],
+      minimumStock: [existingVariant?.minimumStock ?? null],
+      maximumStock: [existingVariant?.maximumStock ?? null],
+      taxIds: [existingVariant?.variantTaxes?.map((vt: any) => vt.taxId) ?? []],
+      imageUrl: [existingVariant?.imageUrl ?? null],
+      imagePublicId: [existingVariant?.imagePublicId ?? null],
+      imageFile: [null],
+      attributes: this.fb.group(attrsGroup),
+      recipe: this.buildRecipeGroup(existingVariant?.recipe),
+    });
+  }
+
+  buildRecipeGroup(existing?: any): FormGroup {
+    const ingredients = this.fb.array(
+      (existing?.ingredients ?? []).map((ing: any) => this.fb.group({
+        variantId: [ing.variantId, Validators.required],
+        variantName: [ing.variantName ?? ''],
+        quantity: [ing.quantity, [Validators.required, Validators.min(0.0001)]],
+        unitId: [ing.unitId, Validators.required],
+        unitName: [ing.unitAbbreviation ?? ''],
+        notes: [ing.notes ?? '']
+      }))
+    );
+    return this.fb.group({
+      enabled: [!!existing],
+      yield: [existing?.yield ?? null, [Validators.min(0.0001)]],
+      yieldUnitId: [existing?.yieldUnitId ?? ''],
+      notes: [existing?.notes ?? ''],
+      ingredients
+    });
+  }
+
+  addVariant() {
+    this.draftVariantForm.set(this.buildVariant());
+    this.editingVariantIndex.set(null);
+    this.isDrawerOpen.set(true);
+  }
+
+  removeVariant(i: number) {
+    if (this.variants.length > 1) this.variants.removeAt(i);
+  }
+
   openEditDrawer(index: number) {
     this.draftVariantForm.set(this.variants.at(index) as FormGroup);
     this.editingVariantIndex.set(index);
@@ -474,9 +607,7 @@ export class ProductFormPageComponent implements OnInit, OnDestroy {
   saveDrawerVariant(form: FormGroup) {
     form.markAllAsTouched();
     if (form.invalid) return;
-    if (this.editingVariantIndex() === null) {
-      this.variants.push(form);
-    }
+    if (this.editingVariantIndex() === null) this.variants.push(form);
     this.closeDrawer();
   }
 
@@ -488,6 +619,22 @@ export class ProductFormPageComponent implements OnInit, OnDestroy {
     }
   }
 
+  closeDrawer() {
+    this.isDrawerOpen.set(false);
+    this.editingVariantIndex.set(null);
+    this.draftVariantForm.set(null);
+  }
+
+  confirmClearVariants() {
+    this.isVariantClearModalOpen.set(false);
+    this.hasVariants.setValue(false, { emitEvent: false });
+    this.applyHasVariantsChange(false);
+  }
+
+  cancelClearVariants() {
+    this.isVariantClearModalOpen.set(false);
+  }
+
   confirmExitVariant() {
     this.isVariantExitModalOpen.set(false);
     this.closeDrawer();
@@ -497,50 +644,9 @@ export class ProductFormPageComponent implements OnInit, OnDestroy {
     this.isVariantExitModalOpen.set(false);
   }
 
-  closeDrawer() {
-    this.isDrawerOpen.set(false);
-    this.editingVariantIndex.set(null);
-    this.draftVariantForm.set(null);
-  }
-
-  // ── Search fns ────────────────────────────────────────────────────────────
-  searchCategoriesFn(query: string, page: number) {
-    return this.categorySvc.findAll({
-      search: query, page, limit: 15,
-      filterModel: { status: { filterType: 'text', type: 'equals', filter: 'ACTIVE' } }
-    }).pipe(
-      map(res => ({
-        data: res.data.map((c: any) => ({ label: c.name, value: c.id, icon: 'lucideFolder' } as SearchSelectOption)),
-        hasMore: res.data.length === 15
-      }))
-    );
-  }
-
-  searchTaxesFn(query: string) {
-    return this.taxSvc.findAllSimple().pipe(
-      map(taxes => {
-        const filtered = taxes.filter((t: any) =>
-          t.name.toLowerCase().includes(query.toLowerCase())
-        );
-        return {
-          data: filtered.map((t: any) => ({ value: t.id, label: `${t.name} (${t.percentage}%)` } as SearchSelectOption)),
-          hasMore: false
-        };
-      })
-    );
-  }
-
-  searchBrandsFn(query: string, page: number) {
-    return this.brandSvc.findAll({ search: query, page, limit: 15 }).pipe(
-      map((res: any) => {
-        const items = Array.isArray(res) ? res : (res.data ?? []);
-        return {
-          data: items.map((b: any) => ({ label: b.name, value: b.id } as SearchSelectOption)),
-          hasMore: items.length === 15
-        };
-      })
-    );
-  }
+  // ── Search helpers ─────────────────────────────────────────────────────────
+  // (Movidos a los componentes hijos: product-general-info, physical-variant-form,
+  //  service-variant-form, raw-material-form)
 
   // ── Submit ────────────────────────────────────────────────────────────────
   onSubmit() {
@@ -551,30 +657,25 @@ export class ProductFormPageComponent implements OnInit, OnDestroy {
     }
 
     const val = this.form.value;
-    let variantPayload: any[];
 
+    let variantPayload: any[];
     if (val.hasVariants) {
       if (this.variants.invalid) return;
-      variantPayload = val.variants.map((v: any) => this.mapVariant(v));
+      variantPayload = this.variants.controls.map(ctrl => this.mapVariant(ctrl.value));
     } else {
+      if (this.simpleVariant.invalid) return;
+      if ((val.type === 'PHYSICAL' || val.type === 'SERVICE') && this.modifierGroups.invalid) return;
       variantPayload = [this.mapSimpleVariant(val.simpleVariant, val.name, val.type)];
     }
 
-    const buildPayload = (imageUrl?: string, imagePublicId?: string): CreateProductPayload => ({
-      name: val.name,
-      description: val.description || undefined,
-      type: val.type,
-      categoryId: val.categoryId,
-      brandId: val.brandId || undefined,
-      isActive: val.isActive,
-      imageUrl: imageUrl || undefined,
-      imagePublicId: imagePublicId || undefined,
-      variants: variantPayload,
-    });
+    // COMBO: require at least 2 items
+    if (val.type === 'COMBO' && this.comboItems.length < 2) {
+      this.toastSvc.error('Un combo debe tener al menos 2 componentes');
+      return;
+    }
 
     this.isSubmitting.set(true);
 
-    // Recoger uploads pendientes
     const productFile = this.selectedImageFile();
     const variantUploads = val.hasVariants
       ? this.variants.controls
@@ -585,16 +686,47 @@ export class ProductFormPageComponent implements OnInit, OnDestroy {
     const totalUploads = (productFile ? 1 : 0) + variantUploads.length;
 
     const doSave = (productImageUrl?: string, productImagePublicId?: string) => {
-      // Reconstruir payload de variantes con las URLs ya resueltas
-      let variantPayload: any[];
-      if (val.hasVariants) {
-        variantPayload = this.variants.controls.map(ctrl => this.mapVariant(ctrl.value));
-      } else {
-        variantPayload = [this.mapSimpleVariant(val.simpleVariant, val.name, val.type)];
-      }
-
-      const payload = buildPayload(productImageUrl, productImagePublicId);
-      payload.variants = variantPayload;
+      const payload: CreateProductPayload = {
+        name: val.name,
+        description: val.description || undefined,
+        type: val.type,
+        comboPriceMode: val.type === 'COMBO' ? val.comboPriceMode : undefined,
+        categoryId: val.categoryId,
+        brandId: val.brandId || undefined,
+        isActive: val.isActive,
+        isSellable: val.isSellable,
+        isPurchasable: val.isPurchasable,
+        imageUrl: productImageUrl || undefined,
+        imagePublicId: productImagePublicId || undefined,
+        variants: val.hasVariants
+          ? this.variants.controls.map(ctrl => this.mapVariant(ctrl.value))
+          : [this.mapSimpleVariant(val.simpleVariant, val.name, val.type)],
+        comboItems: val.type === 'COMBO' && this.comboItems.length > 0
+          ? this.comboItems.controls.map(c => ({
+              variantId: c.get('productVariantId')?.value,
+              quantity: Number(c.get('quantity')?.value),
+              modifierGroups: this.mapItemModifiers(c.get('modifierGroups') as FormArray)
+            }))
+          : undefined,
+        modifierGroups: (val.type === 'PHYSICAL' || val.type === 'SERVICE')
+          ? this.modifierGroups.controls.map(g => ({
+              id: g.get('id')?.value || undefined,
+              name: g.get('name')?.value,
+              minSelections: g.get('minSelections')?.value ?? 0,
+              maxSelections: g.get('maxSelections')?.value ?? undefined,
+              required: g.get('required')?.value ?? false,
+              sortOrder: g.get('sortOrder')?.value ?? 0,
+              options: (g.get('options') as FormArray).controls.map((o, oi) => ({
+                id: o.get('id')?.value || undefined,
+                name: o.get('name')?.value,
+                priceAdjustment: Number(o.get('priceAdjustment')?.value) || 0,
+                variantId: o.get('variantId')?.value || undefined,
+                isDefault: o.get('isDefault')?.value ?? false,
+                sortOrder: o.get('sortOrder')?.value ?? oi
+              }))
+            }))
+          : undefined
+      };
 
       const obs$ = this.isEditing()
         ? this.productSvc.update(this.productId()!, payload)
@@ -615,15 +747,14 @@ export class ProductFormPageComponent implements OnInit, OnDestroy {
     };
 
     if (totalUploads === 0) {
-      const existingUrl = this.imagePreview() && !this.imagePreview()!.startsWith('data:')
-        ? this.imagePreview()! : undefined;
+      const existingUrl = this.imagePreviewUrl() && !this.imagePreviewUrl()!.startsWith('data:')
+        ? this.imagePreviewUrl()! : undefined;
       doSave(existingUrl, this.imagePublicId() ?? undefined);
       return;
     }
 
     this.isUploadingImage.set(true);
     this.uploadProgressLabel.set(`Subiendo imágenes (0/${totalUploads})...`);
-
     let done = 0;
     let productImageUrl: string | undefined;
     let productImagePublicId: string | undefined;
@@ -649,8 +780,8 @@ export class ProductFormPageComponent implements OnInit, OnDestroy {
       next: () => {
         this.isUploadingImage.set(false);
         if (!productImageUrl) {
-          const existing = this.imagePreview() && !this.imagePreview()!.startsWith('data:')
-            ? this.imagePreview()! : undefined;
+          const existing = this.imagePreviewUrl() && !this.imagePreviewUrl()!.startsWith('data:')
+            ? this.imagePreviewUrl()! : undefined;
           productImageUrl = existing;
           productImagePublicId = this.imagePublicId() ?? undefined;
         }
@@ -667,22 +798,33 @@ export class ProductFormPageComponent implements OnInit, OnDestroy {
 
   private mapSimpleVariant(sv: any, productName: string, type: string) {
     const attributeValues = this.buildAttributeValues(sv.attributes ?? {});
+    let salePrice: number;
+    if (type === 'RAW_MATERIAL') {
+      salePrice = 0; // backend enforces salePrice = 0 for RAW_MATERIAL
+    } else if (type === 'COMBO' && this.comboPriceModeCtrl.value === 'CALCULATED') {
+      salePrice = 0; // CALCULATED combos get price at POS
+    } else {
+      salePrice = Number(sv.salePrice);
+    }
     return {
       id: sv.id || undefined,
       name: productName,
       sku: sv.sku || undefined,
       barcode: sv.barcode || undefined,
+      presentationId: (type === 'PHYSICAL' || type === 'RAW_MATERIAL') ? (sv.presentationId || undefined) : undefined,
+      baseUnitId: sv.baseUnitId || undefined,
+      conversionFactor: sv.conversionFactor ? Number(sv.conversionFactor) : undefined,
       costPrice: Number(sv.costPrice),
-      salePrice: Number(sv.salePrice),
+      salePrice,
       taxIds: sv.taxIds?.length ? sv.taxIds : undefined,
-      stockTrackable: type !== 'SERVICE',
-      trackLots: sv.trackLots ?? false,
-      trackExpiry: sv.trackExpiry ?? false,
+      stockTrackable: type === 'SERVICE' || type === 'COMBO' ? false : (sv.stockTrackable ?? true),
+      trackLots: (type !== 'SERVICE' && type !== 'COMBO') && sv.stockTrackable ? (sv.trackLots ?? false) : false,
+      trackExpiry: (type !== 'SERVICE' && type !== 'COMBO') && sv.stockTrackable ? (sv.trackExpiry ?? false) : false,
       durationMinutes: type === 'SERVICE' && sv.durationMinutes ? Number(sv.durationMinutes) : undefined,
-      minimumStock: (type !== 'SERVICE' && sv.minimumStock != null) ? Number(sv.minimumStock) : null,
-      maximumStock: (type !== 'SERVICE' && sv.maximumStock != null) ? Number(sv.maximumStock) : null,
-      unitsPerPack: type !== 'SERVICE' ? 1 : undefined,
+      minimumStock: (type === 'PHYSICAL' || type === 'RAW_MATERIAL') && sv.stockTrackable && sv.minimumStock != null ? Number(sv.minimumStock) : null,
+      maximumStock: (type === 'PHYSICAL' || type === 'RAW_MATERIAL') && sv.stockTrackable && sv.maximumStock != null ? Number(sv.maximumStock) : null,
       attributeValues: attributeValues.length ? attributeValues : undefined,
+      recipe: this.buildRecipePayload(sv.recipe),
     };
   }
 
@@ -694,19 +836,58 @@ export class ProductFormPageComponent implements OnInit, OnDestroy {
       sku: v.sku || undefined,
       barcode: v.barcode || undefined,
       presentationId: v.presentationId || undefined,
-      unitsPerPack: v.stockTrackable ? Number(v.unitsPerPack) : undefined,
+      baseUnitId: v.baseUnitId || undefined,
+      conversionFactor: v.conversionFactor ? Number(v.conversionFactor) : undefined,
       costPrice: Number(v.costPrice),
       salePrice: Number(v.salePrice),
       taxIds: v.taxIds?.length ? v.taxIds : undefined,
       stockTrackable: v.stockTrackable ?? true,
-      trackLots: v.trackLots ?? false,
-      trackExpiry: v.trackExpiry ?? false,
-      durationMinutes: (!v.stockTrackable && v.durationMinutes) ? Number(v.durationMinutes) : undefined,
+      trackLots: v.stockTrackable ? (v.trackLots ?? false) : false,
+      trackExpiry: v.stockTrackable ? (v.trackExpiry ?? false) : false,
+      durationMinutes: undefined, // durationMinutes es exclusivo de SERVICE; PHYSICAL nunca lo envía
       minimumStock: (v.stockTrackable && v.minimumStock != null) ? Number(v.minimumStock) : null,
       maximumStock: (v.stockTrackable && v.maximumStock != null) ? Number(v.maximumStock) : null,
       imageUrl: v.imageUrl || undefined,
       imagePublicId: v.imagePublicId || undefined,
       attributeValues: attributeValues.length ? attributeValues : undefined,
+      recipe: this.buildRecipePayload(v.recipe),
+    };
+  }
+
+  private mapItemModifiers(arr: FormArray | null | undefined) {
+    if (!arr?.length) return undefined;
+    return arr.controls.map(g => ({
+      name: g.get('name')?.value,
+      minSelections: g.get('minSelections')?.value ?? 0,
+      maxSelections: g.get('maxSelections')?.value ?? undefined,
+      required: g.get('required')?.value ?? false,
+      sortOrder: g.get('sortOrder')?.value ?? 0,
+      options: (g.get('options') as FormArray).controls.map((o, oi) => ({
+        name: o.get('name')?.value,
+        priceAdjustment: Number(o.get('priceAdjustment')?.value) || 0,
+        variantId: o.get('variantId')?.value || undefined,
+        isDefault: o.get('isDefault')?.value ?? false,
+        sortOrder: o.get('sortOrder')?.value ?? oi
+      }))
+    }));
+  }
+
+  private buildRecipePayload(recipe: any) {
+    // null explícito → backend borra la receta existente
+    if (!recipe?.enabled || !recipe?.ingredients?.length) return null;
+    if (!recipe?.yieldUnitId) return null;
+    return {
+      yield: Number(recipe.yield),
+      yieldUnitId: recipe.yieldUnitId,
+      notes: recipe.notes || undefined,
+      ingredients: recipe.ingredients
+        .filter((ing: any) => ing.variantId && ing.unitId)
+        .map((ing: any) => ({
+          variantId: ing.variantId,
+          quantity: Number(ing.quantity),
+          unitId: ing.unitId,
+          notes: ing.notes || undefined,
+        })),
     };
   }
 

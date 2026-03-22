@@ -86,7 +86,7 @@ import { SkeletonComponent } from '../skeleton/skeleton';
 
       <!-- Dropdown -->
       @if (isOpen()) {
-        <div class="search-select__menu animation-slide-up">
+        <div class="search-select__menu animation-slide-up" [style]="menuStyle()">
           <!-- Search Box -->
           <div class="search-box">
             <ng-icon name="lucideSearch" class="search-icon"></ng-icon>
@@ -214,11 +214,7 @@ import { SkeletonComponent } from '../skeleton/skeleton';
       }
 
       &__menu {
-        position: absolute;
-        top: calc(100% + 4px);
-        left: 0;
-        right: 0;
-        z-index: 100;
+        /* position y coordenadas vienen del signal menuStyle() */
         background: var(--color-bg-surface);
         border: 1px solid var(--color-border-subtle);
         border-radius: var(--radius-lg);
@@ -388,6 +384,22 @@ export class SearchSelectComponent implements AfterViewInit, ControlValueAccesso
   }
 
   open() {
+    document.addEventListener('scroll', this._scrollHandler, { capture: true, passive: true });
+    const rect = this.containerElement?.nativeElement.getBoundingClientRect();
+    if (rect) {
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const menuMaxHeight = 320;
+      const openUp = spaceBelow < menuMaxHeight && rect.top > spaceBelow;
+      this.menuStyle.set({
+        position: 'fixed',
+        width: `${rect.width}px`,
+        left: `${rect.left}px`,
+        ...(openUp
+          ? { bottom: `${window.innerHeight - rect.top + 4}px`, top: 'auto' }
+          : { top: `${rect.bottom + 4}px`, bottom: 'auto' }),
+        zIndex: '9999',
+      });
+    }
     this.isOpen.set(true);
     if (this.options().length === 0) {
       this.initialLoading.set(true);
@@ -397,6 +409,7 @@ export class SearchSelectComponent implements AfterViewInit, ControlValueAccesso
   }
 
   close() {
+    document.removeEventListener('scroll', this._scrollHandler, { capture: true });
     this.isOpen.set(false);
     this.onTouched();
   }
@@ -486,10 +499,18 @@ export class SearchSelectComponent implements AfterViewInit, ControlValueAccesso
   }
 
   @ViewChild('container') containerElement?: ElementRef<HTMLDivElement>;
+  menuStyle = signal<Record<string, string>>({});
   @HostListener('document:click', ['$event'])
   onClickOutside(event: Event) {
     if (this.isOpen() && !this.containerElement?.nativeElement.contains(event.target as Node)) {
       this.close();
     }
   }
+
+  private _scrollHandler = (e: Event) => {
+    if (!this.isOpen()) return;
+    // Ignorar scroll interno del propio dropdown
+    if (this.containerElement?.nativeElement.contains(e.target as Node)) return;
+    this.close();
+  };
 }

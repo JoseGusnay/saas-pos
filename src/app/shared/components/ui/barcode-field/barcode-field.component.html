@@ -1,4 +1,10 @@
 <div class="barcode-field">
+  @if (label) {
+    <label class="bf__label">
+      {{ label }}
+      @if (optional) { <span class="bf__optional">Opcional</span> }
+    </label>
+  }
   <div class="barcode-input-row">
     <div class="input-icon-wrap">
       <ng-icon name="lucideBarcode" class="ic"></ng-icon>

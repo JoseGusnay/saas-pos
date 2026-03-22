@@ -1,0 +1,160 @@
+<div class="mb">
+
+  <!-- Groups list -->
+  @for (grpCtrl of formArray.controls; track $index; let gi = $index) {
+    <div class="mb__group" [formGroup]="asGroup(grpCtrl)">
+
+      <!-- Group header -->
+      <div class="mb__group-header">
+        <button type="button" class="mb__collapse-btn" (click)="toggleGroup(gi)">
+          <ng-icon [name]="isOpen(gi) ? 'lucideChevronUp' : 'lucideChevronDown'"></ng-icon>
+        </button>
+
+        <input
+          class="mb__group-name-input"
+          type="text"
+          formControlName="name"
+          placeholder="Nombre del grupo (ej: Tamaño, Extras…)"
+          [class.mb__group-name-input--error]="grpCtrl.get('name')?.invalid && grpCtrl.get('name')?.touched"
+        >
+
+        <label class="mb__req-toggle" title="Selección obligatoria">
+          <input type="checkbox" formControlName="required" class="mb__req-checkbox"
+            (change)="onRequiredChange(gi)">
+          <span class="mb__req-label">Obligatorio</span>
+        </label>
+
+        <button type="button" class="mb__remove-group-btn" (click)="removeGroup(gi)" title="Eliminar grupo">
+          <ng-icon name="lucideTrash2"></ng-icon>
+        </button>
+      </div>
+
+      @if (isOpen(gi)) {
+        <div class="mb__group-body">
+
+          <!-- Min / Max selections -->
+          <div class="mb__selections-row">
+            <app-field-input
+              formControlName="minSelections"
+              label="Mín. selecciones"
+              type="number"
+              placeholder="0"
+              [min]="0"
+              [step]="1"
+              [optional]="true"
+            ></app-field-input>
+            <app-field-input
+              formControlName="maxSelections"
+              label="Máx. selecciones"
+              type="number"
+              placeholder="1"
+              [min]="1"
+              [step]="1"
+              [optional]="true"
+            ></app-field-input>
+          </div>
+
+          <!-- Options list -->
+          <div class="mb__options">
+            <div class="mb__options-header">
+              <span class="mb__options-title">Opciones</span>
+              <button type="button" class="mb__add-option-btn" (click)="addOption(gi)">
+                <ng-icon name="lucidePlus"></ng-icon>
+                Añadir opción
+              </button>
+            </div>
+
+            @if (getOptions(grpCtrl).length === 0) {
+              <p class="mb__options-empty">Agrega al menos una opción para este grupo.</p>
+            }
+
+            @for (optCtrl of getOptions(grpCtrl).controls; track $index; let oi = $index) {
+              <div class="mb__option" [formGroup]="asGroup(optCtrl)">
+                <input
+                  class="mb__opt-name"
+                  type="text"
+                  formControlName="name"
+                  placeholder="Nombre de la opción…"
+                  [class.mb__opt-name--error]="optCtrl.get('name')?.invalid && optCtrl.get('name')?.touched"
+                >
+                <div class="mb__opt-price-wrap">
+                  <span class="mb__opt-currency">$</span>
+                  <input
+                    type="number"
+                    class="mb__opt-price"
+                    formControlName="priceAdjustment"
+                    step="0.01"
+                    placeholder="0.00"
+                    title="Ajuste de precio (puede ser negativo)"
+                  >
+                </div>
+
+                <!-- Variant link -->
+                <div class="mb__opt-variant-wrap">
+                  @if (optCtrl.get('variantId')?.value) {
+                    <span class="mb__opt-variant-tag">
+                      <ng-icon name="lucideSearch"></ng-icon>
+                      {{ optCtrl.get('variantName')?.value }}
+                      <button type="button" class="mb__opt-variant-clear" (click)="clearVariant(gi, oi)">
+                        <ng-icon name="lucideX"></ng-icon>
+                      </button>
+                    </span>
+                  } @else if (activeOptKey() === gi + ':' + oi) {
+                    <div class="mb__opt-search-wrap">
+                      <input
+                        class="mb__opt-search-input"
+                        type="text"
+                        placeholder="Buscar variante física…"
+                        [value]="optQuery()"
+                        (input)="onOptSearch($event)"
+                        (blur)="onOptBlur()"
+                        autofocus
+                      >
+                      @if (optSearching()) {
+                        <span class="mb__opt-searching">Buscando…</span>
+                      }
+                      @if (optResults().length > 0) {
+                        <div class="mb__opt-dropdown">
+                          @for (r of optResults(); track r.variantId) {
+                            <button type="button" class="mb__opt-result" (mousedown)="selectVariant(r, gi, oi)">
+                              <span class="mb__opt-result-product">{{ r.productName }}</span>
+                              @if (r.variantName !== r.productName) {
+                                <span class="mb__opt-result-variant"> — {{ r.variantName }}</span>
+                              }
+                            </button>
+                          }
+                        </div>
+                      }
+                    </div>
+                  } @else {
+                    <button type="button" class="mb__opt-link-btn" (click)="openOptSearch(gi, oi)"
+                      title="Vincular variante para descontar stock al elegir esta opción">
+                      + Stock
+                    </button>
+                  }
+                </div>
+
+                <label class="mb__opt-default" title="Marcar como opción predeterminada">
+                  <input type="checkbox" formControlName="isDefault" class="mb__opt-default-check">
+                  <span class="mb__opt-default-label">Default</span>
+                </label>
+                <button type="button" class="mb__remove-opt-btn" (click)="removeOption(gi, oi)" title="Quitar opción">
+                  <ng-icon name="lucideTrash2"></ng-icon>
+                </button>
+              </div>
+            }
+          </div>
+
+        </div>
+      }
+
+    </div>
+  }
+
+  <!-- Add group button -->
+  <button type="button" class="mb__add-group-btn" (click)="addGroup()">
+    <ng-icon name="lucidePlus"></ng-icon>
+    Añadir grupo de modificadores
+  </button>
+
+</div>

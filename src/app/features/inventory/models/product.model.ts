@@ -20,9 +20,37 @@ export interface VariantAttributeValue {
   id?: string;
   variantId?: string;
   attributeTypeId: string;
-  attributeType?: AttributeType;
+  attributeTypeName?: string;        // campo flat que devuelve el backend
+  attributeType?: AttributeType;     // solo disponible en contexto local
   valueText?: string | null;
   valueNumber?: number | null;
+}
+
+export interface ComboItem {
+  id?: string;
+  variantId: string;
+  variantName: string;
+  quantity: number;
+  sortOrder?: number;
+  modifierGroups?: ModifierGroup[];
+}
+
+export interface ModifierOption {
+  id: string;
+  name: string;
+  priceAdjustment: number;
+  isDefault: boolean;
+  sortOrder?: number;
+}
+
+export interface ModifierGroup {
+  id: string;
+  name: string;
+  minSelections: number;
+  maxSelections?: number | null;
+  required: boolean;
+  sortOrder?: number;
+  options: ModifierOption[];
 }
 
 export interface Product {
@@ -30,12 +58,18 @@ export interface Product {
   name: string;
   description?: string;
   type: string;
+  comboPriceMode?: 'FIXED' | 'CALCULATED' | null;
   categoryId: string;
   brandId?: string;
   imageUrl?: string;
   imagePublicId?: string;
   isActive: boolean;
+  isSellable?: boolean;
+  isPurchasable?: boolean;
   variants: ProductVariant[];
+  comboItems?: ComboItem[];
+  modifierGroups?: ModifierGroup[];
+  branchSettings?: { id: string; branchId: string; isAvailable: boolean }[];
   category?: { id: string; name: string };
   brand?: { id: string; name: string };
   createdAt: string;
@@ -45,13 +79,16 @@ export interface Product {
 export interface ProductVariant {
   id: string;
   productId: string;
-  presentationId?: string;
-  presentation?: { id: string; name: string };
-  sku?: string;
-  barcode?: string;
+  presentationId?: string | null;
+  presentationName?: string | null;
+  baseUnitId?: string | null;
+  baseUnitAbbreviation?: string | null;
+  conversionFactor?: number;
+  sku?: string | null;
+  barcode?: string | null;
   name?: string;
-  unitsPerPack: number;
   costPrice: number;
+  lastPurchasePrice?: number | null;
   salePrice: number;
   stockTrackable: boolean;
   trackLots: boolean;
@@ -64,6 +101,24 @@ export interface ProductVariant {
   isActive: boolean;
   variantTaxes?: VariantTax[];
   attributeValues?: VariantAttributeValue[];
+  prices?: { id: string; branchId: string; salePrice: number; isActive: boolean }[];
+  recipe?: {
+    id: string;
+    yield: number;
+    yieldUnitId: string;
+    yieldUnitAbbreviation: string;
+    notes: string | null;
+    isActive: boolean;
+    ingredients: {
+      id: string;
+      variantId: string;
+      variantName: string;
+      quantity: number;
+      unitId: string;
+      unitAbbreviation: string;
+      notes: string | null;
+    }[];
+  } | null;
 }
 
 export interface VariantTax {
@@ -72,25 +127,65 @@ export interface VariantTax {
   tax?: any;
 }
 
+export interface ProductBranchSetting {
+  id: string;
+  productId: string;
+  branchId: string;
+  branchName?: string;
+  isAvailable: boolean;
+}
+
+export interface VariantBranchPrice {
+  id: string;
+  variantId: string;
+  branchId: string;
+  branchName?: string;
+  salePrice: number;
+  isActive: boolean;
+}
+
+export interface CreateModifierOptionPayload {
+  name: string;
+  priceAdjustment?: number;
+  variantId?: string;
+  isDefault?: boolean;
+  sortOrder?: number;
+}
+
+export interface CreateModifierGroupPayload {
+  name: string;
+  minSelections?: number;
+  maxSelections?: number;
+  required?: boolean;
+  sortOrder?: number;
+  options: CreateModifierOptionPayload[];
+}
+
 export interface CreateProductPayload {
   name: string;
   description?: string;
   type?: string;
+  comboPriceMode?: 'FIXED' | 'CALCULATED';
   categoryId: string;
   brandId?: string;
   isActive?: boolean;
+  isSellable?: boolean;
+  isPurchasable?: boolean;
   imageUrl?: string;
   imagePublicId?: string;
   variants: CreateVariantPayload[];
+  comboItems?: { variantId: string; quantity: number; modifierGroups?: CreateModifierGroupPayload[] }[];
+  modifierGroups?: CreateModifierGroupPayload[];
 }
 
 export interface CreateVariantPayload {
   id?: string;
-  presentationId?: string;
+  name: string;
   sku?: string;
   barcode?: string;
-  name?: string;
-  unitsPerPack?: number;
+  presentationId?: string;
+  baseUnitId?: string;
+  conversionFactor?: number;
   costPrice: number;
   salePrice: number;
   stockTrackable?: boolean;
@@ -104,4 +199,10 @@ export interface CreateVariantPayload {
   taxIds?: string[];
   attributeValues?: { attributeTypeId: string; valueText?: string | null; valueNumber?: number | null }[];
   isActive?: boolean;
+  recipe?: {
+    yield: number;
+    yieldUnitId: string;
+    notes?: string;
+    ingredients: { variantId: string; quantity: number; unitId: string; notes?: string }[];
+  } | null;
 }

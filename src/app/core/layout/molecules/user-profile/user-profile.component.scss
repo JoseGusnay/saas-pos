@@ -8,7 +8,7 @@
     padding: 8px 12px;
     border-radius: var(--radius-md);
     margin-top: auto; // Se pega abajo usando flexbox del padre
-    border-top: 1px solid var(--color-border-subtle);
+    border-top: 1px solid var(--color-border-light);
     padding-top: 16px; // Espacio extra visual por el borde
 
     &__content {

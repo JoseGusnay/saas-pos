@@ -1,0 +1,430 @@
+// ─── Form Card (pfc) ──────────────────────────────────────────────────────────
+// Contenedor tipo tarjeta para secciones de formulario
+.pfc {
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+
+  &__kicker {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 14px 20px;
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-muted);
+    border-bottom: 1px solid var(--color-border-light);
+    background: var(--color-bg-canvas);
+
+    ng-icon { font-size: 13px; }
+  }
+
+  &__kicker-badge {
+    margin-left: auto;
+    background: var(--color-accent-primary);
+    color: #fff;
+    font-size: 10px;
+    font-weight: var(--font-weight-bold);
+    padding: 1px 6px;
+    border-radius: 999px;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
+  &__fields {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 20px 20px 24px;
+  }
+
+  &__variant-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--color-border-subtle);
+    transition: background-color var(--transition-fast);
+
+    &:last-child { border-bottom: none; }
+  }
+
+  &__variant-title {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-main);
+    margin: 0 0 2px;
+  }
+
+  &__variant-sub {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    margin: 0;
+  }
+
+  &__pricing-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  &__margin-badge {
+    display: inline-block;
+    padding: 1px 7px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: var(--font-weight-semibold);
+
+    &--good  { background: var(--color-success-bg);      color: var(--color-success-text); }
+    &--warn  { background: rgba(251, 191, 36, 0.12);     color: #D97706; }
+    &--loss  { background: var(--color-danger-bg);       color: var(--color-danger-text); }
+  }
+
+  &__type-locked {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 14px;
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    background: var(--color-bg-canvas);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-md);
+
+    ng-icon { font-size: 13px; flex-shrink: 0; }
+  }
+
+  &__type-note {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    padding: 10px 20px;
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    background: var(--color-bg-canvas);
+    border-top: 1px solid var(--color-border-light);
+
+    ng-icon { font-size: 13px; flex-shrink: 0; }
+  }
+
+  &__fields--combo-price {
+    border-top: 1px solid var(--color-border-light);
+  }
+
+  &--coming-soon .pfc__coming-soon {
+    padding: 32px 20px;
+    text-align: center;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+    p { margin: 0; }
+  }
+
+  // Summary card
+  &__summary {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+  }
+
+  &__summary-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 20px;
+    border-bottom: 1px solid var(--color-border-subtle);
+
+    &:last-child { border-bottom: none; }
+
+    dt {
+      font-size: var(--font-size-xs);
+      color: var(--color-text-muted);
+      font-weight: var(--font-weight-medium);
+    }
+  }
+
+  &__summary-price {
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-main);
+  }
+
+  &__badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: var(--font-weight-semibold);
+
+    &--blue   { background: rgba(79, 70, 229, 0.1);  color: #4F46E5; }
+    &--purple { background: rgba(168, 85, 247, 0.1); color: #A855F7; }
+    &--orange { background: rgba(249, 115, 22, 0.1); color: #F97316; }
+    &--green  { background: rgba(34, 197, 94, 0.1);  color: #22C55E; }
+    &--indigo { background: rgba(79, 70, 229, 0.1);  color: #4F46E5; }
+    &--gray   {
+      background: var(--color-bg-canvas);
+      color: var(--color-text-muted);
+      border: 1px solid var(--color-border-light);
+    }
+  }
+}
+
+// ─── Form Field (pff) ─────────────────────────────────────────────────────────
+// Wrapper individual de campo de formulario
+.pff {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  &__label {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-main);
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  &__req      { color: var(--color-danger-text); }
+  &__optional {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    font-weight: var(--font-weight-regular);
+  }
+
+  &__input {
+    width: 100%;
+    height: 40px;
+    padding: 0 12px;
+    background: var(--color-bg-surface);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-base);
+    color: var(--color-text-main);
+    font-family: inherit;
+    outline: none;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+
+    &::placeholder { color: var(--color-text-muted); }
+
+    &:focus {
+      border-color: var(--color-accent-primary);
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.08);
+    }
+  }
+
+  &__textarea {
+    width: 100%;
+    padding: 10px 12px;
+    background: var(--color-bg-surface);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-base);
+    color: var(--color-text-main);
+    font-family: inherit;
+    outline: none;
+    resize: vertical;
+    line-height: 1.5;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+
+    &::placeholder { color: var(--color-text-muted); }
+
+    &:focus {
+      border-color: var(--color-accent-primary);
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.08);
+    }
+  }
+
+  // ── Radio-style option cards ──────────────────────────────────────────────
+  &__radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  &__radio-option {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 14px;
+    border: 1.5px solid var(--color-border-light);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: border-color var(--transition-fast), background var(--transition-fast);
+
+    input[type="radio"] {
+      margin-top: 3px;
+      accent-color: var(--color-accent-primary);
+      cursor: pointer;
+    }
+
+    &--active {
+      border-color: var(--color-accent-primary);
+      background: rgba(79, 70, 229, 0.04);
+    }
+
+    &:hover:not(&--active) {
+      border-color: var(--color-border-medium);
+      background: var(--color-bg-hover);
+    }
+  }
+
+  &__radio-label {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    strong {
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text-main);
+    }
+
+    small {
+      font-size: var(--font-size-xs);
+      color: var(--color-text-muted);
+    }
+  }
+  // ─────────────────────────────────────────────────────────────────────────
+
+  &--error &__input,
+  &--error &__textarea {
+    border-color: var(--color-danger-text);
+
+    &:focus { box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.08); }
+  }
+
+  &__error {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: var(--font-size-xs);
+    color: var(--color-danger-text);
+
+    ng-icon { font-size: 12px; flex-shrink: 0; }
+  }
+
+  &__section-label {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-muted);
+    margin-bottom: -8px; // acerca visualmente el label a los campos que le siguen
+  }
+
+  &__row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+
+    &--single { grid-template-columns: 1fr; }
+  }
+
+  &__status-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 12px 0;
+    border-top: 1px solid var(--color-border-subtle);
+    margin-top: 4px;
+  }
+
+  &__status-info  { display: flex; flex-direction: column; gap: 2px; }
+  &__status-label {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-main);
+  }
+  &__status-sub   { font-size: var(--font-size-xs); color: var(--color-text-muted); }
+
+  // Price input with $ prefix
+  &__price-wrap {
+    display: flex;
+    align-items: center;
+    background: var(--color-bg-surface);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+
+    &:focus-within {
+      border-color: var(--color-accent-primary);
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.08);
+    }
+
+    .pff--error & {
+      border-color: var(--color-danger-text);
+
+      &:focus-within { box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.08); }
+    }
+  }
+
+  &__currency {
+    padding: 0 10px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-muted);
+    background: var(--color-bg-canvas);
+    border-right: 1px solid var(--color-border-light);
+    user-select: none;
+  }
+
+  &__price-input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 0 12px;
+    height: 40px;
+    font-size: var(--font-size-base);
+    color: var(--color-text-main);
+    font-family: inherit;
+    outline: none;
+
+    &::placeholder { color: var(--color-text-muted); }
+    &::-webkit-inner-spin-button,
+    &::-webkit-outer-spin-button { -webkit-appearance: none; }
+  }
+
+  // Input with leading icon
+  &__icon-input {
+    display: flex;
+    align-items: center;
+    background: var(--color-bg-surface);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+
+    &:focus-within {
+      border-color: var(--color-accent-primary);
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.08);
+    }
+
+    &-ic {
+      padding: 0 10px;
+      color: var(--color-text-muted);
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    .pff__input {
+      border: none;
+      border-radius: 0;
+      padding-left: 0;
+
+      &:focus { box-shadow: none; }
+    }
+  }
+}

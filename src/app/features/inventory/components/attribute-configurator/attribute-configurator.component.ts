@@ -424,12 +424,24 @@ export class AttributeConfiguratorComponent implements OnChanges {
     }
 
     if (this.initialAttributes.length > 0) {
+      // Modo edición: atributos provistos por el padre
       this.confirmedAttributes.set(this.initialAttributes);
       this.selectedIds.set(new Set(this.initialAttributes.map(a => a.attributeTypeId)));
       this.state.set('configured');
     } else {
-      this.state.set('configuring');
-      this.loadSystemAttributes();
+      // Producto nuevo: verificar si la categoría ya tiene atributos guardados
+      this.state.set('loading');
+      this.categorySvc.getCategoryAttributes(this.categoryId).subscribe(saved => {
+        if (saved.length > 0) {
+          this.confirmedAttributes.set(saved);
+          this.selectedIds.set(new Set(saved.map(a => a.attributeTypeId)));
+          this.state.set('configured');
+          this.attributesChange.emit(saved);
+        } else {
+          this.state.set('configuring');
+          this.loadSystemAttributes();
+        }
+      });
     }
   }
 

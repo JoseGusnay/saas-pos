@@ -5,9 +5,11 @@
 
 :root {
     /* 1. Colores de Fondo (Espacios y Contraste) */
-    --color-bg-canvas: #FAFAFA; // Área de trabajo principal (Gris muy suave)
-    --color-bg-surface: #FFFFFF; // Sidebar, Header, Tarjetas (Blanco puro)
-    --color-bg-hover: #F5F5F5; // Hover sutil para enlaces y botones fantasma
+    --color-bg-canvas: #F4F4F5;  // Área de trabajo principal
+    --color-bg-surface: #FFFFFF; // Cards, drawers, modales
+    --color-bg-sidebar: #F9FAFB; // Sidebar — tono entre canvas y surface
+    --color-bg-hover: #EFEFEF;   // Hover sobre sidebar o superficie gris
+    --color-bg-active: rgba(79, 70, 229, 0.07); // Item activo en nav
 
     /* 2. Colores Primarios (Marcas y Acentos) */
     --color-accent-primary: #111111; // Principalmente botones CTA, iconos activos
@@ -15,7 +17,7 @@
 
     /* 3. Colores de Texto (Jerarquía Tópica) */
     --color-text-main: #111111; // Texto principal (Casi negro, más suave para la vista)
-    --color-text-muted: #888888; // Texto secundario, subtítulos, placeholders
+    --color-text-muted: #6B7280; // Texto secundario — ratio 4.6:1 sobre sidebar, pasa WCAG AA
 
     /* 4. Colores de Separación y Bordes */
     --color-border-light: #EAEAEA; // Líneas divisorias de 1px (Header, Sidebar)
@@ -62,10 +64,11 @@
    ========================================================================= */
 [data-theme="dark"] {
     /* Fondo y Superficies Oscuras */
-    --color-bg-canvas: #0A0A0A; // Fondo absoluto
-    --color-bg-surface: #141414; // Paneles, Sidebar, Header
-    --color-bg-hover: rgba(255, 255, 255, 0.05); // Hover táctil
-    --color-bg-active: rgba(255, 255, 255, 0.08);
+    --color-bg-canvas: #0A0A0A;                  // Fondo absoluto
+    --color-bg-surface: #141414;                 // Cards, drawers, modales
+    --color-bg-sidebar: #111111;                 // Sidebar — entre canvas y surface
+    --color-bg-hover: rgba(255, 255, 255, 0.06); // Hover táctil
+    --color-bg-active: rgba(129, 140, 248, 0.12); // Item activo en nav
 
     /* Acentos */
     --color-accent-primary: #FFFFFF;

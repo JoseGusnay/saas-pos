@@ -72,9 +72,10 @@
         @include flex-center;
         width: 32px;
         height: 32px;
-        background-color: var(--color-bg-hover); // Simulamos el logo tipo Vercel/Linear
+        background-color: #4F46E5;
         border-radius: var(--radius-sm);
         flex-shrink: 0;
+        color: #ffffff;
 
         app-icon {
             width: 18px;
@@ -84,11 +85,11 @@
 
     &__name {
         font-size: var(--font-size-sm);
-        font-weight: var(--font-weight-medium);
+        font-weight: var(--font-weight-semibold);
         flex: 1;
         text-align: left;
         @include text-truncate;
-        max-width: 140px; // Evita que un nombre muy largo rompa el sidebar
+        max-width: 140px;
     }
 
     &__chevron {

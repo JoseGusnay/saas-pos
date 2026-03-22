@@ -1,74 +1,58 @@
-<div class="pfp-shell">
+<div class="pfp" [class.pfp--loading]="isLoadingProduct()">
   <form [formGroup]="form" (ngSubmit)="onSubmit()">
 
-    <!-- ═══════ PAGE HEADER (in-flow, no sticky hack needed) ═══════ -->
-    <div class="page-header">
-      <div class="page-header__left">
-        <app-form-button
-          [label]="step() === 2 ? 'Paso anterior' : 'Cancelar'"
-          variant="ghost"
-          icon="lucideArrowLeft"
-          [fullWidth]="false"
-          [disabled]="isSubmitting()"
-          [type]="'button'"
-          (click)="goBack()"
-        ></app-form-button>
-        <div class="page-header__title">
-          <h1>
+    <!-- ═══ HEADER ═══ -->
+    <div class="pfp__header">
+      <div class="pfp__header-left">
+        <button type="button" class="pfp__back-btn" [disabled]="isSubmitting()" (click)="goBack()">
+          <ng-icon name="lucideArrowLeft"></ng-icon>
+          {{ step() === 2 ? 'Paso anterior' : 'Cancelar' }}
+        </button>
+
+        <div class="pfp__title-group">
+          <h1 class="pfp__title">
             {{ isEditing() ? 'Editar Producto' : 'Nuevo Producto' }}
-            <span class="badge"
-                  [class.badge-blue]="typeCtrl.value === 'PHYSICAL'"
-                  [class.badge-purple]="typeCtrl.value === 'SERVICE'">
-              <ng-icon [name]="typeCtrl.value === 'PHYSICAL' ? 'lucidePackage' : 'lucideWrench'"></ng-icon>
-              {{ typeCtrl.value === 'PHYSICAL' ? 'Físico' : 'Servicio' }}
-            </span>
           </h1>
           @if (showVariantStep) {
-            <span class="variant-badge" @fadeSlide>Múltiples variantes</span>
+            <div class="pfp__step-pills" @fadeIn>
+              <span class="pfp__pill" [class.pfp__pill--active]="step() === 1" [class.pfp__pill--done]="step() > 1">
+                <span class="pfp__pill-num">1</span>
+                Datos
+              </span>
+              <span class="pfp__pill-sep"></span>
+              <span class="pfp__pill" [class.pfp__pill--active]="step() === 2">
+                <span class="pfp__pill-num">2</span>
+                Variantes
+              </span>
+            </div>
           }
         </div>
       </div>
 
-      <!-- Step progress — solo cuando hay variantes -->
-      @if (showVariantStep) {
-        <div class="step-progress" @fadeSlide>
-          <div class="step-item" [class.active]="step() === 1" [class.done]="step() > 1">
-            <span class="step-num">1</span>
-            <span class="step-name">Datos</span>
-          </div>
-          <div class="step-connector" [class.filled]="step() > 1"></div>
-          <div class="step-item" [class.active]="step() === 2">
-            <span class="step-num">2</span>
-            <span class="step-name">Variantes</span>
-          </div>
-        </div>
-      }
-
-      <!-- Primary actions -->
-      <div class="page-header__actions" @fadeSlide>
+      <div class="pfp__header-actions">
         @if (!showVariantStep) {
           <app-form-button
-            [label]="isEditing() ? 'Actualizar Producto' : 'Guardar'"
+            [label]="isEditing() ? 'Actualizar' : 'Guardar'"
             [loadingLabel]="uploadProgressLabel() ?? (isEditing() ? 'Actualizando...' : 'Guardando...')"
-            [icon]="isEditing() ? 'lucideCheck' : 'lucideCheck'"
+            icon="lucideCheck"
             [loading]="isSubmitting()"
-            [disabled]="!step1Valid"
+            [disabled]="form.invalid"
             [fullWidth]="false"
           ></app-form-button>
         } @else if (step() === 1) {
           <app-form-button
             label="Continuar"
-            icon="lucideArrowRight"
+            icon="lucideChevronRight"
             [loading]="false"
-            [disabled]="!step1Valid"
+            [disabled]="form.invalid"
             [fullWidth]="false"
-            [type]="'button'"
+            type="button"
             (click)="goToVariantStep()"
           ></app-form-button>
         } @else {
           <app-form-button
-            [label]="isEditing() ? 'Actualizar Producto' : 'Guardar'"
-            [loadingLabel]="uploadProgressLabel() ?? (isEditing() ? 'Actualizando...' : 'Guardando...')"
+            [label]="isEditing() ? 'Actualizar' : 'Guardar'"
+            [loadingLabel]="uploadProgressLabel() ?? 'Guardando...'"
             icon="lucideCheck"
             [loading]="isSubmitting()"
             [disabled]="variants.invalid || variants.length === 0"
@@ -78,520 +62,370 @@
       </div>
     </div>
 
-    <!-- ═══════ STEP 1 : Configuración + Datos ═══════════════════ -->
+    <!-- ═══ STEP 1 ═══ -->
     @if (step() === 1) {
-      <div class="step-pane" @fadeSlide>
-        <div class="split-layout">
+      <div class="pfp__body" @fadeIn>
+        <div class="pfp__layout">
 
-          <!-- LEFT — form fields -->
-          <div class="split-main">
+          <!-- LEFT COLUMN -->
+          <div class="pfp__main">
 
-            <!-- IDENTITY CARD -->
-            <div class="config-card">
-              <div class="card-kicker">
-                <ng-icon name="lucideTag"></ng-icon>
-                Información General
-              </div>
-              <div class="form-stack">
-                <div class="field" [class.error]="form.get('name')?.invalid && form.get('name')?.touched">
-                  <label for="name">Nombre del Producto *</label>
-                  <input id="name" type="text" formControlName="name" autofocus
-                    placeholder="Ej: Coca-Cola, Corte de cabello, Llanta 195/65…">
-                  @if (form.get('name')?.invalid && form.get('name')?.touched) {
-                    <small class="err-msg">
-                      <ng-icon name="lucideAlertCircle"></ng-icon>
-                      El nombre es requerido (mínimo 2 caracteres).
-                    </small>
-                  }
-                </div>
+            <!-- ══ Información General (tipo + campos base) ══ -->
+            <app-product-general-info
+              [typePreset]="typePreset()"
+              [isEditing]="isEditing()"
+              [showBrand]="isPhysical || isRawMaterial"
+              [showSellable]="typeCtrl.value !== 'RAW_MATERIAL'"
+              [showPurchasable]="typeCtrl.value !== 'SERVICE' && typeCtrl.value !== 'COMBO'"
+              [initialCategoryOption]="initialCategoryOption()"
+              [initialBrandOption]="initialBrandOption()"
+              [initialCategoryAttributes]="initialCategoryAttributes()"
+              (attributesChange)="onAttributesConfigured($event)"
+            ></app-product-general-info>
 
-                <div class="field">
-                  <label for="desc">Descripción <span class="optional">Opcional</span></label>
-                  <textarea id="desc" formControlName="description" rows="3"
-                    placeholder="Breve descripción visible en el catálogo…"></textarea>
-                </div>
-
-                <div class="field-row" [class.field-row--single]="isService">
-                  <div class="field" [class.error]="form.get('categoryId')?.invalid && form.get('categoryId')?.touched">
-                    <label>Categoría *</label>
-                    <app-search-select
-                      formControlName="categoryId"
-                      placeholder="Seleccionar categoría…"
-                      searchPlaceholder="Buscar categorías…"
-                      [searchFn]="searchCategoriesFn.bind(this)"
-                      [initialOption]="selectedCategoryOption()"
-                      (selectionChange)="selectedCategoryOption.set($any($event) ?? undefined)">
-                    </app-search-select>
-                    @if (form.get('categoryId')?.invalid && form.get('categoryId')?.touched) {
-                      <small class="err-msg">
-                        <ng-icon name="lucideAlertCircle"></ng-icon>
-                        Selecciona una categoría.
-                      </small>
-                    }
-                  </div>
-                  @if (typeCtrl.value === 'PHYSICAL') {
-                    <div class="field" @fadeSlide>
-                      <label>Marca <span class="optional">Opcional</span></label>
-                      <app-search-select
-                        formControlName="brandId"
-                        placeholder="Seleccionar marca…"
-                        searchPlaceholder="Buscar marcas…"
-                        [searchFn]="searchBrandsFn.bind(this)"
-                        [initialOption]="selectedBrandOption()"
-                        (selectionChange)="selectedBrandOption.set($any($event) ?? undefined)">
-                      </app-search-select>
-                    </div>
-                  }
-                </div>
-
-                <!-- ATTRIBUTE CONFIGURATOR — aparece cuando hay categoría -->
-                @if (form.get('categoryId')?.value) {
-                  <app-attribute-configurator
-                    [categoryId]="form.get('categoryId')?.value"
-                    [initialAttributes]="initialCategoryAttributes()"
-                    (attributesChange)="onAttributesConfigured($event)"
-                  ></app-attribute-configurator>
-                }
-
-                <div class="status-row">
-                  <div>
-                    <p class="status-title">Estado del Producto</p>
-                    <p class="status-sub">
-                      {{ form.get('isActive')?.value ? 'Activo — visible en catálogo y POS.' : 'Inactivo — oculto.' }}
-                    </p>
-                  </div>
-                  <button type="button" class="toggle-switch sm"
-                    [class.on]="form.get('isActive')?.value"
-                    (click)="form.get('isActive')?.setValue(!form.get('isActive')?.value)">
-                    <span class="toggle-thumb"></span>
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <!-- TYPE SELECTOR -->
-            <div class="config-card">
-              <div class="card-kicker">
-                <ng-icon name="lucideZap"></ng-icon>
-                Tipo de Producto
-              </div>
-              <div class="type-selector">
-                <button type="button" class="type-option"
-                  [class.selected]="typeCtrl.value === 'PHYSICAL'"
-                  (click)="selectType('PHYSICAL')">
-                  <div class="type-icon-wrap physical">
-                    <ng-icon name="lucidePackage"></ng-icon>
-                  </div>
-                  <div class="type-text">
-                    <strong>Físico</strong>
-                    <small>Con inventario, stock y presentación</small>
-                  </div>
-                  <div class="type-check">
-                    @if (typeCtrl.value === 'PHYSICAL') { <ng-icon name="lucideCheck"></ng-icon> }
-                  </div>
-                </button>
-
-                <button type="button" class="type-option"
-                  [class.selected]="typeCtrl.value === 'SERVICE'"
-                  (click)="selectType('SERVICE')">
-                  <div class="type-icon-wrap service">
-                    <ng-icon name="lucideWrench"></ng-icon>
-                  </div>
-                  <div class="type-text">
-                    <strong>Servicio</strong>
-                    <small>Sin stock, sin inventario</small>
-                  </div>
-                  <div class="type-check">
-                    @if (typeCtrl.value === 'SERVICE') { <ng-icon name="lucideCheck"></ng-icon> }
-                  </div>
-                </button>
-              </div>
-            </div>
-
-            <!-- VARIANT TOGGLE -->
-            @if (typeCtrl.value === 'PHYSICAL') {
-              <div class="config-card" @fadeSlide>
-                <div class="card-kicker">
+            <!-- ══ PHYSICAL: Variantes y Precio ══ -->
+            @if (isPhysical) {
+              <section class="pfc" @fadeIn>
+                <div class="pfc__kicker">
                   <ng-icon name="lucideLayers"></ng-icon>
-                  Variantes
+                  Variantes y Precio
                 </div>
-                <div class="variant-toggle-row">
-                  <div class="toggle-info">
-                    <p class="toggle-title">¿Tiene múltiples variantes?</p>
-                    <p class="toggle-sub">Tallas, colores, tamaños o precios diferenciados.</p>
+
+                <div class="pfc__variant-toggle">
+                  <div class="pfc__variant-info">
+                    <p class="pfc__variant-title">¿Tiene múltiples variantes?</p>
+                    <p class="pfc__variant-sub">Tallas, colores, tamaños u otras opciones diferenciadas.</p>
                   </div>
-                  <button type="button" class="toggle-switch"
-                    [class.on]="hasVariants.value"
-                    (click)="hasVariants.setValue(!hasVariants.value)">
-                    <span class="toggle-thumb"></span>
-                  </button>
+                  <app-toggle-switch formControlName="hasVariants"></app-toggle-switch>
                 </div>
-              </div>
+
+                @if (!hasVariants.value) {
+                  <div class="pfc__fields" formGroupName="simpleVariant" @fadeIn>
+                    <app-physical-variant-form
+                      [categoryAttributes]="categoryAttributes()"
+                      [productName]="form.get('name')?.value"
+                      [initialTaxOptions]="initialTaxOptions()"
+                      [initialPresentationOption]="initialPresentationOption()"
+                    ></app-physical-variant-form>
+                  </div>
+                }
+              </section>
+
+              <!-- Receta del producto físico simple -->
+              @if (!hasVariants.value && simpleVariant.get('recipe')) {
+                <section class="pfc" @fadeIn>
+                  <div class="pfc__kicker">
+                    <ng-icon name="lucideWrench"></ng-icon>
+                    Receta
+                    <span class="pff__optional" style="margin-left: auto; font-size: var(--font-size-xs);">Opcional</span>
+                  </div>
+                  <div class="pfc__fields">
+                    <app-recipe-builder [recipeGroup]="$any(simpleVariant.get('recipe'))"></app-recipe-builder>
+                  </div>
+                </section>
+              }
             }
 
-            <!-- INLINE PRICING — solo cuando NO tiene variantes -->
-            @if (!hasVariants.value) {
-              <div class="config-card" @fadeSlide formGroupName="simpleVariant">
-                <div class="card-kicker">
-                  <ng-icon name="lucideDollarSign"></ng-icon>
-                  Precio y Datos de Venta
-                  @if (simpleMargin() !== null) {
-                    <span class="margin-badge"
-                      [class.margin--good]="simpleMargin()! >= 20"
-                      [class.margin--warn]="simpleMargin()! > 0 && simpleMargin()! < 20"
-                      [class.margin--loss]="simpleMargin()! <= 0">
-                      {{ simpleMargin()! <= 0 ? 'Pérdida' : 'Margen ' + (simpleMargin()! | number:'1.0-1') + '%' }}
-                    </span>
+            <!-- ══ SERVICE: Configuración del Servicio ══ -->
+            @if (isService) {
+              <section class="pfc" @fadeIn>
+                <div class="pfc__kicker">
+                  <ng-icon name="lucideWrench"></ng-icon>
+                  Configuración del Servicio
+                </div>
+                <div class="pfc__fields" formGroupName="simpleVariant">
+                  <app-service-variant-form
+                    [initialTaxOptions]="initialTaxOptions()"
+                  ></app-service-variant-form>
+                </div>
+              </section>
+            }
+
+            <!-- ══ PHYSICAL / SERVICE: Grupos de modificadores ══ -->
+            @if (isPhysical || isService) {
+              <section class="pfc" @fadeIn>
+                <div class="pfc__kicker">
+                  <ng-icon name="lucideZap"></ng-icon>
+                  Modificadores
+                  @if (modifierGroups.length > 0) {
+                    <span class="pfc__kicker-badge">{{ modifierGroups.length }}</span>
+                  }
+                  <span class="pff__optional" style="margin-left: auto; font-size: var(--font-size-xs);">Opcional</span>
+                </div>
+                <div class="pfc__fields">
+                  <app-modifier-builder [formArray]="modifierGroups"></app-modifier-builder>
+                </div>
+              </section>
+            }
+
+            <!-- ══ COMBO: constructor de componentes ══ -->
+            @if (isCombo) {
+              <section class="pfc" @fadeIn>
+                <div class="pfc__kicker">
+                  <ng-icon name="lucideGift"></ng-icon>
+                  Componentes del Combo
+                  @if (comboItems.length > 0) {
+                    <span class="pfc__kicker-badge">{{ comboItems.length }}</span>
                   }
                 </div>
+                <app-combo-builder
+                  [formArray]="comboItems"
+                  [excludeProductId]="productId() ?? undefined"
+                ></app-combo-builder>
 
-                <!-- Atributos del simple variant (si la categoría los tiene) -->
-                @if (categoryAttributes().length > 0) {
-                  <div class="form-stack" formGroupName="attributes">
-                    @for (cat of categoryAttributes(); track cat.attributeTypeId) {
-                      <div class="field">
-                        <label>
-                          {{ cat.attributeType.name }}
-                          @if (cat.attributeType.unit) { <span class="optional">({{ cat.attributeType.unit }})</span> }
-                          @if (cat.isRequired) { <span style="color:var(--color-danger-text)">*</span> }
-                        </label>
-                        @if (cat.attributeType.dataType === 'NUMBER') {
-                          <input type="number" [formControlName]="cat.attributeTypeId" [placeholder]="cat.attributeType.unit ? 'Ej: 750' : ''">
-                        } @else {
-                          <input type="text" [formControlName]="cat.attributeTypeId" [placeholder]="'Ej: ' + cat.attributeType.name">
-                        }
+                <div class="pfc__fields pfc__fields--combo-price">
+                  <div class="pff">
+                    <label class="pff__label">Modo de Precio <span class="pff__req">*</span></label>
+                    <div class="pff__radio-group">
+                      <label class="pff__radio-option" [class.pff__radio-option--active]="comboPriceModeCtrl.value === 'CALCULATED'">
+                        <input type="radio" formControlName="comboPriceMode" value="CALCULATED">
+                        <span class="pff__radio-label">
+                          <strong>Calculado</strong>
+                          <small>El precio se calcula en caja sumando los componentes</small>
+                        </span>
+                      </label>
+                      <label class="pff__radio-option" [class.pff__radio-option--active]="comboPriceModeCtrl.value === 'FIXED'">
+                        <input type="radio" formControlName="comboPriceMode" value="FIXED">
+                        <span class="pff__radio-label">
+                          <strong>Precio fijo</strong>
+                          <small>El combo tiene un precio de venta específico</small>
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+
+                  @if (isComboPriceFixed) {
+                    <div class="pfc__pricing-row" [formGroup]="simpleVariant">
+                      <app-field-input
+                        formControlName="salePrice"
+                        label="Precio de Venta"
+                        type="number"
+                        placeholder="0.00"
+                        prefix="$"
+                        [required]="true"
+                        [step]="0.01"
+                        [min]="0.01"
+                        [errorMessages]="{ required: 'Precio requerido', min: 'El precio debe ser mayor a 0' }"
+                      ></app-field-input>
+                      <div class="pff">
+                        <label class="pff__label">Impuestos <span class="pff__optional">Opcional</span></label>
+                        <app-search-select
+                          formControlName="taxIds"
+                          placeholder="Seleccionar impuestos…"
+                          searchPlaceholder="Buscar impuestos…"
+                          [multiple]="true"
+                          [searchFn]="searchComboTaxesFn"
+                          [initialOptions]="initialTaxOptions()"
+                          (selectionChange)="onComboTaxChange($event)"
+                        ></app-search-select>
                       </div>
-                    }
-                  </div>
-                }
-
-                <div class="pricing-row">
-                  <div class="price-box primary"
-                       [class.has-error]="simpleVariant.get('salePrice')?.invalid && simpleVariant.get('salePrice')?.touched">
-                    <label>Precio de Venta *</label>
-                    <div class="price-input">
-                      <span class="currency">$</span>
-                      <input type="number" formControlName="salePrice" step="0.01" min="0" placeholder="0.00">
                     </div>
-                    @if (simpleVariant.get('salePrice')?.invalid && simpleVariant.get('salePrice')?.touched) {
-                      <small class="err-msg"><ng-icon name="lucideAlertCircle"></ng-icon> Precio requerido.</small>
-                    }
-                  </div>
-
-                  <div class="price-box secondary">
-                    <label>Costo Neto</label>
-                    <div class="price-input">
-                      <span class="currency">$</span>
-                      <input type="number" formControlName="costPrice" step="0.01" min="0" placeholder="0.00">
-                    </div>
-                  </div>
+                  }
                 </div>
-
-                <div class="field">
-                  <label>Impuestos <span class="optional">Opcional</span></label>
-                  <app-search-select
-                    formControlName="taxIds"
-                    placeholder="Seleccionar impuestos…"
-                    searchPlaceholder="Buscar impuestos…"
-                    [multiple]="true"
-                    [searchFn]="searchTaxesFn.bind(this)"
-                    [initialOptions]="initialTaxOptions()"
-                    (selectionChange)="onTaxSelectionChange($event)">
-                  </app-search-select>
-                </div>
-
-                @if (!isService) {
-                  <div class="field-row" @fadeSlide>
-                    <div class="field">
-                      <label>SKU <span class="optional">Opcional</span></label>
-                      <div class="input-icon-wrap">
-                        <ng-icon name="lucideHash" class="ic"></ng-icon>
-                        <input type="text" formControlName="sku" placeholder="Ej: CAM-ROJO-XL, BEB-001">
-                      </div>
-                    </div>
-                    <div class="field">
-                      <label>Código de Barras <span class="optional">Opcional</span></label>
-                      <app-barcode-field
-                        formControlName="barcode"
-                        [productName]="form.get('name')?.value"
-                        [salePrice]="simpleVariant.get('salePrice')?.value">
-                      </app-barcode-field>
-                    </div>
-                  </div>
-                }
-
-                @if (isService) {
-                  <div class="field" @fadeSlide>
-                    <label>Duración <span class="optional">Opcional</span></label>
-                    <div class="duration-picker">
-                      <div class="duration-presets">
-                        @for (preset of durationPresets; track preset) {
-                          <button type="button" class="duration-chip"
-                            [class.selected]="simpleVariant.get('durationMinutes')?.value === preset"
-                            (click)="simpleVariant.get('durationMinutes')?.setValue(preset)">
-                            {{ durationLabel(preset) }}
-                          </button>
-                        }
-                      </div>
-                      <div class="duration-custom">
-                        <ng-icon name="lucideClock"></ng-icon>
-                        <input type="number" formControlName="durationMinutes" min="1" placeholder="Otro (min)">
-                      </div>
-                    </div>
-                  </div>
-                }
-
-                @if (!isService) {
-                  <div class="tracking-toggles" @fadeSlide>
-                    <label class="tracking-row"
-                      (click)="simpleVariant.get('trackLots')?.setValue(!simpleVariant.get('trackLots')?.value)">
-                      <div class="tracking-toggle-sw" [class.on]="simpleVariant.get('trackLots')?.value">
-                        <span class="tracking-thumb"></span>
-                      </div>
-                      <div>
-                        <span class="tracking-label">Manejo de lotes</span>
-                        <small>Identifica cada entrada de mercancía por lote</small>
-                      </div>
-                    </label>
-                    <label class="tracking-row"
-                      (click)="simpleVariant.get('trackExpiry')?.setValue(!simpleVariant.get('trackExpiry')?.value)">
-                      <div class="tracking-toggle-sw" [class.on]="simpleVariant.get('trackExpiry')?.value">
-                        <span class="tracking-thumb"></span>
-                      </div>
-                      <div>
-                        <span class="tracking-label">Manejo de caducidad</span>
-                        <small>Controla fechas de vencimiento y alertas</small>
-                      </div>
-                    </label>
-
-                    <div class="tracking-limits" [formGroup]="simpleVariant">
-                      <div class="tracking-field">
-                        <label>Stock mínimo <span class="tracking-optional">Opcional</span></label>
-                        <input type="number" formControlName="minimumStock" min="0" placeholder="Ej: 5">
-                        <small>Alerta cuando el stock baje de este valor</small>
-                      </div>
-                      <div class="tracking-field">
-                        <label>Stock máximo <span class="tracking-optional">Opcional</span></label>
-                        <input type="number" formControlName="maximumStock" min="0" placeholder="Ej: 100">
-                        <small>Techo para reorden automático</small>
-                      </div>
-                    </div>
-                  </div>
-                }
-              </div>
+              </section>
             }
-          </div>
 
-          <!-- RIGHT — image + summary aside -->
-          <aside class="split-aside">
-            <div class="config-card image-card">
-              <div class="card-kicker">
-                <ng-icon name="lucideImage"></ng-icon>
+            <!-- ══ RAW_MATERIAL: Inventario y Costo ══ -->
+            @if (isRawMaterial) {
+              <section class="pfc" @fadeIn>
+                <div class="pfc__kicker">
+                  <ng-icon name="lucideLeaf"></ng-icon>
+                  Inventario y Costo
+                </div>
+                <div class="pfc__fields" formGroupName="simpleVariant">
+                  <app-raw-material-form
+                    [productName]="form.get('name')?.value"
+                    [initialUnitOption]="initialUnitOption()"
+                  ></app-raw-material-form>
+                </div>
+              </section>
+
+              @if (simpleVariant.get('recipe')) {
+                <section class="pfc" @fadeIn>
+                  <div class="pfc__kicker">
+                    <ng-icon name="lucideWrench"></ng-icon>
+                    Receta
+                    <span class="pff__optional" style="margin-left: auto; font-size: var(--font-size-xs);">Opcional — para productos semielaborados</span>
+                  </div>
+                  <div class="pfc__fields">
+                    <app-recipe-builder [recipeGroup]="$any(simpleVariant.get('recipe'))"></app-recipe-builder>
+                  </div>
+                </section>
+              }
+            }
+
+          </div><!-- /pfp__main -->
+
+          <!-- RIGHT COLUMN (aside) -->
+          <aside class="pfp__aside">
+
+            <!-- Imagen -->
+            <section class="pfc">
+              <div class="pfc__kicker">
+                <ng-icon name="lucideFolder"></ng-icon>
                 Imagen del Producto
               </div>
-              <label class="image-drop" for="img-upload">
-                @if (isUploadingImage()) {
-                  <div class="img-placeholder">
-                    <ng-icon name="lucideImage"></ng-icon>
-                    <p>Subiendo imagen...</p>
-                  </div>
-                } @else if (imagePreview()) {
-                  <img [src]="imagePreview()" alt="Preview" class="img-preview">
-                  <span class="img-overlay">Cambiar imagen</span>
-                } @else {
-                  <div class="img-placeholder">
-                    <ng-icon name="lucideImage"></ng-icon>
-                    <p>Arrastra o haz clic</p>
-                    <small>PNG, JPG, WEBP · Máx 2MB</small>
-                  </div>
-                }
-              </label>
-              <input id="img-upload" type="file" accept="image/*" hidden (change)="onImageSelected($event)" [disabled]="isSubmitting()">
-            </div>
+              <app-image-upload
+                [previewUrl]="imagePreviewUrl()"
+                [isUploading]="isUploadingImage()"
+                [disabled]="isSubmitting()"
+                (fileSelected)="onImageFileSelected($event)"
+                (removed)="onImageRemoved()"
+              ></app-image-upload>
+            </section>
 
-            <div class="config-card summary-card">
-              <div class="card-kicker">
-                <ng-icon name="lucideSettings2"></ng-icon>
+            <!-- Resumen -->
+            <section class="pfc">
+              <div class="pfc__kicker">
+                <ng-icon name="lucideInfo"></ng-icon>
                 Resumen
               </div>
-              <dl class="summary-list">
-                <div class="summary-row">
+              <dl class="pfc__summary">
+                <div class="pfc__summary-row">
                   <dt>Tipo</dt>
                   <dd>
-                    <span class="badge"
-                      [class.badge-blue]="typeCtrl.value === 'PHYSICAL'"
-                      [class.badge-purple]="typeCtrl.value === 'SERVICE'">
-                      <ng-icon [name]="typeCtrl.value === 'PHYSICAL' ? 'lucidePackage' : 'lucideWrench'"></ng-icon>
-                      {{ typeCtrl.value === 'PHYSICAL' ? 'Físico' : 'Servicio' }}
+                    <span class="pfc__badge"
+                      [class.pfc__badge--blue]="isPhysical"
+                      [class.pfc__badge--purple]="isService"
+                      [class.pfc__badge--orange]="isCombo"
+                      [class.pfc__badge--green]="isRawMaterial">
+                      {{ isPhysical ? 'Físico' : isService ? 'Servicio' : isCombo ? 'Combo' : 'Materia Prima' }}
                     </span>
                   </dd>
                 </div>
-                <div class="summary-row">
-                  <dt>Variantes</dt>
-                  <dd>
-                    <span class="badge"
-                      [class.badge-green]="hasVariants.value"
-                      [class.badge-gray]="!hasVariants.value">
-                      {{ hasVariants.value ? 'Múltiples' : 'Única' }}
-                    </span>
-                  </dd>
-                </div>
-                <div class="summary-row">
+                @if (isPhysical) {
+                  <div class="pfc__summary-row">
+                    <dt>Variantes</dt>
+                    <dd>
+                      <span class="pfc__badge" [class.pfc__badge--indigo]="hasVariants.value" [class.pfc__badge--gray]="!hasVariants.value">
+                        {{ hasVariants.value ? 'Múltiples' : 'Única' }}
+                      </span>
+                    </dd>
+                  </div>
+                }
+                <div class="pfc__summary-row">
                   <dt>Estado</dt>
                   <dd>
-                    <span class="badge"
-                      [class.badge-green]="form.get('isActive')?.value"
-                      [class.badge-gray]="!form.get('isActive')?.value">
+                    <span class="pfc__badge"
+                      [class.pfc__badge--green]="form.get('isActive')?.value"
+                      [class.pfc__badge--gray]="!form.get('isActive')?.value">
                       {{ form.get('isActive')?.value ? 'Activo' : 'Inactivo' }}
                     </span>
                   </dd>
                 </div>
                 @if (!hasVariants.value && simpleVariant.get('salePrice')?.value > 0) {
-                  <div class="summary-row" @fadeSlide>
+                  <div class="pfc__summary-row" @fadeIn>
                     <dt>PVP</dt>
-                    <dd><span class="price-preview">${{ simpleVariant.get('salePrice')?.value | number:'1.2-2' }}</span></dd>
+                    <dd class="pfc__summary-price">${{ simpleVariant.get('salePrice')?.value | number:'1.2-2' }}</dd>
                   </div>
                 }
               </dl>
-            </div>
+            </section>
+
           </aside>
 
-        </div>
+        </div><!-- /pfp__layout -->
       </div>
     }
 
-    <!-- ═══════ STEP 2 : Variantes ════════════════════════════════ -->
+    <!-- ═══ STEP 2: Variantes ═══ -->
     @if (step() === 2 && showVariantStep) {
-      <div class="step-pane" @fadeSlide>
-        <div class="variants-header">
+      <div class="pfp__body" @fadeIn>
+        <div class="pfp__variants-header">
           <div>
-            <h2 class="variants-title">Gestión de Variantes</h2>
-            <p class="variants-sub">
-              Configura precio, SKU e impuestos por cada variante.
-              @if (isService) { Los campos de stock no aplican para servicios. }
-            </p>
+            <h2 class="pfp__variants-title">Gestión de Variantes</h2>
+            <p class="pfp__variants-sub">Configura precio, SKU e impuestos por cada presentación.</p>
           </div>
-          <button type="button" class="btn-add-variant" (click)="addVariant()">
+          <button type="button" class="pfp__add-variant-btn" (click)="addVariant()">
             <ng-icon name="lucidePlus"></ng-icon>
             Añadir Variante
           </button>
         </div>
 
-        <div class="variants-container">
-          @if (variants.length > 0) {
-            <div class="variants-table-wrap">
-              <table class="variants-table">
-                <thead>
-                  <tr>
-                    <th>Nombre de Variante</th>
-                    <th>SKU</th>
-                    <th>PVP</th>
-                    <th class="actions"></th>
-                  </tr>
-                </thead>
-                <tbody formArrayName="variants">
-                  @for (variantForm of variants.controls; track $index) {
-                    <tr [formGroupName]="$index">
-                      <td class="col-name">
-                        <span class="v-name">{{ variantForm.get('name')?.value || 'Sin nombre' }}</span>
-                      </td>
-                      <td class="col-sku">
-                        <span class="v-sku">{{ variantForm.get('sku')?.value || '—' }}</span>
-                      </td>
-                      <td class="col-price">
-                        <span class="v-price">${{ variantForm.get('salePrice')?.value | number:'1.2-2' }}</span>
-                      </td>
-                      <td class="actions">
-                        <div class="row-actions">
-                          <button type="button" class="btn-edit" (click)="$index !== null && openEditDrawer($index)" title="Opciones avanzadas">
-                            <ng-icon name="lucideSettings2"></ng-icon>
-                            <span>Editar</span>
-                          </button>
-                          <button type="button" class="btn-delete" (click)="removeVariant($index)" title="Eliminar" *ngIf="variants.length > 1">
+        @if (variants.length > 0) {
+          <div class="pfp__variants-table-wrap">
+            <table class="pfp__variants-table" formArrayName="variants">
+              <thead>
+                <tr>
+                  <th>Variante</th>
+                  <th>SKU</th>
+                  <th class="text-right">PVP</th>
+                  <th class="text-right">Costo</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (variantForm of variants.controls; track $index) {
+                  <tr [formGroupName]="$index">
+                    <td><span class="pfp__v-name">{{ variantForm.get('name')?.value || 'Sin nombre' }}</span></td>
+                    <td><code class="pfp__v-sku">{{ variantForm.get('sku')?.value || '—' }}</code></td>
+                    <td class="text-right"><span class="pfp__v-price">${{ variantForm.get('salePrice')?.value | number:'1.2-2' }}</span></td>
+                    <td class="text-right"><span class="pfp__v-cost">${{ variantForm.get('costPrice')?.value | number:'1.2-2' }}</span></td>
+                    <td>
+                      <div class="pfp__v-actions">
+                        <button type="button" class="pfp__v-btn pfp__v-btn--edit" (click)="openEditDrawer($index)">
+                          <ng-icon name="lucideSettings2"></ng-icon>
+                          Editar
+                        </button>
+                        @if (variants.length > 1) {
+                          <button type="button" class="pfp__v-btn pfp__v-btn--delete" (click)="removeVariant($index)">
                             <ng-icon name="lucideTrash2"></ng-icon>
                           </button>
-                        </div>
-                      </td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
-            </div>
-          } @else {
-            <div class="variants-empty">
-              <ng-icon name="lucideLayers"></ng-icon>
-              <p>No hay variantes agregadas</p>
-              <button type="button" class="btn-add-variant sm" (click)="addVariant()">
-                Crear primera variante
-              </button>
-            </div>
-          }
-        </div>
+                        }
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <div class="pfp__variants-empty">
+            <ng-icon name="lucideLayers"></ng-icon>
+            <p>No hay variantes configuradas</p>
+            <button type="button" class="pfp__add-variant-btn pfp__add-variant-btn--sm" (click)="addVariant()">
+              Crear primera variante
+            </button>
+          </div>
+        }
       </div>
     }
 
-    <!-- SIDE DRAWER FOR VARIANT DETAILS -->
-  <!-- VARIANT DRAWER (Step 2) -->
-  @if (isDrawerOpen() && draftVariantForm()) {
-    <app-variant-drawer
-      [form]="draftVariantForm()!"
-      [index]="editingVariantIndex() || 0"
-      [isNew]="editingVariantIndex() === null"
-      [isService]="isService"
-      [categoryAttributes]="categoryAttributes()"
-      (saved)="saveDrawerVariant($event)"
-      (cancelled)="handleDrawerClose()"
-    ></app-variant-drawer>
-  }
+    <!-- Variant Drawer -->
+    @if (isDrawerOpen() && draftVariantForm()) {
+      <app-variant-drawer
+        [form]="draftVariantForm()!"
+        [index]="editingVariantIndex() ?? 0"
+        [isNew]="editingVariantIndex() === null"
+        [isService]="isService"
+        [categoryAttributes]="categoryAttributes()"
+        (saved)="saveDrawerVariant($event)"
+        (cancelled)="handleDrawerClose()"
+      ></app-variant-drawer>
+    }
 
-  <!-- CONFIRMATION MODAL: Clear variants when toggling off -->
-  <app-modal
-    [isOpen]="isVariantClearModalOpen()"
-    title="¿Eliminar variantes?"
-    (close)="cancelClearVariants()"
-  >
-    <div modalBody>
-      Tienes <strong>{{ variants.length }} variante{{ variants.length !== 1 ? 's' : '' }} configurada{{ variants.length !== 1 ? 's' : '' }}</strong>. Al desactivar esta opción se eliminarán todas. Esta acción no se puede deshacer.
-    </div>
-    <div modalFooter class="modal-footer-actions">
-      <app-form-button
-        label="Mantener variantes"
-        variant="secondary"
-        [type]="'button'"
-        (click)="cancelClearVariants()"
-      ></app-form-button>
-      <app-form-button
-        label="Sí, eliminar todo"
-        variant="danger"
-        [type]="'button'"
-        (click)="confirmClearVariants()"
-      ></app-form-button>
-    </div>
-  </app-modal>
+    <!-- Modal: Clear variants -->
+    <app-modal [isOpen]="isVariantClearModalOpen()" title="¿Eliminar variantes?" (close)="cancelClearVariants()">
+      <div modalBody>
+        Tienes <strong>{{ variants.length }} variante{{ variants.length !== 1 ? 's' : '' }}</strong> configurada{{ variants.length !== 1 ? 's' : '' }}.
+        Al desactivar esta opción se eliminarán todas. Esta acción no se puede deshacer.
+      </div>
+      <div modalFooter class="pfp__modal-footer">
+        <app-form-button label="Mantener variantes" variant="secondary" type="button" [fullWidth]="false" (click)="cancelClearVariants()"></app-form-button>
+        <app-form-button label="Sí, eliminar todo" variant="danger" type="button" [fullWidth]="false" (click)="confirmClearVariants()"></app-form-button>
+      </div>
+    </app-modal>
 
-  <!-- CONFIRMATION MODAL: Exit Variant Drawer with changes -->
-  <app-modal
-    [isOpen]="isVariantExitModalOpen()"
-    title="Cambios sin guardar"
-    (close)="cancelExitVariant()"
-  >
-    <div modalBody>
-      Tienes cambios en la variante que no has guardado. ¿Estás seguro de que quieres salir? Se perderán los ajustes realizados.
-    </div>
-    <div modalFooter class="modal-footer-actions">
-      <app-form-button
-        label="Continuar editando"
-        variant="secondary"
-        [type]="'button'"
-        (click)="cancelExitVariant()"
-      ></app-form-button>
-      <app-form-button
-        label="Salir sin guardar"
-        variant="danger"
-        [type]="'button'"
-        (click)="confirmExitVariant()"
-      ></app-form-button>
-    </div>
-  </app-modal>
-</form>
+    <!-- Modal: Exit variant drawer with unsaved changes -->
+    <app-modal [isOpen]="isVariantExitModalOpen()" title="Cambios sin guardar" (close)="cancelExitVariant()">
+      <div modalBody>
+        Tienes cambios en la variante que no se han guardado. ¿Deseas salir de todas formas?
+      </div>
+      <div modalFooter class="pfp__modal-footer">
+        <app-form-button label="Continuar editando" variant="secondary" type="button" [fullWidth]="false" (click)="cancelExitVariant()"></app-form-button>
+        <app-form-button label="Salir sin guardar" variant="danger" type="button" [fullWidth]="false" (click)="confirmExitVariant()"></app-form-button>
+      </div>
+    </app-modal>
+
+  </form>
 </div>

@@ -24,6 +24,8 @@ import JsBarcode from 'jsbarcode';
   ]
 })
 export class BarcodeFieldComponent implements AfterViewInit {
+  @Input() label    = '';
+  @Input() optional = false;
   @Input() productName = '';
   @Input() salePrice: number | null = null;
 
