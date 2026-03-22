@@ -96,7 +96,7 @@
     }
 
     <!-- Estado activo -->
-    <div class="pff__toggle-row">
+    <div class="pff__toggle-row" (click)="isActiveToggle.toggle()">
       <div class="pff__toggle-info">
         <span class="pff__toggle-label">Estado del Producto</span>
         <span class="pff__toggle-hint">
@@ -105,28 +105,28 @@
               : 'Inactivo — oculto en catálogo y POS.' }}
         </span>
       </div>
-      <app-toggle-switch formControlName="isActive"></app-toggle-switch>
+      <app-toggle-switch #isActiveToggle formControlName="isActive" (click)="$event.stopPropagation()"></app-toggle-switch>
     </div>
 
     <!-- Se vende -->
     @if (showSellable()) {
-      <div class="pff__toggle-row">
+      <div class="pff__toggle-row" (click)="isSellableToggle.toggle()">
         <div class="pff__toggle-info">
           <span class="pff__toggle-label">Se vende</span>
           <span class="pff__toggle-hint">Aparece en el POS y puede añadirse a ventas.</span>
         </div>
-        <app-toggle-switch formControlName="isSellable"></app-toggle-switch>
+        <app-toggle-switch #isSellableToggle formControlName="isSellable" (click)="$event.stopPropagation()"></app-toggle-switch>
       </div>
     }
 
     <!-- Se compra -->
     @if (showPurchasable()) {
-      <div class="pff__toggle-row">
+      <div class="pff__toggle-row" (click)="isPurchasableToggle.toggle()">
         <div class="pff__toggle-info">
           <span class="pff__toggle-label">Se compra</span>
           <span class="pff__toggle-hint">Puede incluirse en órdenes de compra.</span>
         </div>
-        <app-toggle-switch formControlName="isPurchasable"></app-toggle-switch>
+        <app-toggle-switch #isPurchasableToggle formControlName="isPurchasable" (click)="$event.stopPropagation()"></app-toggle-switch>
       </div>
     }
 

@@ -19,30 +19,30 @@ import { FieldInputComponent } from '../../../../shared/components/ui/field-inpu
     <div class="stc">
 
       <!-- Toggle principal -->
-      <div class="pff__toggle-row">
+      <div class="pff__toggle-row" (click)="stockTrackableToggle.toggle()">
         <div class="pff__toggle-info">
           <span class="pff__toggle-label">Rastrear stock</span>
           <small class="pff__toggle-hint">Controla entradas, salidas y disponibilidad por sucursal</small>
         </div>
-        <app-toggle-switch formControlName="stockTrackable"></app-toggle-switch>
+        <app-toggle-switch #stockTrackableToggle formControlName="stockTrackable" (click)="$event.stopPropagation()"></app-toggle-switch>
       </div>
 
       @if (isTracking) {
         <div class="pff__toggle-group">
-          <div class="pff__toggle-row">
+          <div class="pff__toggle-row" (click)="trackLotsToggle.toggle()">
             <div class="pff__toggle-info">
               <span class="pff__toggle-label">Manejo de lotes</span>
               <small class="pff__toggle-hint">Identifica cada entrada de mercancía por lote único</small>
             </div>
-            <app-toggle-switch formControlName="trackLots"></app-toggle-switch>
+            <app-toggle-switch #trackLotsToggle formControlName="trackLots" (click)="$event.stopPropagation()"></app-toggle-switch>
           </div>
 
-          <div class="pff__toggle-row">
+          <div class="pff__toggle-row" (click)="trackExpiryToggle.toggle()">
             <div class="pff__toggle-info">
               <span class="pff__toggle-label">Control de caducidad</span>
               <small class="pff__toggle-hint">Alerta cuando los lotes estén próximos a vencer</small>
             </div>
-            <app-toggle-switch formControlName="trackExpiry"></app-toggle-switch>
+            <app-toggle-switch #trackExpiryToggle formControlName="trackExpiry" (click)="$event.stopPropagation()"></app-toggle-switch>
           </div>
         </div>
 
