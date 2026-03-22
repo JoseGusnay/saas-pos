@@ -48,7 +48,7 @@ import { map } from 'rxjs';
             </div>
             <div class="header-text">
               <h3>{{ form.get('name')?.value || 'Nueva Variante' }}</h3>
-              <p>ID: {{ isNew ? 'Nueva' : '#' + (index + 1) }} · {{ isService ? 'Servicio' : isRawMaterial ? 'Materia Prima' : 'Producto Físico' }}</p>
+              <p>{{ productName || (isService ? 'Servicio' : isRawMaterial ? 'Materia Prima' : 'Producto Físico') }} · {{ isNew ? 'Nueva variante' : 'Variante #' + (index + 1) }}</p>
             </div>
           </div>
           <button type="button" class="btn-close" (click)="cancel()">
@@ -747,6 +747,7 @@ export class VariantDrawerComponent implements OnInit, OnDestroy {
   @Input() isNew: boolean = false;
   @Input() isService: boolean = false;
   @Input() isRawMaterial: boolean = false;
+  @Input() productName: string = '';
   @Input() categoryAttributes: CategoryAttributeType[] = [];
   @Output() saved = new EventEmitter<FormGroup>();
   @Output() cancelled = new EventEmitter<void>();

@@ -328,9 +328,36 @@
     }
   }
 
+  &__v-name-cell {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
   &__v-name {
     font-weight: var(--font-weight-medium);
     color: var(--color-text-main);
+  }
+
+  &__v-error-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    height: 18px;
+    padding: 0 6px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: var(--font-weight-medium);
+    background: var(--color-danger-bg);
+    color: var(--color-danger-text);
+    white-space: nowrap;
+    flex-shrink: 0;
+
+    ng-icon { font-size: 10px; }
+  }
+
+  &__v-row--error td:first-child {
+    border-left: 2px solid var(--color-danger-text);
   }
 
   &__v-sku {
@@ -407,6 +434,18 @@
 
     &--edit:hover {
       background: var(--color-bg-hover);
+    }
+
+    &--duplicate {
+      color: var(--color-text-muted);
+      border-color: transparent;
+      background: transparent;
+      padding: 5px;
+
+      &:hover {
+        background: var(--color-bg-hover);
+        color: var(--color-accent-primary);
+      }
     }
 
     &--delete {

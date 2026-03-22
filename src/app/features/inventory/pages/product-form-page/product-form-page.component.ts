@@ -16,7 +16,7 @@ import {
   lucideArrowLeft, lucideCheck, lucidePlus, lucideTrash2,
   lucideChevronRight, lucideSettings2, lucideFolder,
   lucideLayers, lucideGift, lucideLeaf,
-  lucideWrench, lucideZap, lucideInfo
+  lucideWrench, lucideZap, lucideInfo, lucideCopy
 } from '@ng-icons/lucide';
 
 import { ProductService } from '../../services/product.service';
@@ -75,7 +75,7 @@ import { forkJoin, of, map } from 'rxjs';
       lucideArrowLeft, lucideCheck, lucidePlus, lucideTrash2,
       lucideFolder, lucideChevronRight, lucideSettings2,
       lucideLayers, lucideGift, lucideLeaf,
-      lucideWrench, lucideZap, lucideInfo
+      lucideWrench, lucideZap, lucideInfo, lucideCopy
     })
   ],
   animations: [
@@ -622,6 +622,26 @@ export class ProductFormPageComponent implements OnInit {
     } else {
       this.variants.removeAt(i);
     }
+  }
+
+  duplicateVariant(index: number) {
+    const source = this.variants.at(index).value;
+    const clone = this.buildVariant(source.attributes ? Object.entries(source.attributes).map(([k, v]) => ({
+      attributeTypeId: k,
+      ...(typeof v === 'number' ? { valueNumber: v } : { valueText: v })
+    })) : []);
+    clone.patchValue({
+      ...source,
+      id: null,
+      name: '',
+      sku: '',
+      barcode: '',
+      imageUrl: null,
+      imagePublicId: null,
+      imageFile: null,
+    });
+    this.variants.push(clone);
+    this.openEditDrawer(this.variants.length - 1);
   }
 
   confirmDeleteVariant() {

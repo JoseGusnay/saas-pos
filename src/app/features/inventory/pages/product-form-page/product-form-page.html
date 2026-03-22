@@ -332,8 +332,20 @@
               </thead>
               <tbody>
                 @for (variantForm of variants.controls; track $index) {
-                  <tr [formGroupName]="$index" [class.pfp__v-row--inactive]="!variantForm.get('isActive')?.value">
-                    <td><span class="pfp__v-name">{{ variantForm.get('name')?.value || 'Sin nombre' }}</span></td>
+                  <tr [formGroupName]="$index"
+                    [class.pfp__v-row--inactive]="!variantForm.get('isActive')?.value"
+                    [class.pfp__v-row--error]="variantForm.invalid && variantForm.touched">
+                    <td>
+                      <div class="pfp__v-name-cell">
+                        <span class="pfp__v-name">{{ variantForm.get('name')?.value || 'Sin nombre' }}</span>
+                        @if (variantForm.invalid && variantForm.touched) {
+                          <span class="pfp__v-error-badge">
+                            <ng-icon name="lucideInfo"></ng-icon>
+                            Incompleta
+                          </span>
+                        }
+                      </div>
+                    </td>
                     <td><code class="pfp__v-sku">{{ variantForm.get('sku')?.value || '—' }}</code></td>
                     <td class="text-right">
                       @if (isRawMaterial) {
@@ -353,6 +365,9 @@
                         <button type="button" class="pfp__v-btn pfp__v-btn--edit" (click)="openEditDrawer($index)">
                           <ng-icon name="lucideSettings2"></ng-icon>
                           Editar
+                        </button>
+                        <button type="button" class="pfp__v-btn pfp__v-btn--duplicate" (click)="duplicateVariant($index)" title="Duplicar variante">
+                          <ng-icon name="lucideCopy"></ng-icon>
                         </button>
                         @if (variants.length > 1) {
                           <button type="button" class="pfp__v-btn pfp__v-btn--delete" (click)="removeVariant($index)">
@@ -386,6 +401,7 @@
         [isNew]="editingVariantIndex() === null"
         [isService]="isService"
         [isRawMaterial]="isRawMaterial"
+        [productName]="form.get('name')?.value"
         [categoryAttributes]="categoryAttributes()"
         (saved)="saveDrawerVariant($event)"
         (cancelled)="handleDrawerClose()"
