@@ -128,6 +128,8 @@ export class ProductFormPageComponent implements OnInit {
   draftVariantForm = signal<FormGroup | null>(null);
   isVariantExitModalOpen = signal(false);
   isVariantClearModalOpen = signal(false);
+  isVariantDeleteModalOpen = signal(false);
+  variantDeleteIndex = signal<number | null>(null);
 
   step = signal<1 | 2>(1);
 
@@ -390,10 +392,6 @@ export class ProductFormPageComponent implements OnInit {
           { sku: '', barcode: '', presentationId: '', trackLots: false, trackExpiry: false, stockTrackable: false },
           { emitEvent: false }
         );
-        if (this.hasVariants.value) {
-          this.hasVariants.setValue(false, { emitEvent: false });
-          this.variants.clear();
-        }
         this.form.patchValue({ isPurchasable: false }, { emitEvent: false });
       } else if (type === 'COMBO') {
         this.simpleVariant.patchValue(
@@ -557,12 +555,15 @@ export class ProductFormPageComponent implements OnInit {
       name: [existingVariant?.name ?? '', Validators.required],
       sku: [existingVariant?.sku ?? ''],
       barcode: [existingVariant?.barcode ?? ''],
+      isActive: [existingVariant?.isActive ?? true],
       presentationId: [existingVariant?.presentationId ?? ''],
-      baseUnitId: [existingVariant?.baseUnitId ?? ''],
+      baseUnitId: [existingVariant?.baseUnitId ?? '',
+        this.typeCtrl.value === 'RAW_MATERIAL' ? [Validators.required] : []],
       conversionFactor: [existingVariant?.conversionFactor ?? 1, [Validators.min(0.0001)]],
       costPrice: [this.round2(existingVariant?.costPrice ?? 0), [Validators.min(0)]],
-      salePrice: [this.round2(existingVariant?.salePrice ?? null), [Validators.required, Validators.min(0)]],
-      stockTrackable: [existingVariant?.stockTrackable ?? true],
+      salePrice: [this.round2(existingVariant?.salePrice ?? null),
+        this.typeCtrl.value === 'RAW_MATERIAL' ? [Validators.min(0)] : [Validators.required, Validators.min(0)]],
+      stockTrackable: [existingVariant?.stockTrackable ?? (this.typeCtrl.value !== 'SERVICE')],
       trackLots: [existingVariant?.trackLots ?? false],
       trackExpiry: [existingVariant?.trackExpiry ?? false],
       durationMinutes: [existingVariant?.durationMinutes ?? null],
@@ -574,7 +575,16 @@ export class ProductFormPageComponent implements OnInit {
       imageFile: [null],
       attributes: this.fb.group(attrsGroup),
       recipe: this.buildRecipeGroup(existingVariant?.recipe),
-    });
+    }, { validators: this.stockMinMaxValidator });
+  }
+
+  private stockMinMaxValidator(group: import('@angular/forms').AbstractControl) {
+    const min = group.get('minimumStock')?.value;
+    const max = group.get('maximumStock')?.value;
+    if (min != null && max != null && Number(max) < Number(min)) {
+      return { minExceedsMax: true };
+    }
+    return null;
   }
 
   buildRecipeGroup(existing?: any): FormGroup {
@@ -604,7 +614,26 @@ export class ProductFormPageComponent implements OnInit {
   }
 
   removeVariant(i: number) {
-    if (this.variants.length > 1) this.variants.removeAt(i);
+    if (this.variants.length <= 1) return;
+    const variantId = this.variants.at(i).get('id')?.value;
+    if (this.isEditing() && variantId) {
+      this.variantDeleteIndex.set(i);
+      this.isVariantDeleteModalOpen.set(true);
+    } else {
+      this.variants.removeAt(i);
+    }
+  }
+
+  confirmDeleteVariant() {
+    const i = this.variantDeleteIndex();
+    if (i !== null) this.variants.removeAt(i);
+    this.isVariantDeleteModalOpen.set(false);
+    this.variantDeleteIndex.set(null);
+  }
+
+  cancelDeleteVariant() {
+    this.isVariantDeleteModalOpen.set(false);
+    this.variantDeleteIndex.set(null);
   }
 
   openEditDrawer(index: number) {
@@ -839,8 +868,12 @@ export class ProductFormPageComponent implements OnInit {
 
   private mapVariant(v: any) {
     const attributeValues = this.buildAttributeValues(v.attributes);
+    const type = this.typeCtrl.value;
+    const salePrice = type === 'RAW_MATERIAL' ? 0 : Number(v.salePrice);
+    const stockTrackable = type === 'SERVICE' ? false : (v.stockTrackable ?? true);
     return {
       id: v.id || undefined,
+      isActive: v.isActive ?? true,
       name: v.name,
       sku: v.sku || undefined,
       barcode: v.barcode || undefined,
@@ -848,12 +881,12 @@ export class ProductFormPageComponent implements OnInit {
       baseUnitId: v.baseUnitId || undefined,
       conversionFactor: v.conversionFactor ? Number(v.conversionFactor) : undefined,
       costPrice: Number(v.costPrice),
-      salePrice: Number(v.salePrice),
+      salePrice,
       taxIds: v.taxIds?.length ? v.taxIds : undefined,
-      stockTrackable: v.stockTrackable ?? true,
-      trackLots: v.stockTrackable ? (v.trackLots ?? false) : false,
-      trackExpiry: v.stockTrackable ? (v.trackExpiry ?? false) : false,
-      durationMinutes: undefined, // durationMinutes es exclusivo de SERVICE; PHYSICAL nunca lo envía
+      stockTrackable,
+      trackLots: stockTrackable ? (v.trackLots ?? false) : false,
+      trackExpiry: stockTrackable ? (v.trackExpiry ?? false) : false,
+      durationMinutes: type === 'SERVICE' && v.durationMinutes ? Number(v.durationMinutes) : undefined,
       minimumStock: (v.stockTrackable && v.minimumStock != null) ? Number(v.minimumStock) : null,
       maximumStock: (v.stockTrackable && v.maximumStock != null) ? Number(v.maximumStock) : null,
       imageUrl: v.imageUrl || undefined,

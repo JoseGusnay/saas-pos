@@ -94,6 +94,12 @@
         font-size: 11px;
       }
     }
+
+    &--discount {
+      background: rgba(239, 68, 68, 0.08);
+      color: var(--color-danger-text, #ef4444);
+      border-color: transparent;
+    }
   }
 
   &__group-card-actions {

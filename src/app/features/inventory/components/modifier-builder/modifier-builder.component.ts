@@ -217,7 +217,7 @@ export class ModifierBuilderComponent implements OnInit, OnDestroy {
     const sortOrder = this.getOptions(this.formArray.at(groupIndex)).length;
     const draft = this.fb.group({
       name: ['', [Validators.required, Validators.maxLength(100)]],
-      priceAdjustment: [0, [Validators.min(0)]],
+      priceAdjustment: [0],
       variantId: [null],
       variantName: [''],
       isDefault: [false],
@@ -235,13 +235,6 @@ export class ModifierBuilderComponent implements OnInit, OnDestroy {
   }
 
   private _setupOptionSubscriptions(opt: FormGroup, gi: number, oi: number | null) {
-    // Asegurar precio no negativo
-    const priceCtrl = opt.get('priceAdjustment')!;
-    if (!priceCtrl.hasValidator(Validators.min(0))) {
-      priceCtrl.addValidators(Validators.min(0));
-      priceCtrl.updateValueAndValidity({ emitEvent: false });
-    }
-
     // Solo una opción predeterminada a la vez
     this.isDefaultSub = opt.get('isDefault')!.valueChanges
       .pipe(takeUntil(this.destroy$))

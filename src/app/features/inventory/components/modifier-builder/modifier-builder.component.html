@@ -131,7 +131,9 @@
               <span class="mb__opt-card-name">{{ optCtrl.get('name')?.value || 'Sin nombre' }}</span>
               <div class="mb__opt-card-badges">
                 @if (optCtrl.get('priceAdjustment')?.value) {
-                  <span class="mb__badge">+${{ optCtrl.get('priceAdjustment')?.value }}</span>
+                  <span class="mb__badge" [class.mb__badge--discount]="optCtrl.get('priceAdjustment')?.value < 0">
+                    {{ optCtrl.get('priceAdjustment')?.value >= 0 ? '+' : '' }}${{ optCtrl.get('priceAdjustment')?.value }}
+                  </span>
                 }
                 @if (optCtrl.get('isDefault')?.value) {
                   <span class="mb__badge mb__badge--default">Predeterminado</span>
@@ -182,9 +184,8 @@
         placeholder="0.00"
         prefix="$"
         [step]="0.01"
-        [min]="0"
         [optional]="true"
-        [errorMessages]="{ min: 'El precio no puede ser negativo' }"
+        hint="Usa valores negativos para descuentos (ej: -0.50)"
       ></app-field-input>
 
       <div class="mb__drawer-toggle-row">

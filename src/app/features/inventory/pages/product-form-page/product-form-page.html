@@ -83,62 +83,65 @@
               (attributesChange)="onAttributesConfigured($event)"
             ></app-product-general-info>
 
-            <!-- ══ PHYSICAL: Variantes y Precio ══ -->
-            @if (isPhysical) {
+            <!-- ══ PHYSICAL / SERVICE / RAW_MATERIAL: Variantes ══ -->
+            @if (isPhysical || isService || isRawMaterial) {
               <section class="pfc" @fadeIn>
                 <div class="pfc__kicker">
                   <ng-icon name="lucideLayers"></ng-icon>
-                  Variantes y Precio
+                  {{ isService ? 'Configuración del Servicio' : isRawMaterial ? 'Inventario y Costo' : 'Variantes y Precio' }}
                 </div>
 
                 <div class="pfc__variant-toggle">
                   <div class="pfc__variant-info">
                     <p class="pfc__variant-title">¿Tiene múltiples variantes?</p>
-                    <p class="pfc__variant-sub">Tallas, colores, tamaños u otras opciones diferenciadas.</p>
+                    <p class="pfc__variant-sub">
+                      {{ isService ? 'Diferentes niveles o modalidades del servicio.' :
+                         isRawMaterial ? 'Diferentes presentaciones o formatos del insumo.' :
+                         'Tallas, colores, tamaños u otras opciones diferenciadas.' }}
+                    </p>
                   </div>
                   <app-toggle-switch formControlName="hasVariants"></app-toggle-switch>
                 </div>
 
                 @if (!hasVariants.value) {
                   <div class="pfc__fields" formGroupName="simpleVariant" @fadeIn>
-                    <app-physical-variant-form
-                      [categoryAttributes]="categoryAttributes()"
-                      [productName]="form.get('name')?.value"
-                      [initialTaxOptions]="initialTaxOptions()"
-                      [initialPresentationOption]="initialPresentationOption()"
-                    ></app-physical-variant-form>
+                    @if (isPhysical) {
+                      <app-physical-variant-form
+                        [categoryAttributes]="categoryAttributes()"
+                        [productName]="form.get('name')?.value"
+                        [initialTaxOptions]="initialTaxOptions()"
+                        [initialPresentationOption]="initialPresentationOption()"
+                      ></app-physical-variant-form>
+                    } @else if (isService) {
+                      <app-service-variant-form
+                        [initialTaxOptions]="initialTaxOptions()"
+                      ></app-service-variant-form>
+                    } @else if (isRawMaterial) {
+                      <app-raw-material-form
+                        [categoryAttributes]="categoryAttributes()"
+                        [productName]="form.get('name')?.value"
+                        [initialUnitOption]="initialUnitOption()"
+                      ></app-raw-material-form>
+                    }
                   </div>
                 }
               </section>
 
-              <!-- Receta del producto físico simple -->
-              @if (!hasVariants.value && simpleVariant.get('recipe')) {
+              <!-- Receta del producto simple (PHYSICAL / RAW_MATERIAL) -->
+              @if (!hasVariants.value && (isPhysical || isRawMaterial) && simpleVariant.get('recipe')) {
                 <section class="pfc" @fadeIn>
                   <div class="pfc__kicker">
                     <ng-icon name="lucideWrench"></ng-icon>
                     Receta
-                    <span class="pff__optional" style="margin-left: auto; font-size: var(--font-size-xs);">Opcional</span>
+                    <span class="pff__optional" style="margin-left: auto; font-size: var(--font-size-xs);">
+                      Opcional{{ isRawMaterial ? ' — para productos semielaborados' : '' }}
+                    </span>
                   </div>
                   <div class="pfc__fields">
                     <app-recipe-builder [recipeGroup]="$any(simpleVariant.get('recipe'))"></app-recipe-builder>
                   </div>
                 </section>
               }
-            }
-
-            <!-- ══ SERVICE: Configuración del Servicio ══ -->
-            @if (isService) {
-              <section class="pfc" @fadeIn>
-                <div class="pfc__kicker">
-                  <ng-icon name="lucideWrench"></ng-icon>
-                  Configuración del Servicio
-                </div>
-                <div class="pfc__fields" formGroupName="simpleVariant">
-                  <app-service-variant-form
-                    [initialTaxOptions]="initialTaxOptions()"
-                  ></app-service-variant-form>
-                </div>
-              </section>
             }
 
             <!-- ══ PHYSICAL / SERVICE: Grupos de modificadores ══ -->
@@ -225,35 +228,6 @@
               </section>
             }
 
-            <!-- ══ RAW_MATERIAL: Inventario y Costo ══ -->
-            @if (isRawMaterial) {
-              <section class="pfc" @fadeIn>
-                <div class="pfc__kicker">
-                  <ng-icon name="lucideLeaf"></ng-icon>
-                  Inventario y Costo
-                </div>
-                <div class="pfc__fields" formGroupName="simpleVariant">
-                  <app-raw-material-form
-                    [categoryAttributes]="categoryAttributes()"
-                    [productName]="form.get('name')?.value"
-                    [initialUnitOption]="initialUnitOption()"
-                  ></app-raw-material-form>
-                </div>
-              </section>
-
-              @if (simpleVariant.get('recipe')) {
-                <section class="pfc" @fadeIn>
-                  <div class="pfc__kicker">
-                    <ng-icon name="lucideWrench"></ng-icon>
-                    Receta
-                    <span class="pff__optional" style="margin-left: auto; font-size: var(--font-size-xs);">Opcional — para productos semielaborados</span>
-                  </div>
-                  <div class="pfc__fields">
-                    <app-recipe-builder [recipeGroup]="$any(simpleVariant.get('recipe'))"></app-recipe-builder>
-                  </div>
-                </section>
-              }
-            }
 
           </div><!-- /pfp__main -->
 
@@ -294,7 +268,7 @@
                     </span>
                   </dd>
                 </div>
-                @if (isPhysical) {
+                @if (isPhysical || isService || isRawMaterial) {
                   <div class="pfc__summary-row">
                     <dt>Variantes</dt>
                     <dd>
@@ -352,16 +326,28 @@
                   <th>SKU</th>
                   <th class="text-right">PVP</th>
                   <th class="text-right">Costo</th>
+                  <th>Estado</th>
                   <th></th>
                 </tr>
               </thead>
               <tbody>
                 @for (variantForm of variants.controls; track $index) {
-                  <tr [formGroupName]="$index">
+                  <tr [formGroupName]="$index" [class.pfp__v-row--inactive]="!variantForm.get('isActive')?.value">
                     <td><span class="pfp__v-name">{{ variantForm.get('name')?.value || 'Sin nombre' }}</span></td>
                     <td><code class="pfp__v-sku">{{ variantForm.get('sku')?.value || '—' }}</code></td>
-                    <td class="text-right"><span class="pfp__v-price">${{ variantForm.get('salePrice')?.value | number:'1.2-2' }}</span></td>
+                    <td class="text-right">
+                      @if (isRawMaterial) {
+                        <span class="pfp__v-price pfp__v-price--na">N/A</span>
+                      } @else {
+                        <span class="pfp__v-price">${{ variantForm.get('salePrice')?.value | number:'1.2-2' }}</span>
+                      }
+                    </td>
                     <td class="text-right"><span class="pfp__v-cost">${{ variantForm.get('costPrice')?.value | number:'1.2-2' }}</span></td>
+                    <td>
+                      <span class="pfp__v-status" [class.pfp__v-status--active]="variantForm.get('isActive')?.value">
+                        {{ variantForm.get('isActive')?.value ? 'Activa' : 'Inactiva' }}
+                      </span>
+                    </td>
                     <td>
                       <div class="pfp__v-actions">
                         <button type="button" class="pfp__v-btn pfp__v-btn--edit" (click)="openEditDrawer($index)">
@@ -399,6 +385,7 @@
         [index]="editingVariantIndex() ?? 0"
         [isNew]="editingVariantIndex() === null"
         [isService]="isService"
+        [isRawMaterial]="isRawMaterial"
         [categoryAttributes]="categoryAttributes()"
         (saved)="saveDrawerVariant($event)"
         (cancelled)="handleDrawerClose()"
@@ -414,6 +401,18 @@
       <div modalFooter class="pfp__modal-footer">
         <app-form-button label="Mantener variantes" variant="secondary" type="button" [fullWidth]="false" (click)="cancelClearVariants()"></app-form-button>
         <app-form-button label="Sí, eliminar todo" variant="danger" type="button" [fullWidth]="false" (click)="confirmClearVariants()"></app-form-button>
+      </div>
+    </app-modal>
+
+    <!-- Modal: Delete existing variant -->
+    <app-modal [isOpen]="isVariantDeleteModalOpen()" title="¿Eliminar variante?" (close)="cancelDeleteVariant()">
+      <div modalBody>
+        Esta variante ya existe en el sistema. Al guardar el producto, la variante será <strong>desactivada permanentemente</strong>
+        y su historial de stock quedará conservado pero inaccesible. Esta acción no se puede deshacer.
+      </div>
+      <div modalFooter class="pfp__modal-footer">
+        <app-form-button label="Cancelar" variant="secondary" type="button" [fullWidth]="false" (click)="cancelDeleteVariant()"></app-form-button>
+        <app-form-button label="Sí, eliminar variante" variant="danger" type="button" [fullWidth]="false" (click)="confirmDeleteVariant()"></app-form-button>
       </div>
     </app-modal>
 

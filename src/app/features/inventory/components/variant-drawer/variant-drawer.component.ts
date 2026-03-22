@@ -48,7 +48,7 @@ import { map } from 'rxjs';
             </div>
             <div class="header-text">
               <h3>{{ form.get('name')?.value || 'Nueva Variante' }}</h3>
-              <p>ID: {{ isNew ? 'Nueva' : '#' + (index + 1) }} · {{ isService ? 'Servicio' : 'Producto Físico' }}</p>
+              <p>ID: {{ isNew ? 'Nueva' : '#' + (index + 1) }} · {{ isService ? 'Servicio' : isRawMaterial ? 'Materia Prima' : 'Producto Físico' }}</p>
             </div>
           </div>
           <button type="button" class="btn-close" (click)="cancel()">
@@ -121,6 +121,18 @@ import { map } from 'rxjs';
                   </div>
                 </div>
               }
+
+              <!-- Variante activa -->
+              <label class="toggle-row">
+                <div class="toggle-switch-sm" [class.on]="form.get('isActive')?.value"
+                  (click)="form.get('isActive')?.setValue(!form.get('isActive')?.value)">
+                  <span class="toggle-thumb-sm"></span>
+                </div>
+                <div>
+                  <span class="toggle-label">Variante activa</span>
+                  <small>Las variantes inactivas no aparecen en el punto de venta</small>
+                </div>
+              </label>
 
               <!-- Imagen de variante -->
               <div class="field">
@@ -226,37 +238,52 @@ import { map } from 'rxjs';
               <div class="section-kicker"><ng-icon name="lucideBoxes"></ng-icon> Trazabilidad</div>
               <div class="form-stack">
                 <label class="toggle-row">
-                  <div class="toggle-switch-sm" [class.on]="form.get('trackLots')?.value"
-                    (click)="form.get('trackLots')?.setValue(!form.get('trackLots')?.value)">
+                  <div class="toggle-switch-sm" [class.on]="form.get('stockTrackable')?.value"
+                    (click)="toggleStockTrackable()">
                     <span class="toggle-thumb-sm"></span>
                   </div>
                   <div>
-                    <span class="toggle-label">Manejo de lotes</span>
-                    <small>Permite identificar cada entrada de mercancía por lote</small>
-                  </div>
-                </label>
-                <label class="toggle-row">
-                  <div class="toggle-switch-sm" [class.on]="form.get('trackExpiry')?.value"
-                    (click)="form.get('trackExpiry')?.setValue(!form.get('trackExpiry')?.value)">
-                    <span class="toggle-thumb-sm"></span>
-                  </div>
-                  <div>
-                    <span class="toggle-label">Manejo de caducidad</span>
-                    <small>Controla fechas de vencimiento y alertas de expiración</small>
+                    <span class="toggle-label">Rastrear stock</span>
+                    <small>Descuenta unidades al vender y permite gestionar inventario</small>
                   </div>
                 </label>
 
                 @if (form.get('stockTrackable')?.value) {
+                  <label class="toggle-row">
+                    <div class="toggle-switch-sm" [class.on]="form.get('trackLots')?.value"
+                      (click)="form.get('trackLots')?.setValue(!form.get('trackLots')?.value)">
+                      <span class="toggle-thumb-sm"></span>
+                    </div>
+                    <div>
+                      <span class="toggle-label">Manejo de lotes</span>
+                      <small>Permite identificar cada entrada de mercancía por lote</small>
+                    </div>
+                  </label>
+                  <label class="toggle-row">
+                    <div class="toggle-switch-sm" [class.on]="form.get('trackExpiry')?.value"
+                      (click)="form.get('trackExpiry')?.setValue(!form.get('trackExpiry')?.value)">
+                      <span class="toggle-thumb-sm"></span>
+                    </div>
+                    <div>
+                      <span class="toggle-label">Manejo de caducidad</span>
+                      <small>Controla fechas de vencimiento y alertas de expiración</small>
+                    </div>
+                  </label>
+
                   <div class="stock-limits">
                     <div class="field">
                       <label>Stock mínimo <span class="optional">Opcional</span></label>
                       <input type="number" formControlName="minimumStock" min="0" placeholder="Ej: 5">
                       <small class="field-hint">Alerta cuando el stock baje de este valor</small>
                     </div>
-                    <div class="field">
+                    <div class="field" [class.error]="form.hasError('minExceedsMax') && form.get('maximumStock')?.touched">
                       <label>Stock máximo <span class="optional">Opcional</span></label>
                       <input type="number" formControlName="maximumStock" min="0" placeholder="Ej: 100">
-                      <small class="field-hint">Techo para reorden automático</small>
+                      @if (form.hasError('minExceedsMax') && form.get('maximumStock')?.touched) {
+                        <small class="err-msg"><ng-icon name="lucideAlertCircle"></ng-icon> El máximo debe ser mayor al mínimo</small>
+                      } @else {
+                        <small class="field-hint">Techo para reorden automático</small>
+                      }
                     </div>
                   </div>
                 }
@@ -268,21 +295,23 @@ import { map } from 'rxjs';
           <div class="section-card">
             <div class="section-kicker">
               <ng-icon name="lucideDollarSign"></ng-icon> Precios
-              @if (margin() !== null) {
+              @if (!isRawMaterial && margin() !== null) {
                 <span class="margin-badge" [class.margin--good]="margin()! >= 20" [class.margin--warn]="margin()! > 0 && margin()! < 20" [class.margin--loss]="margin()! <= 0">
                   {{ margin()! <= 0 ? 'Pérdida' : 'Margen ' + (margin()! | number:'1.0-1') + '%' }}
                 </span>
               }
             </div>
 
-            <div class="pricing-split">
-              <div class="price-field" [class.error]="form.get('salePrice')?.invalid && form.get('salePrice')?.touched">
-                <label>PVP (Final) *</label>
-                <div class="price-input">
-                  <span class="currency">$</span>
-                  <input type="number" formControlName="salePrice" step="0.01">
+            <div [class.pricing-split]="!isRawMaterial">
+              @if (!isRawMaterial) {
+                <div class="price-field" [class.error]="form.get('salePrice')?.invalid && form.get('salePrice')?.touched">
+                  <label>PVP (Final) *</label>
+                  <div class="price-input">
+                    <span class="currency">$</span>
+                    <input type="number" formControlName="salePrice" step="0.01">
+                  </div>
                 </div>
-              </div>
+              }
               <div class="price-field">
                 <label>Costo Neto</label>
                 <div class="price-input">
@@ -717,6 +746,7 @@ export class VariantDrawerComponent implements OnInit, OnDestroy {
   @Input() index: number = 0;
   @Input() isNew: boolean = false;
   @Input() isService: boolean = false;
+  @Input() isRawMaterial: boolean = false;
   @Input() categoryAttributes: CategoryAttributeType[] = [];
   @Output() saved = new EventEmitter<FormGroup>();
   @Output() cancelled = new EventEmitter<void>();
@@ -778,6 +808,18 @@ export class VariantDrawerComponent implements OnInit, OnDestroy {
     reader.readAsDataURL(file);
   }
 
+  toggleStockTrackable() {
+    const ctrl = this.form.get('stockTrackable')!;
+    const next = !ctrl.value;
+    ctrl.setValue(next);
+    if (!next) {
+      this.form.get('trackLots')?.setValue(false);
+      this.form.get('trackExpiry')?.setValue(false);
+      this.form.get('minimumStock')?.setValue(null);
+      this.form.get('maximumStock')?.setValue(null);
+    }
+  }
+
   cancel() {
     this.cancelled.emit();
   }
@@ -833,7 +875,7 @@ export class VariantDrawerComponent implements OnInit, OnDestroy {
   }
 
   searchUnitsFn(query: string, page: number) {
-    return this.unitsService.findAll({ search: query, page, limit: 8, onlyActive: true }).pipe(
+    return this.unitsService.findAll({ search: query, page, limit: 8, onlyActive: true, type: this.isService ? 'UNIT' : undefined }).pipe(
       map(res => ({
         data: res.data.map((u: any) => ({ value: u.id, label: `${u.name} (${u.abbreviation})` })),
         hasMore: res.data.length === 8
