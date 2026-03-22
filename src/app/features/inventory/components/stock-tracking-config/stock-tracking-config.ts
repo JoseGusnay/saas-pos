@@ -19,28 +19,28 @@ import { FieldInputComponent } from '../../../../shared/components/ui/field-inpu
     <div class="stc">
 
       <!-- Toggle principal -->
-      <div class="stc__row stc__row--main">
-        <div class="stc__row-info">
-          <span class="stc__row-label">Rastrear stock</span>
-          <small class="stc__row-hint">Controla entradas, salidas y disponibilidad por sucursal</small>
+      <div class="pff__toggle-row">
+        <div class="pff__toggle-info">
+          <span class="pff__toggle-label">Rastrear stock</span>
+          <small class="pff__toggle-hint">Controla entradas, salidas y disponibilidad por sucursal</small>
         </div>
         <app-toggle-switch formControlName="stockTrackable"></app-toggle-switch>
       </div>
 
       @if (isTracking) {
-        <div class="stc__toggles">
-          <div class="stc__row">
-            <div class="stc__row-info">
-              <span class="stc__row-label">Manejo de lotes</span>
-              <small class="stc__row-hint">Identifica cada entrada de mercancía por lote único</small>
+        <div class="pff__toggle-group">
+          <div class="pff__toggle-row">
+            <div class="pff__toggle-info">
+              <span class="pff__toggle-label">Manejo de lotes</span>
+              <small class="pff__toggle-hint">Identifica cada entrada de mercancía por lote único</small>
             </div>
             <app-toggle-switch formControlName="trackLots"></app-toggle-switch>
           </div>
 
-          <div class="stc__row">
-            <div class="stc__row-info">
-              <span class="stc__row-label">Control de caducidad</span>
-              <small class="stc__row-hint">Alerta cuando los lotes estén próximos a vencer</small>
+          <div class="pff__toggle-row">
+            <div class="pff__toggle-info">
+              <span class="pff__toggle-label">Control de caducidad</span>
+              <small class="pff__toggle-hint">Alerta cuando los lotes estén próximos a vencer</small>
             </div>
             <app-toggle-switch formControlName="trackExpiry"></app-toggle-switch>
           </div>
@@ -75,59 +75,6 @@ import { FieldInputComponent } from '../../../../shared/components/ui/field-inpu
       display: flex;
       flex-direction: column;
       gap: 16px;
-
-      &__row--main {
-        border: 1px solid var(--color-border-light);
-        border-radius: var(--radius-md);
-        background: var(--color-bg-surface);
-        padding: 14px 16px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 16px;
-      }
-
-      &__toggles {
-        display: flex;
-        flex-direction: column;
-        gap: 0;
-        border: 1px solid var(--color-border-light);
-        border-radius: var(--radius-md);
-        overflow: hidden;
-      }
-
-      &__row {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 16px;
-        padding: 14px 16px;
-        background: var(--color-bg-surface);
-        transition: background-color var(--transition-fast);
-
-        & + & {
-          border-top: 1px solid var(--color-border-light);
-        }
-
-        &:hover { background: var(--color-bg-hover); }
-      }
-
-      &__row-info {
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-      }
-
-      &__row-label {
-        font-size: var(--font-size-sm);
-        font-weight: var(--font-weight-medium);
-        color: var(--color-text-main);
-      }
-
-      &__row-hint {
-        font-size: var(--font-size-xs);
-        color: var(--color-text-muted);
-      }
 
       &__limits {
         display: grid;

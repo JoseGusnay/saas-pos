@@ -96,10 +96,10 @@
     }
 
     <!-- Estado activo -->
-    <div class="pff__status-row">
-      <div class="pff__status-info">
-        <span class="pff__status-label">Estado del Producto</span>
-        <span class="pff__status-sub">
+    <div class="pff__toggle-row">
+      <div class="pff__toggle-info">
+        <span class="pff__toggle-label">Estado del Producto</span>
+        <span class="pff__toggle-hint">
           {{ isActiveValue()
               ? 'Activo — visible en catálogo y POS.'
               : 'Inactivo — oculto en catálogo y POS.' }}
@@ -110,10 +110,10 @@
 
     <!-- Se vende -->
     @if (showSellable()) {
-      <div class="pff__status-row">
-        <div class="pff__status-info">
-          <span class="pff__status-label">Se vende</span>
-          <span class="pff__status-sub">Aparece en el POS y puede añadirse a ventas.</span>
+      <div class="pff__toggle-row">
+        <div class="pff__toggle-info">
+          <span class="pff__toggle-label">Se vende</span>
+          <span class="pff__toggle-hint">Aparece en el POS y puede añadirse a ventas.</span>
         </div>
         <app-toggle-switch formControlName="isSellable"></app-toggle-switch>
       </div>
@@ -121,10 +121,10 @@
 
     <!-- Se compra -->
     @if (showPurchasable()) {
-      <div class="pff__status-row">
-        <div class="pff__status-info">
-          <span class="pff__status-label">Se compra</span>
-          <span class="pff__status-sub">Puede incluirse en órdenes de compra.</span>
+      <div class="pff__toggle-row">
+        <div class="pff__toggle-info">
+          <span class="pff__toggle-label">Se compra</span>
+          <span class="pff__toggle-hint">Puede incluirse en órdenes de compra.</span>
         </div>
         <app-toggle-switch formControlName="isPurchasable"></app-toggle-switch>
       </div>

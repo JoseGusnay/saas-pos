@@ -348,6 +348,47 @@
   }
   &__status-sub   { font-size: var(--font-size-xs); color: var(--color-text-muted); }
 
+  // ── Toggle row — patrón unificado para toggles con label + descripción ──────
+  &__toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 16px;
+    background: var(--color-bg-surface);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-md);
+    transition: background-color var(--transition-fast);
+
+    &:hover { background: var(--color-bg-hover); }
+  }
+
+  // Grupo de filas relacionadas: borde exterior compartido + divisores internos
+  &__toggle-group {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+
+    .pff__toggle-row {
+      border: none;
+      border-radius: 0;
+
+      & + .pff__toggle-row {
+        border-top: 1px solid var(--color-border-light);
+      }
+    }
+  }
+
+  &__toggle-info  { display: flex; flex-direction: column; gap: 2px; }
+  &__toggle-label {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-main);
+  }
+  &__toggle-hint  { font-size: var(--font-size-xs); color: var(--color-text-muted); }
+
   // Price input with $ prefix
   &__price-wrap {
     display: flex;
