@@ -543,22 +543,20 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
           <div class="form-grid">
             <div class="form-group">
               <label class="form-label">Bodega de destino *</label>
-              <select class="form-control" [(ngModel)]="receiptForm.warehouseId" (ngModelChange)="onWarehouseChange($event)">
-                <option value="">Seleccionar bodega...</option>
-                @for (wh of warehouses(); track wh.id) {
-                  <option [value]="wh.id">{{ wh.name }}</option>
-                }
-              </select>
+              <app-custom-select
+                [options]="warehouseOptions()"
+                [value]="receiptForm.warehouseId"
+                (valueChange)="receiptForm.warehouseId = $event; onWarehouseChange($event)"
+              ></app-custom-select>
             </div>
             @if (selectedWarehouseHasLocations && warehouseLocations().length > 0) {
               <div class="form-group">
                 <label class="form-label">Ubicación <span class="optional">(por defecto para todos los items)</span></label>
-                <select class="form-control" [(ngModel)]="receiptForm.defaultLocationId">
-                  <option value="">Sin ubicación</option>
-                  @for (loc of warehouseLocations(); track loc.id) {
-                    <option [value]="loc.id">{{ loc.name }} {{ loc.code ? '(' + loc.code + ')' : '' }}</option>
-                  }
-                </select>
+                <app-custom-select
+                  [options]="locationOptions()"
+                  [value]="receiptForm.defaultLocationId"
+                  (valueChange)="receiptForm.defaultLocationId = $event"
+                ></app-custom-select>
               </div>
             }
             <div class="form-group">
@@ -595,16 +593,26 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
                   <span>{{ ri.productName }}{{ ri.variantName ? ' — ' + ri.variantName : '' }}</span>
                   @if (ri.sku) { <span class="ri-sku">{{ ri.sku }}</span> }
                 </div>
-                <div class="r">{{ ri.quantityOrdered }} {{ ri.unitOfMeasure }}</div>
-                <div class="r">{{ ri.quantityReceived }}</div>
-                <div class="r">
-                  <input type="number" class="cell-input num-input" min="0"
-                    [max]="ri.quantityOrdered - ri.quantityReceived"
-                    [(ngModel)]="ri.qtyToReceive" />
-                </div>
-                <div class="r">
-                  <input type="number" class="cell-input num-input" min="0" step="0.01"
-                    [(ngModel)]="ri.unitCost" />
+                <div class="ri-nums">
+                  <div class="ri-field">
+                    <span class="ri-field__label">Pedido</span>
+                    <span class="ri-field__value">{{ ri.quantityOrdered }} {{ ri.unitOfMeasure }}</span>
+                  </div>
+                  <div class="ri-field">
+                    <span class="ri-field__label">Recibido</span>
+                    <span class="ri-field__value">{{ ri.quantityReceived }}</span>
+                  </div>
+                  <div class="ri-field">
+                    <span class="ri-field__label">A recibir</span>
+                    <input type="number" class="cell-input num-input" min="0"
+                      [max]="ri.quantityOrdered - ri.quantityReceived"
+                      [(ngModel)]="ri.qtyToReceive" />
+                  </div>
+                  <div class="ri-field">
+                    <span class="ri-field__label">Costo</span>
+                    <input type="number" class="cell-input num-input" min="0" step="0.01"
+                      [(ngModel)]="ri.unitCost" />
+                  </div>
                 </div>
               </div>
               @if ((ri.trackLots || selectedWarehouseHasLocations) && ri.qtyToReceive > 0) {
@@ -624,12 +632,11 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
                   @if (selectedWarehouseHasLocations && warehouseLocations().length > 0) {
                     <div class="ri-extra-field">
                       <label>Ubicación</label>
-                      <select class="form-control" [(ngModel)]="ri.locationId">
-                        <option value="">{{ receiptForm.defaultLocationId ? 'Usar default' : 'Seleccionar...' }}</option>
-                        @for (loc of warehouseLocations(); track loc.id) {
-                          <option [value]="loc.id">{{ loc.name }} {{ loc.code ? '(' + loc.code + ')' : '' }}</option>
-                        }
-                      </select>
+                      <app-custom-select
+                        [options]="locationOptions()"
+                        [value]="ri.locationId"
+                        (valueChange)="ri.locationId = $event"
+                      ></app-custom-select>
                     </div>
                   }
                 </div>
@@ -741,11 +748,11 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
             </div>
             <div class="form-group form-group--full">
               <label class="form-label">Método de pago *</label>
-              <select class="form-control" [(ngModel)]="paymentForm.paymentMethod">
-                @for (pm of paymentMethods; track pm.value) {
-                  <option [value]="pm.value">{{ pm.label }}</option>
-                }
-              </select>
+              <app-custom-select
+                [options]="paymentMethodOptions"
+                [value]="paymentForm.paymentMethod"
+                (valueChange)="paymentForm.paymentMethod = $any($event)"
+              ></app-custom-select>
             </div>
             <div class="form-group form-group--full">
               <label class="form-label">Referencia / N° documento <span class="optional">(opcional)</span></label>
@@ -838,6 +845,11 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
     .skeleton-card { pointer-events: none; background: var(--color-bg-surface); border-radius: var(--radius-lg); border: 1px solid var(--color-border-light); padding: 20px; }
 
     /* ── Responsive ────────────────────────────────────────────────────── */
+    @media (max-width: 480px) {
+      .ri-nums { grid-template-columns: 1fr 1fr; }
+      .ri-extra { grid-template-columns: 1fr; }
+    }
+
     @media (max-width: 768px) {
       .orders-grid { grid-template-columns: 1fr; gap: 0.75rem; }
 
@@ -861,19 +873,6 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
       /* Detail tabs scroll */
       .dtabs-header { overflow-x: auto; -webkit-overflow-scrolling: touch; flex-wrap: nowrap; }
       .dtab-btn { white-space: nowrap; flex-shrink: 0; padding: 0.5rem 0.625rem; font-size: var(--font-size-xs); }
-
-      /* Forms 1 col */
-      .form-grid { grid-template-columns: 1fr; }
-      .form-group--full { grid-column: span 1; }
-
-      /* Receipt items stacked */
-      .ri-head { display: none; }
-      .ri-row {
-        grid-template-columns: 1fr 1fr;
-        gap: 0.375rem;
-      }
-      .ri-prod { grid-column: 1 / -1; }
-      .ri-extra { grid-template-columns: 1fr; }
 
       /* Retention lines stacked */
       .ret-line { flex-wrap: wrap; gap: 0.375rem; }
@@ -993,9 +992,9 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
     .badge-partial { padding: 2px 8px; border-radius: 99px; background: #fef9c3; color: #854d0e; font-size: 10px; font-weight: 600; }
 
     /* ── Form shared styles ────────────────────────────────────────────────── */
-    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .form-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; }
     .form-group { display: flex; flex-direction: column; gap: 0.325rem; }
-    .form-group--full { grid-column: span 2; }
+    .form-group--full { grid-column: 1 / -1; }
     .form-label { font-size: var(--font-size-sm); font-weight: var(--font-weight-medium); color: var(--color-text-main); }
     .optional { font-weight: 400; color: var(--color-text-muted); font-size: var(--font-size-xs); }
     .form-control { padding: 0.5rem 0.75rem; border: 1px solid var(--color-border-light); border-radius: var(--radius-md); background: var(--color-bg-surface); color: var(--color-text-main); font-size: var(--font-size-sm); width: 100%; box-sizing: border-box; }
@@ -1007,18 +1006,24 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
 
     /* Receipt items */
     .receipt-items-title { font-size: var(--font-size-sm); font-weight: var(--font-weight-semibold); color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin: 1.25rem 0 0.625rem; }
-    .receipt-items { display: flex; flex-direction: column; }
-    .ri-head { display: grid; grid-template-columns: 1fr 70px 70px 90px 80px; gap: 0.5rem; padding: 0.375rem 0.25rem; border-bottom: 2px solid var(--color-border-light); margin-bottom: 0.25rem; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-muted); font-weight: 600; }
-    .ri-row { display: grid; grid-template-columns: 1fr 70px 70px 90px 80px; gap: 0.5rem; align-items: center; padding: 0.5rem 0.25rem; border-bottom: 1px solid var(--color-border-subtle); }
-    .ri-prod { display: flex; flex-direction: column; gap: 2px; font-size: var(--font-size-sm); }
+    .receipt-items { display: flex; flex-direction: column; gap: 0.5rem; }
+    .ri-head { display: none; }
+    .ri-row {
+      display: flex; flex-direction: column; gap: 0.5rem;
+      padding: 0.75rem; border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-md); background: var(--color-bg-surface);
+    }
+    .ri-prod { display: flex; flex-direction: column; gap: 2px; font-size: var(--font-size-sm); font-weight: var(--font-weight-medium); }
     .ri-sku { font-size: var(--font-size-xs); color: var(--color-text-muted); font-family: monospace; }
+    .ri-nums { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 0.5rem; }
+    .ri-field { display: flex; flex-direction: column; gap: 2px; }
+    .ri-field__label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-muted); font-weight: 600; }
+    .ri-field__value { font-size: var(--font-size-sm); color: var(--color-text-main); }
     .ri-extra {
-      grid-column: 1 / -1;
       display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;
       padding: 0.5rem 0.75rem 0.75rem;
       background: var(--color-bg-canvas);
       border-radius: var(--radius-sm);
-      margin: -0.25rem 0 0.25rem;
     }
     .ri-extra-field { display: flex; flex-direction: column; gap: 4px; }
     .ri-extra-field label { font-size: var(--font-size-xs); font-weight: var(--font-weight-medium); color: var(--color-text-muted); }
@@ -1105,6 +1110,7 @@ export class PurchaseOrdersListComponent {
   readonly codSustentoOptions = COD_SUSTENTO_OPTIONS;
   readonly pagoLocExtOptions = PAGO_LOC_EXT_OPTIONS;
   readonly paymentMethods = PAYMENT_METHODS;
+  readonly paymentMethodOptions: SelectOption[] = PAYMENT_METHODS.map(p => ({ value: p.value, label: p.label }));
 
   tabs = [
     { label: 'Todas', value: '' },
@@ -1186,6 +1192,14 @@ export class PurchaseOrdersListComponent {
   // ─── Receipt form ─────────────────────────────────────────────────────────
   warehouses = signal<{ id: string; name: string; hasLocations: boolean }[]>([]);
   warehouseLocations = signal<{ id: string; name: string; code: string }[]>([]);
+  warehouseOptions = computed<SelectOption[]>(() => [
+    { value: '', label: 'Seleccionar bodega...' },
+    ...this.warehouses().map(w => ({ value: w.id, label: w.name })),
+  ]);
+  locationOptions = computed<SelectOption[]>(() => [
+    { value: '', label: 'Sin ubicación' },
+    ...this.warehouseLocations().map(l => ({ value: l.id, label: l.name + (l.code ? ` (${l.code})` : '') })),
+  ]);
 
   receiptForm: {
     warehouseId: string;

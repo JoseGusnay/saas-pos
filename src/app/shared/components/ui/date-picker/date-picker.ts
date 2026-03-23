@@ -35,7 +35,7 @@ interface CalendarDay {
   ],
   template: `
     <div class="dp">
-      <button type="button" class="dp__trigger" (click)="toggle()" [class.dp__trigger--open]="isOpen()">
+      <button #trigger type="button" class="dp__trigger" (click)="toggle(trigger)" [class.dp__trigger--open]="isOpen()">
         <ng-icon name="lucideCalendar" class="dp__icon"></ng-icon>
         <span class="dp__value" [class.dp__value--placeholder]="!value()">
           {{ value() ? formatDisplay(value()!) : placeholder }}
@@ -47,47 +47,72 @@ interface CalendarDay {
         }
       </button>
 
-      @if (isOpen()) {
-        <div class="dp__dropdown">
-          <div class="dp__header">
-            <button type="button" class="dp__nav" (click)="prevMonth()">
-              <ng-icon name="lucideChevronLeft"></ng-icon>
+      @if (isOpen() && !isMobile()) {
+        <div class="dp__backdrop" (click)="close()"></div>
+        <div class="dp__dropdown"
+             [class.dp__dropdown--flipped]="dropdownPos()?.flipped"
+             [style.top.px]="dropdownPos()?.top"
+             [style.left.px]="dropdownPos()?.left"
+             [style.bottom.px]="dropdownPos()?.bottom">
+          <ng-container *ngTemplateOutlet="calendarTpl"></ng-container>
+        </div>
+      }
+
+      @if (isOpen() && isMobile()) {
+        <div class="dp__sheet-backdrop" (click)="close()"></div>
+        <div class="dp__sheet">
+          <div class="dp__sheet-handle"></div>
+          <div class="dp__sheet-header">
+            <span class="dp__sheet-title">{{ placeholder }}</span>
+            <button type="button" class="dp__sheet-close" (click)="close()">
+              <ng-icon name="lucideX"></ng-icon>
             </button>
-            <span class="dp__month-year">{{ monthName() }} {{ viewYear() }}</span>
-            <button type="button" class="dp__nav" (click)="nextMonth()">
-              <ng-icon name="lucideChevronRight"></ng-icon>
-            </button>
           </div>
-
-          <div class="dp__weekdays">
-            @for (day of weekdays; track day) {
-              <span class="dp__weekday">{{ day }}</span>
-            }
-          </div>
-
-          <div class="dp__days">
-            @for (day of calendarDays(); track day.dateStr) {
-              <button
-                type="button"
-                class="dp__day"
-                [class.dp__day--other]="!day.isCurrentMonth"
-                [class.dp__day--today]="day.isToday"
-                [class.dp__day--selected]="day.isSelected"
-                [class.dp__day--past]="day.isPast && disablePast"
-                [disabled]="day.isPast && disablePast"
-                (click)="selectDay(day)"
-              >
-                {{ day.date }}
-              </button>
-            }
-          </div>
-
-          <div class="dp__footer">
-            <button type="button" class="dp__today-btn" (click)="goToday()">Hoy</button>
+          <div class="dp__sheet-body">
+            <ng-container *ngTemplateOutlet="calendarTpl"></ng-container>
           </div>
         </div>
       }
     </div>
+
+    <ng-template #calendarTpl>
+      <div class="dp__header">
+        <button type="button" class="dp__nav" (click)="prevMonth()">
+          <ng-icon name="lucideChevronLeft"></ng-icon>
+        </button>
+        <span class="dp__month-year">{{ monthName() }} {{ viewYear() }}</span>
+        <button type="button" class="dp__nav" (click)="nextMonth()">
+          <ng-icon name="lucideChevronRight"></ng-icon>
+        </button>
+      </div>
+
+      <div class="dp__weekdays">
+        @for (day of weekdays; track day) {
+          <span class="dp__weekday">{{ day }}</span>
+        }
+      </div>
+
+      <div class="dp__days">
+        @for (day of calendarDays(); track day.dateStr) {
+          <button
+            type="button"
+            class="dp__day"
+            [class.dp__day--other]="!day.isCurrentMonth"
+            [class.dp__day--today]="day.isToday"
+            [class.dp__day--selected]="day.isSelected"
+            [class.dp__day--past]="day.isPast && disablePast"
+            [disabled]="day.isPast && disablePast"
+            (click)="selectDay(day)"
+          >
+            {{ day.date }}
+          </button>
+        }
+      </div>
+
+      <div class="dp__footer">
+        <button type="button" class="dp__today-btn" (click)="goToday()">Hoy</button>
+      </div>
+    </ng-template>
   `,
   styles: [`
     .dp { position: relative; width: 100%; }
@@ -117,20 +142,81 @@ interface CalendarDay {
       &:hover { background: var(--color-border-light); color: var(--color-text-main); }
     }
 
+    /* ── Desktop: fixed dropdown ─────────────────────────────── */
+    .dp__backdrop {
+      position: fixed; inset: 0; z-index: 9998;
+    }
+
     .dp__dropdown {
-      position: absolute; top: calc(100% + 6px); left: 0; z-index: 100;
+      position: fixed; z-index: 9999;
       width: 280px; padding: 12px;
       background: var(--color-bg-surface); border: 1px solid var(--color-border-light);
       border-radius: var(--radius-lg);
       box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
       animation: dpSlideIn 0.15s ease-out;
+
+      &--flipped { animation: dpSlideUp 0.15s ease-out; }
     }
 
     @keyframes dpSlideIn {
       from { opacity: 0; transform: translateY(-4px); }
       to { opacity: 1; transform: translateY(0); }
     }
+    @keyframes dpSlideUp {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
 
+    /* ── Mobile: bottom sheet ────────────────────────────────── */
+    .dp__sheet-backdrop {
+      position: fixed; inset: 0; z-index: 9998;
+      background: rgba(0, 0, 0, 0.4);
+      animation: dpFadeIn 0.2s ease;
+    }
+
+    .dp__sheet {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 9999;
+      background: var(--color-bg-surface);
+      border-radius: 16px 16px 0 0;
+      animation: dpSheetUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      padding-bottom: env(safe-area-inset-bottom, 0);
+    }
+
+    .dp__sheet-handle {
+      width: 36px; height: 4px; border-radius: 2px;
+      background: var(--color-border-light); margin: 8px auto 0;
+    }
+
+    .dp__sheet-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 20px 8px;
+    }
+
+    .dp__sheet-title {
+      font-size: var(--font-size-sm); font-weight: var(--font-weight-semibold);
+      color: var(--color-text-main);
+    }
+
+    .dp__sheet-close {
+      display: flex; align-items: center; justify-content: center;
+      width: 28px; height: 28px; border: none; border-radius: 50%;
+      background: var(--color-bg-hover); color: var(--color-text-muted);
+      cursor: pointer; font-size: 14px;
+      &:hover { background: var(--color-border-light); }
+    }
+
+    .dp__sheet-body { padding: 8px 20px 20px; }
+
+    @keyframes dpFadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes dpSheetUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+
+    /* ── Calendar shared (used in both modes) ────────────────── */
     .dp__header {
       display: flex; align-items: center; justify-content: space-between;
       margin-bottom: 8px;
@@ -200,6 +286,8 @@ export class DatePickerComponent implements ControlValueAccessor {
 
   value = signal<string | null>(null);
   isOpen = signal(false);
+  isMobile = signal(false);
+  dropdownPos = signal<{ top: number | null; left: number; bottom: number | null; flipped: boolean } | null>(null);
   viewMonth = signal(new Date().getMonth());
   viewYear = signal(new Date().getFullYear());
 
@@ -267,14 +355,40 @@ export class DatePickerComponent implements ControlValueAccessor {
 
   constructor(private el: ElementRef) {}
 
-  toggle() { this.isOpen.update(v => !v); }
+  toggle(trigger: HTMLElement) {
+    if (this.isOpen()) {
+      this.close();
+      return;
+    }
+    this.isMobile.set(window.innerWidth <= 768);
+    if (this.isMobile()) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      const rect = trigger.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const flipped = spaceBelow < 320;
+      this.dropdownPos.set({
+        top: flipped ? null : rect.bottom + 4,
+        bottom: flipped ? (window.innerHeight - rect.top) + 4 : null,
+        left: rect.left,
+        flipped,
+      });
+    }
+    this.isOpen.set(true);
+  }
+
+  close() {
+    this.isOpen.set(false);
+    this.dropdownPos.set(null);
+    document.body.style.overflow = '';
+  }
 
   selectDay(day: CalendarDay) {
     if (day.isPast && this.disablePast) return;
     this.value.set(day.dateStr);
     this.onChange(day.dateStr);
     this.onTouched();
-    this.isOpen.set(false);
+    this.close();
   }
 
   clear(e: Event) {
@@ -328,8 +442,8 @@ export class DatePickerComponent implements ControlValueAccessor {
 
   @HostListener('document:click', ['$event'])
   onClickOutside(event: Event) {
-    if (!this.el.nativeElement.contains(event.target)) {
-      this.isOpen.set(false);
+    if (!this.isMobile() && !this.el.nativeElement.contains(event.target)) {
+      this.close();
     }
   }
 
