@@ -7,6 +7,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 
 import { PurchaseOrderService } from '../../../../core/services/purchase-order.service';
 import { BranchService } from '../../../../core/services/branch.service';
+import { TaxService } from '../../../../core/services/tax.service';
 import { ToastService } from '../../../../core/services/toast.service';
 import {
   PaymentCondition,
@@ -18,6 +19,7 @@ import {
 import { environment } from '../../../../../environments/environment';
 
 import { SearchSelectComponent } from '../../../../shared/components/ui/search-select/search-select';
+import { DatePickerComponent } from '../../../../shared/components/ui/date-picker/date-picker';
 import { SearchSelectOption } from '../../../../shared/models/search-select.models';
 import { FormButtonComponent } from '../../../../shared/components/ui/form-button/form-button';
 import { SpinnerComponent } from '../../../../shared/components/ui/spinner/spinner';
@@ -30,6 +32,12 @@ import {
 
 // ─── Local types ─────────────────────────────────────────────────────────────
 
+interface TaxDetail {
+  id: string;
+  name: string;
+  percentage: number;
+}
+
 interface LineItem {
   variantId: string;
   variantLabel: string;
@@ -40,22 +48,18 @@ interface LineItem {
   quantityOrdered: number;
   unitCost: number;
   discountPercent: number;
-  taxRate: number;
+  taxIds: string[];
+  taxDetails: TaxDetail[];
 }
 
 function calcLine(item: LineItem) {
   const base = item.quantityOrdered * item.unitCost;
   const disc = base * (item.discountPercent / 100);
   const sub  = base - disc;
-  const iva  = sub * (item.taxRate / 100);
-  return { base, disc, sub, iva, lineTotal: sub + iva };
+  const totalTaxRate = item.taxDetails.reduce((sum, t) => sum + t.percentage, 0);
+  const taxes = +(sub * totalTaxRate / 100).toFixed(2);
+  return { base, disc, sub, taxes, lineTotal: sub + taxes };
 }
-
-const TAX_RATES = [
-  { value: 0,  label: '0%' },
-  { value: 5,  label: '5%' },
-  { value: 15, label: '15%' },
-];
 
 const PAYMENT_CONDITIONS: { value: PaymentCondition; label: string; short: string }[] = [
   { value: 'CONTADO',    label: 'Contado',         short: 'Contado'  },
@@ -70,7 +74,7 @@ const PAYMENT_CONDITIONS: { value: PaymentCondition; label: string; short: strin
 @Component({
   selector: 'app-purchase-order-form',
   standalone: true,
-  imports: [CommonModule, FormsModule, SearchSelectComponent, FormButtonComponent, SpinnerComponent, NgIconComponent],
+  imports: [CommonModule, FormsModule, SearchSelectComponent, DatePickerComponent, FormButtonComponent, SpinnerComponent, NgIconComponent],
   providers: [
     provideIcons({ lucidePlus, lucideTrash2, lucideSave, lucideArrowLeft, lucidePackagePlus, lucideCheck, lucideBuilding2, lucideTruck, lucideFileText, lucidePrinter, lucideCalendar })
   ],
@@ -131,6 +135,13 @@ const PAYMENT_CONDITIONS: { value: PaymentCondition; label: string; short: strin
               <span>IDENTIFICACIÓN DEL PROVEEDOR</span>
             </div>
             <div class="doc-card__body">
+              <div class="doc-type-row">
+                <label class="doc-type-label">Tipo de Documento:</label>
+                <select class="doc-type-select" [(ngModel)]="documentType">
+                  <option value="FACTURA">Factura</option>
+                  <option value="LIQUIDACION_COMPRA">Liquidación de Compra</option>
+                </select>
+              </div>
               <div class="vendor-search">
                 <app-search-select
                   placeholder="Buscar proveedor por nombre o RUC..."
@@ -207,17 +218,14 @@ const PAYMENT_CONDITIONS: { value: PaymentCondition; label: string; short: strin
                 ></app-search-select>
               </div>
 
-              <!-- Fecha de entrega: input custom con ícono -->
+              <!-- Fecha de entrega -->
               <div class="logi-field">
                 <span class="lf-label">FECHA DE ENTREGA ESPERADA</span>
-                <label class="date-field">
-                  <ng-icon name="lucideCalendar" size="14" class="date-field__icon"></ng-icon>
-                  <input
-                    class="date-field__input"
-                    type="date"
-                    [(ngModel)]="expectedDeliveryDate"
-                  />
-                </label>
+                <app-date-picker
+                  [(ngModel)]="expectedDeliveryDate"
+                  placeholder="Seleccionar fecha..."
+                  [disablePast]="true"
+                ></app-date-picker>
               </div>
 
               <div class="logi-field">
@@ -260,8 +268,8 @@ const PAYMENT_CONDITIONS: { value: PaymentCondition; label: string; short: strin
                     <th class="th-num">CANT.</th>
                     <th class="th-num">PRECIO</th>
                     <th class="th-num">DESC. %</th>
-                    <th class="th-num">IVA</th>
-                    <th class="th-num">IVA $</th>
+                    <th>IMPUESTOS</th>
+                    <th class="th-num">IMP. $</th>
                     <th class="th-num">TOTAL</th>
                     <th class="th-del"></th>
                   </tr>
@@ -290,14 +298,16 @@ const PAYMENT_CONDITIONS: { value: PaymentCondition; label: string; short: strin
                         <input class="cell-in cell-right" type="number" min="0" max="100" step="0.1"
                           [(ngModel)]="item.discountPercent" (ngModelChange)="touch()" />
                       </td>
-                      <td class="td-num">
-                        <select class="cell-sel" [(ngModel)]="item.taxRate" (ngModelChange)="touch()">
-                          @for (t of taxRates; track t.value) {
-                            <option [value]="t.value">{{ t.label }}</option>
-                          }
-                        </select>
+                      <td class="td-tax">
+                        <app-search-select
+                          placeholder="Impuestos"
+                          [multiple]="true"
+                          [searchFn]="searchTaxesFn"
+                          [initialOptions]="getTaxOptions(item)"
+                          (selectionChange)="onItemTaxChange($event, $index)"
+                        ></app-search-select>
                       </td>
-                      <td class="td-num td-muted">{{ c.iva | currency:'USD':'symbol':'1.2-2' }}</td>
+                      <td class="td-num td-muted">{{ c.taxes | currency:'USD':'symbol':'1.2-2' }}</td>
                       <td class="td-num td-bold">{{ c.lineTotal | currency:'USD':'symbol':'1.2-2' }}</td>
                       <td class="td-del">
                         <button class="del-btn" (click)="removeItem(i)">
@@ -323,30 +333,10 @@ const PAYMENT_CONDITIONS: { value: PaymentCondition; label: string; short: strin
                     <span class="t-val t-val--red">- {{ totalDiscount() | currency:'USD':'symbol':'1.2-2' }}</span>
                   </div>
                 }
-                @if (baseIva0() > 0) {
+                @for (tax of taxBreakdown(); track tax.name) {
                   <div class="t-row">
-                    <span class="t-label">BASE IVA 0%</span>
-                    <span class="t-val">{{ baseIva0() | currency:'USD':'symbol':'1.2-2' }}</span>
-                  </div>
-                }
-                @if (baseIva5() > 0) {
-                  <div class="t-row">
-                    <span class="t-label">BASE IVA 5%</span>
-                    <span class="t-val">{{ baseIva5() | currency:'USD':'symbol':'1.2-2' }}</span>
-                  </div>
-                  <div class="t-row">
-                    <span class="t-label">IVA (5%)</span>
-                    <span class="t-val">{{ ivaAmount5() | currency:'USD':'symbol':'1.2-2' }}</span>
-                  </div>
-                }
-                @if (baseIva15() > 0) {
-                  <div class="t-row">
-                    <span class="t-label">BASE IVA 15%</span>
-                    <span class="t-val">{{ baseIva15() | currency:'USD':'symbol':'1.2-2' }}</span>
-                  </div>
-                  <div class="t-row">
-                    <span class="t-label">IVA (15%)</span>
-                    <span class="t-val">{{ ivaAmount15() | currency:'USD':'symbol':'1.2-2' }}</span>
+                    <span class="t-label">{{ tax.name }}</span>
+                    <span class="t-val">{{ tax.amount | currency:'USD':'symbol':'1.2-2' }}</span>
                   </div>
                 }
               </div>
@@ -433,6 +423,16 @@ const PAYMENT_CONDITIONS: { value: PaymentCondition; label: string; short: strin
     .doc-card__body { padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem; }
 
     /* Vendor card */
+    .doc-type-row {
+      display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;
+    }
+    .doc-type-label { font-size: var(--font-size-xs); font-weight: var(--font-weight-medium); color: var(--color-text-muted); white-space: nowrap; }
+    .doc-type-select {
+      padding: 0.375rem 0.75rem; border: 1px solid var(--color-border-light); border-radius: var(--radius-sm);
+      background: var(--color-bg-surface); font-size: var(--font-size-sm); color: var(--color-text-main);
+      cursor: pointer; outline: none;
+      &:focus { border-color: var(--color-accent-primary); }
+    }
     .vendor-search { }
     .vendor-grid {
       display: grid; grid-template-columns: 1fr 1fr; gap: 1rem 1.5rem;
@@ -528,6 +528,7 @@ const PAYMENT_CONDITIONS: { value: PaymentCondition; label: string; short: strin
     .items-tbl td { padding: 0.5rem 0.75rem; vertical-align: middle; }
     .td-code { font-family: monospace; font-size: var(--font-size-xs); color: var(--color-text-muted); white-space: nowrap; }
     .td-desc { min-width: 180px; }
+    .td-tax { min-width: 160px; }
     .item-name { font-weight: var(--font-weight-medium); color: var(--color-text-main); }
     .td-muted { color: var(--color-text-muted); }
     .td-bold { font-weight: var(--font-weight-semibold); color: var(--color-text-main); }
@@ -608,7 +609,7 @@ export class PurchaseOrderFormComponent implements OnInit {
   private route         = inject(ActivatedRoute);
   private http          = inject(HttpClient);
 
-  readonly taxRates          = TAX_RATES;
+  private taxSvc = inject(TaxService);
   readonly paymentConditions = PAYMENT_CONDITIONS;
   readonly today             = new Date();
 
@@ -627,6 +628,7 @@ export class PurchaseOrderFormComponent implements OnInit {
   selectedSupplierPhone = signal('');
 
   selectedBranchId      = signal('');
+  documentType: 'FACTURA' | 'LIQUIDACION_COMPRA' = 'FACTURA';
   paymentCondition: PaymentCondition = 'CONTADO';
   expectedDeliveryDate  = '';
   deliveryAddress       = '';
@@ -651,13 +653,61 @@ export class PurchaseOrderFormComponent implements OnInit {
 
   subtotal      = computed(() => this.calcs().reduce((s, c) => s + c.sub,  0));
   totalDiscount = computed(() => this.calcs().reduce((s, c) => s + c.disc, 0));
-  baseIva0      = computed(() => this.itemsSignal().filter(i => i.taxRate === 0).reduce((s, i)  => s + calcLine(i).sub, 0));
-  baseIva5      = computed(() => this.itemsSignal().filter(i => i.taxRate === 5).reduce((s, i)  => s + calcLine(i).sub, 0));
-  baseIva15     = computed(() => this.itemsSignal().filter(i => i.taxRate === 15).reduce((s, i) => s + calcLine(i).sub, 0));
-  ivaAmount5    = computed(() => this.baseIva5()  * 0.05);
-  ivaAmount15   = computed(() => this.baseIva15() * 0.15);
-  totalIva      = computed(() => this.calcs().reduce((s, c) => s + c.iva, 0));
-  total         = computed(() => this.subtotal() + this.totalIva());
+  totalTaxes    = computed(() => this.calcs().reduce((s, c) => s + c.taxes, 0));
+  total         = computed(() => this.subtotal() + this.totalTaxes());
+
+  taxBreakdown = computed(() => {
+    const map = new Map<string, { name: string; base: number; amount: number }>();
+    for (const item of this.itemsSignal()) {
+      const c = calcLine(item);
+      for (const tax of item.taxDetails) {
+        const taxAmount = +(c.sub * tax.percentage / 100).toFixed(2);
+        const existing = map.get(tax.id);
+        if (existing) {
+          existing.base += c.sub;
+          existing.amount += taxAmount;
+        } else {
+          map.set(tax.id, { name: `${tax.name} (${tax.percentage}%)`, base: c.sub, amount: taxAmount });
+        }
+      }
+    }
+    return Array.from(map.values());
+  });
+
+  // ── Tax helpers ──────────────────────────────────────────────────────────
+
+  searchTaxesFn = (query: string) =>
+    this.taxSvc.findAllSimple().pipe(
+      map((taxes: any[]) => ({
+        data: taxes
+          .filter(t => t.name.toLowerCase().includes(query.toLowerCase()))
+          .map(t => ({ value: t.id, label: `${t.name} (${t.percentage}%)`, extra: t } as SearchSelectOption)),
+        hasMore: false
+      }))
+    );
+
+  getTaxOptions(item: LineItem): SearchSelectOption[] {
+    return item.taxDetails.map(t => ({ value: t.id, label: `${t.name} (${t.percentage}%)` }));
+  }
+
+  onItemTaxChange(event: SearchSelectOption | SearchSelectOption[] | null, index: number) {
+    const items = [...this.itemsSignal()];
+    const item = { ...items[index] };
+    if (Array.isArray(event)) {
+      item.taxIds = event.map(e => e.value);
+      item.taxDetails = event.map(e => ({
+        id: e.value,
+        name: (e as any).extra?.name ?? e.label.split(' (')[0],
+        percentage: (e as any).extra?.percentage ?? 0,
+      }));
+    } else {
+      item.taxIds = [];
+      item.taxDetails = [];
+    }
+    items[index] = item;
+    this.itemsSignal.set(items);
+    this.touch();
+  }
 
   canSave = computed(() =>
     !!this.selectedSupplierId() && !!this.selectedBranchId() && this.itemsSignal().length > 0
@@ -737,6 +787,7 @@ export class PurchaseOrderFormComponent implements OnInit {
             value: order.branchId,
             label: (order as any).branchName ?? order.branchId,
           });
+          this.documentType = order.documentType ?? 'FACTURA';
           this.paymentCondition = order.paymentCondition ?? 'CONTADO';
           const pc = PAYMENT_CONDITIONS.find(p => p.value === this.paymentCondition);
           this.initialPaymentCondition.set({ value: this.paymentCondition, label: pc?.label ?? this.paymentCondition });
@@ -758,11 +809,12 @@ export class PurchaseOrderFormComponent implements OnInit {
             productName:     item.productName ?? '',
             variantName:     item.variantName ?? '',
             sku:             item.sku ?? '',
-            unitOfMeasure:   item.unitOfMeasure ?? 'UN',
+            unitOfMeasure:   (item as any).unitOfMeasure ?? 'UN',
             quantityOrdered: item.quantityOrdered,
             unitCost:        Number(item.unitCost),
             discountPercent: Number(item.discountPercent ?? 0),
-            taxRate:         Number(item.taxRate ?? 0),
+            taxIds:          (item.taxes ?? []).map((t: any) => t.taxId),
+            taxDetails:      (item.taxes ?? []).map((t: any) => ({ id: t.taxId, name: t.taxName?.split(' (')[0] ?? '', percentage: +t.taxRate })),
           })));
           this.isLoadingOrder.set(false);
         },
@@ -813,7 +865,8 @@ export class PurchaseOrderFormComponent implements OnInit {
       quantityOrdered: 1,
       unitCost:        Number(m.costPrice ?? 0),
       discountPercent: 0,
-      taxRate:         15,
+      taxIds:          [],
+      taxDetails:      [],
     }]);
     this.variantSelectorReset.set(undefined);
   }
@@ -834,6 +887,7 @@ export class PurchaseOrderFormComponent implements OnInit {
     this.savingAndApproving.set(approve);
 
     const base = {
+      documentType:         this.documentType,
       supplierId:           this.selectedSupplierId(),
       branchId:             this.selectedBranchId(),
       paymentCondition:     this.paymentCondition,
@@ -845,11 +899,10 @@ export class PurchaseOrderFormComponent implements OnInit {
         variantName:     i.variantName || undefined,
         sku:             i.sku || undefined,
         productName:     i.productName || undefined,
-        unitOfMeasure:   i.unitOfMeasure || undefined,
         quantityOrdered: i.quantityOrdered,
         unitCost:        i.unitCost,
         discountPercent: i.discountPercent || undefined,
-        taxRate:         i.taxRate,
+        taxIds:          i.taxIds.length ? i.taxIds : undefined,
       } as PurchaseOrderItemPayload)),
     };
 

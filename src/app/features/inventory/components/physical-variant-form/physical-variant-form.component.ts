@@ -12,6 +12,7 @@ import { SearchSelectComponent } from '../../../../shared/components/ui/search-s
 import { BarcodeFieldComponent } from '../../../../shared/components/ui/barcode-field/barcode-field.component';
 import { FieldInputComponent } from '../../../../shared/components/ui/field-input/field-input';
 import { StockTrackingConfigComponent } from '../stock-tracking-config/stock-tracking-config';
+import { ToggleSwitchComponent } from '../../../../shared/components/ui/toggle-switch/toggle-switch';
 import { TaxService } from '../../../../core/services/tax.service';
 import { PresentationService } from '../../../../core/services/presentation.service';
 import { SearchSelectOption } from '../../../../shared/models/search-select.models';
@@ -23,7 +24,8 @@ import { CategoryAttributeType } from '../../models/product.model';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     CommonModule, ReactiveFormsModule, NgIconComponent,
-    SearchSelectComponent, BarcodeFieldComponent, FieldInputComponent, StockTrackingConfigComponent
+    SearchSelectComponent, BarcodeFieldComponent, FieldInputComponent, StockTrackingConfigComponent,
+    ToggleSwitchComponent
   ],
   providers: [provideIcons({ lucideAlertCircle })],
   viewProviders: [{ provide: ControlContainer, useFactory: () => inject(ControlContainer, { skipSelf: true }) }],

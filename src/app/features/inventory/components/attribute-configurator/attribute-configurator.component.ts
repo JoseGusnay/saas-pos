@@ -449,8 +449,8 @@ export class AttributeConfiguratorComponent implements OnChanges {
     if (this.systemAttributes().length > 0) return; // already loaded
     this.isLoadingSystem.set(true);
     this.attrTypeSvc.findAll().subscribe({
-      next: attrs => {
-        this.systemAttributes.set(attrs);
+      next: res => {
+        this.systemAttributes.set(res.data);
         this.isLoadingSystem.set(false);
       },
       error: () => this.isLoadingSystem.set(false)

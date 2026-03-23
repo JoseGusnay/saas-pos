@@ -55,6 +55,10 @@ export class PurchaseOrderService {
     return this.http.post<any>(`${this.apiUrl}/${id}/payment`, payload).pipe(map(r => r?.data ?? r));
   }
 
+  duplicate(id: string): Observable<PurchaseOrder> {
+    return this.http.post<any>(`${this.apiUrl}/${id}/duplicate`, {}).pipe(map(r => r?.data ?? r));
+  }
+
   cancel(id: string): Observable<PurchaseOrder> {
     return this.http.post<any>(`${this.apiUrl}/${id}/cancel`, {}).pipe(map(r => r?.data ?? r));
   }

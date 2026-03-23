@@ -11,6 +11,7 @@ import { SearchSelectComponent } from '../../../../shared/components/ui/search-s
 import { FieldInputComponent } from '../../../../shared/components/ui/field-input/field-input';
 import { BarcodeFieldComponent } from '../../../../shared/components/ui/barcode-field/barcode-field.component';
 import { StockTrackingConfigComponent } from '../stock-tracking-config/stock-tracking-config';
+import { ToggleSwitchComponent } from '../../../../shared/components/ui/toggle-switch/toggle-switch';
 import { UnitDrawerComponent } from '../unit-drawer/unit-drawer.component';
 import { UnitsService } from '../../../../core/services/units.service';
 import { Unit } from '../../../../core/models/unit.models';
@@ -21,7 +22,7 @@ import { CategoryAttributeType } from '../../models/product.model';
   selector: 'app-raw-material-form',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, ReactiveFormsModule, NgIconComponent, SearchSelectComponent, FieldInputComponent, BarcodeFieldComponent, StockTrackingConfigComponent, UnitDrawerComponent],
+  imports: [CommonModule, ReactiveFormsModule, NgIconComponent, SearchSelectComponent, FieldInputComponent, BarcodeFieldComponent, StockTrackingConfigComponent, ToggleSwitchComponent, UnitDrawerComponent],
   providers: [provideIcons({ lucideAlertCircle })],
   viewProviders: [{ provide: ControlContainer, useFactory: () => inject(ControlContainer, { skipSelf: true }) }],
   styles: [`:host { display: flex; flex-direction: column; gap: 20px; }`],
@@ -31,14 +32,23 @@ import { CategoryAttributeType } from '../../models/product.model';
       <div class="pff__section-label">Características</div>
       <div class="pff__row" formGroupName="attributes">
         @for (cat of categoryAttributes(); track cat.attributeTypeId) {
-          <app-field-input
-            [formControlName]="cat.attributeTypeId"
-            [label]="cat.attributeType.unit ? cat.attributeType.name + ' (' + cat.attributeType.unit + ')' : cat.attributeType.name"
-            [type]="cat.attributeType.dataType === 'NUMBER' ? 'number' : 'text'"
-            [placeholder]="cat.attributeType.dataType === 'NUMBER' ? 'Ej: 750' : 'Ej: ' + cat.attributeType.name"
-            [required]="cat.isRequired"
-            [optional]="!cat.isRequired"
-          ></app-field-input>
+          @if (cat.attributeType.dataType === 'BOOLEAN') {
+            <div class="pff__toggle-row" (click)="boolToggle.toggle()">
+              <div class="pff__toggle-info">
+                <span class="pff__toggle-label">{{ cat.attributeType.name }}</span>
+              </div>
+              <app-toggle-switch #boolToggle [formControlName]="cat.attributeTypeId" size="sm" (click)="$event.stopPropagation()"></app-toggle-switch>
+            </div>
+          } @else {
+            <app-field-input
+              [formControlName]="cat.attributeTypeId"
+              [label]="cat.attributeType.unit ? cat.attributeType.name + ' (' + cat.attributeType.unit + ')' : cat.attributeType.name"
+              [type]="cat.attributeType.dataType === 'NUMBER' ? 'number' : 'text'"
+              [placeholder]="cat.attributeType.dataType === 'NUMBER' ? 'Ej: 750' : 'Ej: ' + cat.attributeType.name"
+              [required]="cat.isRequired"
+              [optional]="!cat.isRequired"
+            ></app-field-input>
+          }
         }
       </div>
     }

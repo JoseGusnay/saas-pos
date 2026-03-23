@@ -33,20 +33,26 @@ import {
   lucidePackageCheck, lucideX, lucideClipboardList, lucideBuilding2,
   lucideWarehouse, lucideCalendar, lucideHash, lucideBanknote,
   lucideFileText, lucideShieldCheck, lucideChevronRight,
-  lucideReceipt, lucideCreditCard,
+  lucideReceipt, lucideCreditCard, lucideCopy,
 } from '@ng-icons/lucide';
 
 // ─── Receipt form model ───────────────────────────────────────────────────────
 
 interface ReceiptFormItem {
   orderItemId:      string;
+  variantId:        string;
   productName:      string;
   variantName:      string;
   sku:              string;
   unitOfMeasure:    string;
   quantityOrdered:  number;
-  quantityReceived: number;  // already received before this receipt
-  qtyToReceive:     number;  // user input for this receipt
+  quantityReceived: number;
+  qtyToReceive:     number;
+  trackLots:        boolean;
+  trackExpiry:      boolean;
+  lotNumber:        string;
+  expiryDate:       string;
+  locationId:       string;
 }
 
 const IVA_RETENTION_OPTIONS = [
@@ -86,7 +92,7 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
       lucidePackageCheck, lucideX, lucideClipboardList, lucideBuilding2,
       lucideWarehouse, lucideCalendar, lucideHash, lucideBanknote,
       lucideFileText, lucideShieldCheck, lucideChevronRight,
-      lucideReceipt, lucideCreditCard,
+      lucideReceipt, lucideCreditCard, lucideCopy,
     })
   ],
   template: `
@@ -285,7 +291,7 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
                         <th class="r">Rec.</th>
                         <th class="r">Costo</th>
                         <th class="r">Desc.%</th>
-                        <th class="r">IVA%</th>
+                        <th class="r">Imp.</th>
                         <th class="r">Total</th>
                       </tr>
                     </thead>
@@ -297,7 +303,7 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
                             @if (item.variantName) { <span class="itbl-variant">{{ item.variantName }}</span> }
                             @if (item.sku) { <span class="itbl-sku">{{ item.sku }}</span> }
                           </td>
-                          <td class="r">{{ item.unitOfMeasure }}</td>
+                          <td class="r">{{ $any(item).unitOfMeasure ?? 'UN' }}</td>
                           <td class="r">{{ item.quantityOrdered }}</td>
                           <td class="r">
                             <span [class.qty-partial]="item.quantityReceived > 0 && item.quantityReceived < item.quantityOrdered"
@@ -307,7 +313,7 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
                           </td>
                           <td class="r">{{ +item.unitCost | currency:'USD':'symbol':'1.2-2' }}</td>
                           <td class="r">{{ item.discountPercent }}%</td>
-                          <td class="r">{{ item.taxRate }}%</td>
+                          <td class="r">{{ item.totalTaxes | currency:'USD':'symbol':'1.2-2' }}</td>
                           <td class="r fw">{{ +item.lineTotal | currency:'USD':'symbol':'1.2-2' }}</td>
                         </tr>
                       }
@@ -321,17 +327,12 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
                 @if (+d.totalDiscount > 0) {
                   <div class="dt-row"><span>Descuento</span><span>- {{ +d.totalDiscount | currency:'USD':'symbol':'1.2-2' }}</span></div>
                 }
-                @if (+d.baseIva0 > 0) {
-                  <div class="dt-row"><span>Base IVA 0%</span><span>{{ +d.baseIva0 | currency:'USD':'symbol':'1.2-2' }}</span></div>
-                }
-                @if (+d.baseIva5 > 0) {
-                  <div class="dt-row"><span>Base IVA 5%</span><span>{{ +d.baseIva5 | currency:'USD':'symbol':'1.2-2' }}</span></div>
-                }
-                @if (+d.baseIva15 > 0) {
-                  <div class="dt-row"><span>Base IVA 15%</span><span>{{ +d.baseIva15 | currency:'USD':'symbol':'1.2-2' }}</span></div>
-                }
-                @if (+d.totalIva > 0) {
-                  <div class="dt-row"><span>Total IVA</span><span>{{ +d.totalIva | currency:'USD':'symbol':'1.2-2' }}</span></div>
+                @if (d.taxSummary?.length) {
+                  @for (tax of d.taxSummary; track tax.taxId) {
+                    <div class="dt-row"><span>{{ tax.taxName }}</span><span>{{ +tax.taxAmount | currency:'USD':'symbol':'1.2-2' }}</span></div>
+                  }
+                } @else if (+d.totalTaxes > 0) {
+                  <div class="dt-row"><span>Impuestos</span><span>{{ +d.totalTaxes | currency:'USD':'symbol':'1.2-2' }}</span></div>
                 }
                 <div class="dt-row dt-total"><span>TOTAL</span><span>{{ +d.total | currency:'USD':'symbol':'1.2-2' }}</span></div>
                 @if (+d.totalPaid > 0) {
@@ -463,6 +464,26 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
         <div drawerBody>
           <div class="form-grid">
             <div class="form-group">
+              <label class="form-label">Bodega de destino *</label>
+              <select class="form-control" [(ngModel)]="receiptForm.warehouseId" (ngModelChange)="onWarehouseChange($event)">
+                <option value="">Seleccionar bodega...</option>
+                @for (wh of warehouses(); track wh.id) {
+                  <option [value]="wh.id">{{ wh.name }}</option>
+                }
+              </select>
+            </div>
+            @if (selectedWarehouseHasLocations && warehouseLocations().length > 0) {
+              <div class="form-group">
+                <label class="form-label">Ubicación <span class="optional">(por defecto para todos los items)</span></label>
+                <select class="form-control" [(ngModel)]="receiptForm.defaultLocationId">
+                  <option value="">Sin ubicación</option>
+                  @for (loc of warehouseLocations(); track loc.id) {
+                    <option [value]="loc.id">{{ loc.name }} {{ loc.code ? '(' + loc.code + ')' : '' }}</option>
+                  }
+                </select>
+              </div>
+            }
+            <div class="form-group">
               <label class="form-label">N° Factura del proveedor *</label>
               <input class="form-control" type="text" [(ngModel)]="receiptForm.supplierInvoiceNumber" placeholder="001-001-000000123" />
             </div>
@@ -503,6 +524,20 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
                     [(ngModel)]="ri.qtyToReceive" />
                 </div>
               </div>
+              @if (ri.trackLots && ri.qtyToReceive > 0) {
+                <div class="ri-extra">
+                  <div class="ri-extra-field">
+                    <label>N.o de Lote *</label>
+                    <input type="text" class="form-control" [(ngModel)]="ri.lotNumber" placeholder="Ej: LOTE-2026-001" />
+                  </div>
+                  @if (ri.trackExpiry) {
+                    <div class="ri-extra-field">
+                      <label>Fecha de Vencimiento *</label>
+                      <input type="date" class="form-control" [(ngModel)]="ri.expiryDate" />
+                    </div>
+                  }
+                </div>
+              }
             }
           </div>
         </div>
@@ -768,6 +803,16 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
     .ri-row { display: grid; grid-template-columns: 1fr 80px 90px 110px; gap: 0.5rem; align-items: center; padding: 0.5rem 0.25rem; border-bottom: 1px solid var(--color-border-subtle); }
     .ri-prod { display: flex; flex-direction: column; gap: 2px; font-size: var(--font-size-sm); }
     .ri-sku { font-size: var(--font-size-xs); color: var(--color-text-muted); font-family: monospace; }
+    .ri-extra {
+      grid-column: 1 / -1;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;
+      padding: 0.5rem 0.75rem 0.75rem;
+      background: var(--color-bg-canvas);
+      border-radius: var(--radius-sm);
+      margin: -0.25rem 0 0.25rem;
+    }
+    .ri-extra-field { display: flex; flex-direction: column; gap: 4px; }
+    .ri-extra-field label { font-size: var(--font-size-xs); font-weight: var(--font-weight-medium); color: var(--color-text-muted); }
 
     /* Retention preview */
     .retention-preview { background: var(--color-bg-subtle); border-radius: var(--radius-md); padding: 0.75rem 1rem; display: flex; flex-direction: column; gap: 0.375rem; }
@@ -789,6 +834,7 @@ export class PurchaseOrdersListComponent {
   private branchService = inject(BranchService);
   private toastService  = inject(ToastService);
   private router        = inject(Router);
+  private http          = inject(HttpClient);
 
   readonly ivaRetentionOpts   = IVA_RETENTION_OPTIONS;
   readonly rentaRetentionOpts = RENTA_RETENTION_OPTIONS;
@@ -828,12 +874,25 @@ export class PurchaseOrdersListComponent {
   isPaymentModalOpen  = signal(false);
 
   // ─── Receipt form ─────────────────────────────────────────────────────────
-  receiptForm = {
+  warehouses = signal<{ id: string; name: string; hasLocations: boolean }[]>([]);
+  warehouseLocations = signal<{ id: string; name: string; code: string }[]>([]);
+
+  receiptForm: {
+    warehouseId: string;
+    defaultLocationId: string;
+    supplierInvoiceNumber: string;
+    supplierInvoiceDate: string;
+    sriAuthorizationNumber: string;
+    notes: string;
+    items: ReceiptFormItem[];
+  } = {
+    warehouseId: '',
+    defaultLocationId: '',
     supplierInvoiceNumber: '',
     supplierInvoiceDate: '',
     sriAuthorizationNumber: '',
     notes: '',
-    items: [] as ReceiptFormItem[],
+    items: [],
   };
 
   // ─── Retention form ───────────────────────────────────────────────────────
@@ -935,6 +994,9 @@ export class PurchaseOrdersListComponent {
       actions.push({ id: 'retention', label: 'Retención',      icon: 'lucideShieldCheck' });
       actions.push({ id: 'payment',   label: 'Registrar Pago', icon: 'lucideCreditCard' });
     }
+    if (order.status !== 'ANULADA') {
+      actions.push({ id: 'duplicate', label: 'Duplicar',       icon: 'lucideCopy' });
+    }
     return actions;
   }
 
@@ -945,6 +1007,7 @@ export class PurchaseOrdersListComponent {
     if (action.id === 'receipt')   { this.onViewDetail(order, () => this.openReceiptDrawer()); return; }
     if (action.id === 'retention') { this.onViewDetail(order, () => this.openRetentionModal()); return; }
     if (action.id === 'payment')   { this.onViewDetail(order, () => this.openPaymentModal()); return; }
+    if (action.id === 'duplicate')  { this.onDuplicate(order); return; }
     if (action.id === 'cancel')    { this.actionTargetId.set(order.id); this.isCancelModalOpen.set(true); }
     if (action.id === 'delete')    { this.actionTargetId.set(order.id); this.isDeleteModalOpen.set(true); }
   }
@@ -953,6 +1016,39 @@ export class PurchaseOrdersListComponent {
   onSearch(q: string)      { this.searchQuery.set(q); this.currentPage.set(1); }
   onNew()                  { this.router.navigate(['/inventario/ordenes-compra/nueva']); }
   onEdit(order: PurchaseOrder) { this.router.navigate(['/inventario/ordenes-compra', order.id, 'editar']); }
+
+  onWarehouseChange(warehouseId: string) {
+    this.receiptForm.warehouseId = warehouseId;
+    const wh = this.warehouses().find(w => w.id === warehouseId);
+    if (wh?.hasLocations) {
+      this.http.get<any>(`${environment.apiUrl}/business/locations?warehouseId=${warehouseId}&limit=50`).subscribe({
+        next: (res: any) => {
+          const data = res?.data?.data ?? res?.data ?? res ?? [];
+          this.warehouseLocations.set(data.filter((l: any) => l.isActive));
+        }
+      });
+    } else {
+      this.warehouseLocations.set([]);
+    }
+  }
+
+  get selectedWarehouseHasLocations(): boolean {
+    const wh = this.warehouses().find(w => w.id === this.receiptForm.warehouseId);
+    return wh?.hasLocations ?? false;
+  }
+
+  onDuplicate(order: PurchaseOrder) {
+    this.isActioning.set(true);
+    this.orderService.duplicate(order.id).subscribe({
+      next: (newOrder) => {
+        this.toastService.success(`Orden ${newOrder.orderNumber} creada como borrador`);
+        this.isActioning.set(false);
+        this.refreshTrigger.update(v => v + 1);
+        this.router.navigate(['/inventario/ordenes-compra', newOrder.id, 'editar']);
+      },
+      error: () => { this.toastService.error('Error al duplicar la orden'); this.isActioning.set(false); }
+    });
+  }
 
   onViewDetail(order: PurchaseOrder, afterLoad?: () => void) {
     this.isDetailOpen.set(true);
@@ -978,31 +1074,61 @@ export class PurchaseOrdersListComponent {
   openReceiptDrawer() {
     const d = this.detail();
     if (!d) return;
+    this.receiptForm.warehouseId            = '';
+    this.warehouseLocations.set([]);
+
+    // Cargar bodegas activas
+    this.http.get<any>(`${environment.apiUrl}/business/warehouses?limit=50`).subscribe({
+      next: (res: any) => {
+        const data = res?.data?.data ?? res?.data ?? res ?? [];
+        this.warehouses.set(data.filter((w: any) => w.isActive));
+      }
+    });
+
     this.receiptForm.supplierInvoiceNumber  = '';
     this.receiptForm.supplierInvoiceDate    = '';
     this.receiptForm.sriAuthorizationNumber = '';
     this.receiptForm.notes                  = '';
     this.receiptForm.items = (d.items ?? []).map(item => ({
       orderItemId:      item.id,
+      variantId:        item.variantId,
       productName:      item.productName ?? '',
       variantName:      item.variantName ?? '',
       sku:              item.sku ?? '',
-      unitOfMeasure:    item.unitOfMeasure,
+      unitOfMeasure:    (item as any).unitOfMeasure ?? 'UN',
       quantityOrdered:  item.quantityOrdered,
       quantityReceived: item.quantityReceived,
       qtyToReceive:     item.quantityOrdered - item.quantityReceived,
+      trackLots:        (item as any).trackLots ?? false,
+      trackExpiry:      (item as any).trackExpiry ?? false,
+      lotNumber:        '',
+      expiryDate:       '',
+      locationId:       '',
     }));
     this.isReceiptDrawerOpen.set(true);
   }
 
   openRetentionModal() {
     const d = this.detail();
+    const tipo = (d as any)?.supplierTipoContribuyente;
+    const rimpe = (d as any)?.supplierRegimenRimpe;
+
+    // Sugerir retención IVA según tipo de contribuyente
+    let suggestedIvaRetention = 30; // default para bienes
+    if (rimpe === 'POPULAR') suggestedIvaRetention = 100;
+
+    // Sugerir retención IR según tipo
+    let suggestedRentaRetention = 2; // bienes muebles (2026)
+    if (rimpe === 'POPULAR') suggestedRentaRetention = 0;
+    else if (tipo === 'SOCIEDAD') suggestedRentaRetention = 2;
+    else if (tipo === 'PERSONA_NATURAL') suggestedRentaRetention = 2;
+
     this.retentionForm.retentionNumber         = '';
     this.retentionForm.retentionDate           = new Date().toISOString().slice(0, 10);
-    this.retentionForm.ivaRetentionPercent      = 30;
-    this.retentionForm.ivaRetentionBase         = d ? +d.totalIva : 0;
+    this.retentionForm.ivaRetentionPercent      = suggestedIvaRetention;
+    this.retentionForm.ivaRetentionBase         = d ? +d.totalTaxes || 0 : 0;
     this.retentionForm.ivaRetentionAmount       = 0;
-    this.retentionForm.rentaRetentionPercent    = 0;
+    this.retentionForm.rentaRetentionPercent    = suggestedRentaRetention;
     this.retentionForm.rentaRetentionBase       = d ? +d.subtotal : 0;
     this.retentionForm.rentaRetentionAmount     = 0;
     this.retentionForm.notes                   = '';
@@ -1060,7 +1186,12 @@ export class PurchaseOrdersListComponent {
       this.toastService.error('Completa el número y fecha de factura');
       return;
     }
+    if (!this.receiptForm.warehouseId) {
+      this.toastService.error('Selecciona una bodega');
+      return;
+    }
     const payload: RegisterReceiptPayload = {
+      warehouseId: this.receiptForm.warehouseId,
       supplierInvoiceNumber,
       supplierInvoiceDate,
       sriAuthorizationNumber: sriAuthorizationNumber || undefined,
@@ -1068,11 +1199,27 @@ export class PurchaseOrdersListComponent {
       items: items.filter(i => i.qtyToReceive > 0).map(i => ({
         orderItemId:      i.orderItemId,
         quantityReceived: i.qtyToReceive,
+        lotNumber:        i.trackLots && i.lotNumber ? i.lotNumber : undefined,
+        expiryDate:       i.trackExpiry && i.expiryDate ? i.expiryDate : undefined,
+        locationId:       i.locationId || this.receiptForm.defaultLocationId || undefined,
       })),
     };
     if (payload.items.length === 0) {
       this.toastService.error('Ingresa al menos una cantidad a recibir');
       return;
+    }
+
+    // Validar lotes y vencimientos requeridos
+    const itemsToReceive = items.filter(i => i.qtyToReceive > 0);
+    for (const i of itemsToReceive) {
+      if (i.trackLots && !i.lotNumber?.trim()) {
+        this.toastService.error(`Ingresa el número de lote para "${i.productName}"`);
+        return;
+      }
+      if (i.trackExpiry && !i.expiryDate) {
+        this.toastService.error(`Ingresa la fecha de vencimiento para "${i.productName}"`);
+        return;
+      }
     }
     this.isActioning.set(true);
     this.orderService.registerReceipt(id, payload).subscribe({

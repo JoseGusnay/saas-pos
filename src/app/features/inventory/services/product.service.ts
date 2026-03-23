@@ -44,12 +44,20 @@ export class ProductService {
     return this.http.get<any>(`${this.apiUrl}/${id}`).pipe(map(res => res.data));
   }
 
-  create(payload: CreateProductPayload): Observable<Product> {
-    return this.http.post<any>(this.apiUrl, payload).pipe(map(res => res.data));
+  create(data: FormData | CreateProductPayload): Observable<Product> {
+    const body = data instanceof FormData ? data : this.toFormData(data);
+    return this.http.post<any>(this.apiUrl, body).pipe(map(res => res.data));
   }
 
-  update(id: string, payload: Partial<CreateProductPayload>): Observable<Product> {
-    return this.http.patch<any>(`${this.apiUrl}/${id}`, payload).pipe(map(res => res.data));
+  update(id: string, data: FormData | Partial<CreateProductPayload>): Observable<Product> {
+    const body = data instanceof FormData ? data : this.toFormData(data);
+    return this.http.patch<any>(`${this.apiUrl}/${id}`, body).pipe(map(res => res.data));
+  }
+
+  private toFormData(payload: any): FormData {
+    const fd = new FormData();
+    fd.append('payload', JSON.stringify(payload));
+    return fd;
   }
 
   remove(id: string): Observable<void> {

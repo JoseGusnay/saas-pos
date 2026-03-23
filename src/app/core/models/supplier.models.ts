@@ -1,7 +1,15 @@
+export type TipoIdentificacion = 'RUC' | 'CEDULA' | 'PASAPORTE';
+export type TipoContribuyente = 'PERSONA_NATURAL' | 'SOCIEDAD' | 'CONTRIBUYENTE_ESPECIAL' | 'ENTIDAD_PUBLICA';
+export type RegimenRimpe = 'POPULAR' | 'EMPRENDEDOR' | null;
+
 export interface Supplier {
   id: string;
   name: string;
+  tipoIdentificacion: TipoIdentificacion;
   ruc?: string | null;
+  tipoContribuyente: TipoContribuyente;
+  obligadoContabilidad: boolean;
+  regimenRimpe: RegimenRimpe;
   email?: string | null;
   phone?: string | null;
   address?: string | null;
@@ -13,7 +21,11 @@ export interface Supplier {
 
 export interface CreateSupplierPayload {
   name: string;
+  tipoIdentificacion?: TipoIdentificacion;
   ruc?: string;
+  tipoContribuyente?: TipoContribuyente;
+  obligadoContabilidad?: boolean;
+  regimenRimpe?: RegimenRimpe;
   email?: string;
   phone?: string;
   address?: string;

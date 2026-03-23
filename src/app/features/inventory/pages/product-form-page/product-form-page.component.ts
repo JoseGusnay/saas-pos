@@ -24,7 +24,6 @@ import { CategoryService } from '../../../../core/services/category.service';
 import { TaxService } from '../../../../core/services/tax.service';
 import { UnitsService } from '../../../../core/services/units.service';
 import { PresentationService } from '../../../../core/services/presentation.service';
-import { FileStorageService } from '../../../../core/services/file-storage.service';
 import { ToastService } from '../../../../core/services/toast.service';
 
 import { VariantDrawerComponent } from '../../components/variant-drawer/variant-drawer.component';
@@ -45,7 +44,7 @@ import { FieldInputComponent } from '../../../../shared/components/ui/field-inpu
 
 import { SearchSelectOption } from '../../../../shared/models/search-select.models';
 import { CategoryAttributeType, CreateProductPayload } from '../../models/product.model';
-import { forkJoin, of, map } from 'rxjs';
+import { map } from 'rxjs';
 
 @Component({
   selector: 'app-product-form-page',
@@ -98,7 +97,6 @@ export class ProductFormPageComponent implements OnInit {
   private taxSvc = inject(TaxService);
   private unitsSvc = inject(UnitsService);
   private presentationSvc = inject(PresentationService);
-  private fileSvc = inject(FileStorageService);
   private toastSvc = inject(ToastService);
 
   // ── State ──────────────────────────────────────────────────────────────────
@@ -744,140 +742,95 @@ export class ProductFormPageComponent implements OnInit {
 
     const val = this.form.value;
 
-    let variantPayload: any[];
     if (val.hasVariants) {
       if (this.variants.invalid) return;
-      variantPayload = this.variants.controls.map(ctrl => this.mapVariant(ctrl.value));
     } else {
       if (this.simpleVariant.invalid) return;
       if ((val.type === 'PHYSICAL' || val.type === 'SERVICE') && this.modifierGroups.invalid) return;
-      variantPayload = [this.mapSimpleVariant(val.simpleVariant, val.name, val.type)];
     }
 
-    // COMBO: require at least 2 items
     if (val.type === 'COMBO' && this.comboItems.length < 2) {
       this.toastSvc.error('Un combo debe tener al menos 2 componentes');
       return;
     }
 
     this.isSubmitting.set(true);
+    this.uploadProgressLabel.set('Guardando...');
 
-    const productFile = this.selectedImageFile();
-    const variantUploads = val.hasVariants
-      ? this.variants.controls
-          .map((ctrl, i) => ({ ctrl, file: ctrl.get('imageFile')?.value as File | null, index: i }))
-          .filter(v => v.file)
-      : [];
-
-    const totalUploads = (productFile ? 1 : 0) + variantUploads.length;
-
-    const doSave = (productImageUrl?: string, productImagePublicId?: string) => {
-      const payload: CreateProductPayload = {
-        name: val.name,
-        description: val.description || undefined,
-        type: val.type,
-        comboPriceMode: val.type === 'COMBO' ? val.comboPriceMode : undefined,
-        categoryId: val.categoryId,
-        brandId: val.brandId || undefined,
-        isActive: val.isActive,
-        isSellable: val.isSellable,
-        isPurchasable: val.isPurchasable,
-        imageUrl: productImageUrl || undefined,
-        imagePublicId: productImagePublicId || undefined,
-        variants: val.hasVariants
-          ? this.variants.controls.map(ctrl => this.mapVariant(ctrl.value))
-          : [this.mapSimpleVariant(val.simpleVariant, val.name, val.type)],
-        comboItems: val.type === 'COMBO' && this.comboItems.length > 0
-          ? this.comboItems.controls.map(c => ({
-              variantId: c.get('productVariantId')?.value,
-              quantity: Number(c.get('quantity')?.value),
-              modifierGroups: this.mapItemModifiers(c.get('modifierGroups') as FormArray)
+    // Build JSON payload
+    const payload: CreateProductPayload = {
+      name: val.name,
+      description: val.description || undefined,
+      type: val.type,
+      comboPriceMode: val.type === 'COMBO' ? val.comboPriceMode : undefined,
+      categoryId: val.categoryId,
+      brandId: val.brandId || undefined,
+      isActive: val.isActive,
+      isSellable: val.isSellable,
+      isPurchasable: val.isPurchasable,
+      // Preserve existing image URL if no new file selected
+      imageUrl: !this.selectedImageFile() && this.imagePreviewUrl() && !this.imagePreviewUrl()!.startsWith('data:')
+        ? this.imagePreviewUrl()! : undefined,
+      imagePublicId: !this.selectedImageFile() ? (this.imagePublicId() ?? undefined) : undefined,
+      variants: val.hasVariants
+        ? this.variants.controls.map(ctrl => this.mapVariant(ctrl.value))
+        : [this.mapSimpleVariant(val.simpleVariant, val.name, val.type)],
+      comboItems: val.type === 'COMBO' && this.comboItems.length > 0
+        ? this.comboItems.controls.map(c => ({
+            variantId: c.get('productVariantId')?.value,
+            quantity: Number(c.get('quantity')?.value),
+            modifierGroups: this.mapItemModifiers(c.get('modifierGroups') as FormArray)
+          }))
+        : undefined,
+      modifierGroups: (val.type === 'PHYSICAL' || val.type === 'SERVICE')
+        ? this.modifierGroups.controls.map(g => ({
+            id: g.get('id')?.value || undefined,
+            name: g.get('name')?.value,
+            minSelections: g.get('minSelections')?.value ?? 0,
+            maxSelections: g.get('maxSelections')?.value ?? undefined,
+            required: g.get('required')?.value ?? false,
+            sortOrder: g.get('sortOrder')?.value ?? 0,
+            options: (g.get('options') as FormArray).controls.map((o, oi) => ({
+              id: o.get('id')?.value || undefined,
+              name: o.get('name')?.value,
+              priceAdjustment: Number(o.get('priceAdjustment')?.value) || 0,
+              variantId: o.get('variantId')?.value || undefined,
+              isDefault: o.get('isDefault')?.value ?? false,
+              sortOrder: o.get('sortOrder')?.value ?? oi
             }))
-          : undefined,
-        modifierGroups: (val.type === 'PHYSICAL' || val.type === 'SERVICE')
-          ? this.modifierGroups.controls.map(g => ({
-              id: g.get('id')?.value || undefined,
-              name: g.get('name')?.value,
-              minSelections: g.get('minSelections')?.value ?? 0,
-              maxSelections: g.get('maxSelections')?.value ?? undefined,
-              required: g.get('required')?.value ?? false,
-              sortOrder: g.get('sortOrder')?.value ?? 0,
-              options: (g.get('options') as FormArray).controls.map((o, oi) => ({
-                id: o.get('id')?.value || undefined,
-                name: o.get('name')?.value,
-                priceAdjustment: Number(o.get('priceAdjustment')?.value) || 0,
-                variantId: o.get('variantId')?.value || undefined,
-                isDefault: o.get('isDefault')?.value ?? false,
-                sortOrder: o.get('sortOrder')?.value ?? oi
-              }))
-            }))
-          : undefined
-      };
-
-      const obs$ = this.isEditing()
-        ? this.productSvc.update(this.productId()!, payload)
-        : this.productSvc.create(payload);
-
-      obs$.subscribe({
-        next: res => {
-          const msg = this.isEditing() ? 'Producto actualizado' : `Producto "${res.name}" creado`;
-          this.toastSvc.success(`${msg} exitosamente`);
-          this.router.navigate(['/inventario/productos']);
-        },
-        error: () => {
-          this.toastSvc.error('Error al guardar el producto');
-          this.isSubmitting.set(false);
-          this.uploadProgressLabel.set(null);
-        }
-      });
+          }))
+        : undefined
     };
 
-    if (totalUploads === 0) {
-      const existingUrl = this.imagePreviewUrl() && !this.imagePreviewUrl()!.startsWith('data:')
-        ? this.imagePreviewUrl()! : undefined;
-      doSave(existingUrl, this.imagePublicId() ?? undefined);
-      return;
+    // Build FormData: JSON + files
+    const formData = new FormData();
+    formData.append('payload', JSON.stringify(payload));
+
+    if (this.selectedImageFile()) {
+      formData.append('productImage', this.selectedImageFile()!);
     }
 
-    this.isUploadingImage.set(true);
-    this.uploadProgressLabel.set(`Subiendo imágenes (0/${totalUploads})...`);
-    let done = 0;
-    let productImageUrl: string | undefined;
-    let productImagePublicId: string | undefined;
+    if (val.hasVariants) {
+      this.variants.controls.forEach((ctrl, i) => {
+        const file = ctrl.get('imageFile')?.value as File | null;
+        if (file) formData.append(`variantImage_${i}`, file);
+      });
+    }
 
-    const uploads$ = [
-      productFile
-        ? this.fileSvc.upload(productFile).pipe(
-            map(r => { productImageUrl = r.url; productImagePublicId = r.publicId; done++; this.uploadProgressLabel.set(`Subiendo imágenes (${done}/${totalUploads})...`); })
-          )
-        : of(null),
-      ...variantUploads.map(v =>
-        this.fileSvc.upload(v.file!, 'variants').pipe(
-          map(r => {
-            v.ctrl.patchValue({ imageUrl: r.url, imagePublicId: r.publicId, imageFile: null });
-            done++;
-            this.uploadProgressLabel.set(`Subiendo imágenes (${done}/${totalUploads})...`);
-          })
-        )
-      )
-    ];
+    const obs$ = this.isEditing()
+      ? this.productSvc.update(this.productId()!, formData)
+      : this.productSvc.create(formData);
 
-    forkJoin(uploads$).subscribe({
-      next: () => {
-        this.isUploadingImage.set(false);
-        if (!productImageUrl) {
-          const existing = this.imagePreviewUrl() && !this.imagePreviewUrl()!.startsWith('data:')
-            ? this.imagePreviewUrl()! : undefined;
-          productImageUrl = existing;
-          productImagePublicId = this.imagePublicId() ?? undefined;
-        }
-        doSave(productImageUrl, productImagePublicId);
+    obs$.subscribe({
+      next: res => {
+        const msg = this.isEditing() ? 'Producto actualizado' : `Producto "${res.name}" creado`;
+        this.toastSvc.success(`${msg} exitosamente`);
+        this.router.navigate(['/inventario/productos']);
       },
       error: () => {
-        this.isUploadingImage.set(false);
+        this.toastSvc.error('Error al guardar el producto');
         this.isSubmitting.set(false);
         this.uploadProgressLabel.set(null);
-        this.toastSvc.error('Error al subir las imágenes');
       }
     });
   }

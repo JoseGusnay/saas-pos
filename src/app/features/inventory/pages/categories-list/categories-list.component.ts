@@ -87,11 +87,11 @@ import { CategoryImportModalComponent } from '../../components/category-import-m
     CategoryImportModalComponent
   ],
   providers: [
-    provideIcons({ 
-      lucidePlus, lucideSearch, lucideLayoutGrid, lucideList, 
-      lucideFilter, lucideMoreVertical, lucidePencil, lucideTrash2, 
+    provideIcons({
+      lucidePlus, lucideSearch, lucideLayoutGrid, lucideList,
+      lucideFilter, lucideMoreVertical, lucidePencil, lucideTrash2,
       lucideChevronRight, lucideFolder, lucideInfo, lucideTag,
-      lucidePlusCircle, lucideRefreshCw, lucideTrash, lucideCloudDownload, lucideDownload
+      lucidePlusCircle, lucideRefreshCw, lucideTrash, lucideCloudDownload, lucideDownload, lucideHistory
     })
   ],
   template: `

@@ -210,10 +210,12 @@ import { map } from 'rxjs';
                         >
                       </div>
                     } @else if (cat.attributeType.dataType === 'BOOLEAN') {
-                      <label class="toggle-row">
-                        <input type="checkbox" [formControlName]="cat.attributeTypeId">
-                        <span>Sí</span>
-                      </label>
+                      <div class="pff__toggle-row" (click)="boolToggle.toggle()">
+                        <div class="pff__toggle-info">
+                          <span class="pff__toggle-label">{{ cat.attributeType.name }}</span>
+                        </div>
+                        <app-toggle-switch #boolToggle [formControlName]="cat.attributeTypeId" size="sm" (click)="$event.stopPropagation()"></app-toggle-switch>
+                      </div>
                     } @else {
                       <input
                         type="text"

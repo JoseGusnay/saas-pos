@@ -6,6 +6,8 @@ export type PurchaseOrderStatus =
   | 'CERRADA'
   | 'ANULADA';
 
+export type PurchaseDocumentType = 'FACTURA' | 'LIQUIDACION_COMPRA';
+
 export type PaymentCondition =
   | 'CONTADO'
   | 'CREDITO_15'
@@ -25,6 +27,18 @@ export type PaymentMethod =
   | 'CHEQUE'
   | 'TARJETA';
 
+// ── Impuesto por línea ──────────────────────────────────────────────────────
+
+export interface PurchaseOrderItemTax {
+  id: string;
+  orderItemId: string;
+  taxId: string;
+  taxName: string;
+  taxRate: number;
+  baseAmount: number;
+  taxAmount: number;
+}
+
 // ── Ítem de orden ─────────────────────────────────────────────────────────────
 
 export interface PurchaseOrderItem {
@@ -34,17 +48,17 @@ export interface PurchaseOrderItem {
   variantName: string | null;
   sku: string | null;
   productName: string | null;
-  unitOfMeasure: string;
+  unitId: string | null;
   quantityOrdered: number;
   quantityReceived: number;
   unitCost: number;
   discountPercent: number;
-  taxRate: number;
   subtotalBeforeDiscount: number;
   discountAmount: number;
   subtotal: number;
-  ivaAmount: number;
+  totalTaxes: number;
   lineTotal: number;
+  taxes?: PurchaseOrderItemTax[];
 }
 
 // ── Recepción ─────────────────────────────────────────────────────────────────
@@ -53,7 +67,10 @@ export interface PurchaseOrderReceiptItem {
   id: string;
   receiptId: string;
   orderItemId: string;
+  variantId: string;
   quantityReceived: number;
+  lotId: string | null;
+  locationId: string | null;
 }
 
 export interface PurchaseOrderReceipt {
@@ -100,11 +117,22 @@ export interface PurchaseOrderPayment {
   createdAt: string;
 }
 
+// ── Desglose de impuestos a nivel de orden ────────────────────────────────────
+
+export interface TaxSummaryItem {
+  taxId: string;
+  taxName: string;
+  taxRate: number;
+  baseAmount: number;
+  taxAmount: number;
+}
+
 // ── Orden ─────────────────────────────────────────────────────────────────────
 
 export interface PurchaseOrder {
   id: string;
   orderNumber: string;
+  documentType: PurchaseDocumentType;
   supplierId: string;
   branchId: string;
   status: PurchaseOrderStatus;
@@ -116,10 +144,8 @@ export interface PurchaseOrder {
   internalNotes: string | null;
   subtotal: number;
   totalDiscount: number;
-  baseIva0: number;
-  baseIva5: number;
-  baseIva15: number;
-  totalIva: number;
+  totalTaxes: number;
+  taxSummary: TaxSummaryItem[] | null;
   total: number;
   totalPaid: number;
   userName: string | null;
@@ -129,6 +155,8 @@ export interface PurchaseOrder {
   /** Joined */
   supplierName?: string;
   supplierRuc?: string;
+  supplierTipoContribuyente?: string;
+  supplierRegimenRimpe?: string;
   branchName?: string;
   itemCount?: number;
   items?: PurchaseOrderItem[];
@@ -144,14 +172,15 @@ export interface PurchaseOrderItemPayload {
   variantName?: string;
   sku?: string;
   productName?: string;
-  unitOfMeasure?: string;
+  unitId?: string;
   quantityOrdered: number;
   unitCost: number;
   discountPercent?: number;
-  taxRate?: number;
+  taxIds?: string[];
 }
 
 export interface CreatePurchaseOrderPayload {
+  documentType?: PurchaseDocumentType;
   supplierId: string;
   branchId: string;
   paymentCondition?: PaymentCondition;
@@ -174,9 +203,13 @@ export interface UpdatePurchaseOrderPayload {
 export interface ReceiptItemPayload {
   orderItemId: string;
   quantityReceived: number;
+  lotNumber?: string;
+  expiryDate?: string;
+  locationId?: string;
 }
 
 export interface RegisterReceiptPayload {
+  warehouseId: string;
   supplierInvoiceNumber: string;
   supplierInvoiceDate: string;
   sriAuthorizationNumber?: string;

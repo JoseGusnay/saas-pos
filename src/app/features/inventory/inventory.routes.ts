@@ -22,6 +22,11 @@ export const INVENTORY_ROUTES: Routes = [
     data: { breadcrumb: 'Presentaciones' }
   },
   {
+    path: 'atributos',
+    loadComponent: () => import('./pages/attribute-types-list/attribute-types-list.component').then(m => m.AttributeTypesListComponent),
+    data: { breadcrumb: 'Tipos de Atributo' }
+  },
+  {
     path: 'impuestos',
     loadComponent: () => import('./pages/taxes-list/taxes-list.component').then(m => m.TaxesListComponent),
     data: { breadcrumb: 'Impuestos' }

@@ -2,7 +2,7 @@ import { Component, inject, output, signal, ChangeDetectorRef } from '@angular/c
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SupplierService } from '../../../../../../core/services/supplier.service';
-import { Supplier } from '../../../../../../core/models/supplier.models';
+import { Supplier, TipoIdentificacion, TipoContribuyente } from '../../../../../../core/models/supplier.models';
 import { ToastService } from '../../../../../../core/services/toast.service';
 
 @Component({
@@ -15,22 +15,63 @@ import { ToastService } from '../../../../../../core/services/toast.service';
       <div class="form-section">
         <h3 class="section-title">Identificación</h3>
         <div class="form-group">
-          <label for="name">Nombre *</label>
-          <input id="name" type="text" class="form-control" [(ngModel)]="formData.name" name="name" placeholder="Nombre del proveedor" required />
+          <label for="name">Razón Social / Nombre *</label>
+          <input id="name" type="text" class="form-control" [(ngModel)]="formData.name" name="name" placeholder="Nombre o razón social del proveedor" required />
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label for="ruc">RUC / Cédula</label>
-            <input id="ruc" type="text" class="form-control" [(ngModel)]="formData.ruc" name="ruc" placeholder="0000000000001" />
+            <label for="tipoIdentificacion">Tipo de Identificación</label>
+            <select id="tipoIdentificacion" class="form-control" [(ngModel)]="formData.tipoIdentificacion" name="tipoIdentificacion">
+              <option value="RUC">RUC</option>
+              <option value="CEDULA">Cédula</option>
+              <option value="PASAPORTE">Pasaporte</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="ruc">{{ formData.tipoIdentificacion === 'RUC' ? 'RUC' : formData.tipoIdentificacion === 'CEDULA' ? 'Cédula' : 'Pasaporte' }}</label>
+            <input id="ruc" type="text" class="form-control" [(ngModel)]="formData.ruc" name="ruc"
+              [placeholder]="formData.tipoIdentificacion === 'RUC' ? '0000000000001' : formData.tipoIdentificacion === 'CEDULA' ? '0000000000' : 'Número'"
+              [maxlength]="formData.tipoIdentificacion === 'RUC' ? 13 : formData.tipoIdentificacion === 'CEDULA' ? 10 : 20" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="email">Correo electrónico</label>
+            <input id="email" type="email" class="form-control" [(ngModel)]="formData.email" name="email" placeholder="proveedor@ejemplo.com" />
           </div>
           <div class="form-group">
             <label for="phone">Teléfono</label>
             <input id="phone" type="text" class="form-control" [(ngModel)]="formData.phone" name="phone" placeholder="+593 99 000 0000" />
           </div>
         </div>
-        <div class="form-group">
-          <label for="email">Correo electrónico</label>
-          <input id="email" type="email" class="form-control" [(ngModel)]="formData.email" name="email" placeholder="proveedor@ejemplo.com" />
+      </div>
+
+      <div class="form-section">
+        <h3 class="section-title">Datos Fiscales</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="tipoContribuyente">Tipo de Contribuyente</label>
+            <select id="tipoContribuyente" class="form-control" [(ngModel)]="formData.tipoContribuyente" name="tipoContribuyente">
+              <option value="PERSONA_NATURAL">Persona Natural</option>
+              <option value="SOCIEDAD">Sociedad</option>
+              <option value="CONTRIBUYENTE_ESPECIAL">Contribuyente Especial</option>
+              <option value="ENTIDAD_PUBLICA">Entidad Pública</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="regimenRimpe">Régimen RIMPE</label>
+            <select id="regimenRimpe" class="form-control" [(ngModel)]="formData.regimenRimpe" name="regimenRimpe">
+              <option [ngValue]="''">No aplica</option>
+              <option value="POPULAR">Negocio Popular</option>
+              <option value="EMPRENDEDOR">Emprendedor</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-switches">
+          <div class="form-check">
+            <input id="obligadoContabilidad" type="checkbox" [(ngModel)]="formData.obligadoContabilidad" name="obligadoContabilidad" />
+            <label for="obligadoContabilidad">Obligado a llevar contabilidad</label>
+          </div>
         </div>
       </div>
 
@@ -101,19 +142,27 @@ export class SupplierFormComponent {
   formData = this.emptyForm();
 
   private emptyForm() {
-    return { name: '', ruc: '', email: '', phone: '', contactName: '', address: '', isActive: true };
+    return {
+      name: '', tipoIdentificacion: 'RUC' as TipoIdentificacion, ruc: '',
+      tipoContribuyente: 'PERSONA_NATURAL' as TipoContribuyente, obligadoContabilidad: false, regimenRimpe: '' as string,
+      email: '', phone: '', contactName: '', address: '', isActive: true,
+    };
   }
 
   setSupplier(supplier: Supplier) {
     this.editingId = supplier.id;
     const data = {
-      name:        supplier.name,
-      ruc:         supplier.ruc ?? '',
-      email:       supplier.email ?? '',
-      phone:       supplier.phone ?? '',
-      contactName: supplier.contactName ?? '',
-      address:     supplier.address ?? '',
-      isActive:    supplier.isActive,
+      name:                 supplier.name,
+      tipoIdentificacion:   supplier.tipoIdentificacion ?? 'RUC',
+      ruc:                  supplier.ruc ?? '',
+      tipoContribuyente:    supplier.tipoContribuyente ?? 'PERSONA_NATURAL',
+      obligadoContabilidad: supplier.obligadoContabilidad ?? false,
+      regimenRimpe:         supplier.regimenRimpe ?? '',
+      email:                supplier.email ?? '',
+      phone:                supplier.phone ?? '',
+      contactName:          supplier.contactName ?? '',
+      address:              supplier.address ?? '',
+      isActive:             supplier.isActive,
     };
     this.formData = { ...data };
     this.pristineData = { ...data };
@@ -135,13 +184,17 @@ export class SupplierFormComponent {
     this.isSubmitting.set(true);
 
     const payload = {
-      name:        this.formData.name.trim(),
-      ruc:         this.formData.ruc.trim() || undefined,
-      email:       this.formData.email.trim() || undefined,
-      phone:       this.formData.phone.trim() || undefined,
-      contactName: this.formData.contactName.trim() || undefined,
-      address:     this.formData.address.trim() || undefined,
-      isActive:    this.formData.isActive,
+      name:                 this.formData.name.trim(),
+      tipoIdentificacion:   this.formData.tipoIdentificacion,
+      ruc:                  this.formData.ruc.trim() || undefined,
+      tipoContribuyente:    this.formData.tipoContribuyente,
+      obligadoContabilidad: this.formData.obligadoContabilidad,
+      regimenRimpe:         (this.formData.regimenRimpe || null) as any,
+      email:                this.formData.email.trim() || undefined,
+      phone:                this.formData.phone.trim() || undefined,
+      contactName:          this.formData.contactName.trim() || undefined,
+      address:              this.formData.address.trim() || undefined,
+      isActive:             this.formData.isActive,
     };
 
     const request = this.editingId

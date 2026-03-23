@@ -49,6 +49,7 @@ export interface SelectOption {
       position: relative;
       width: fit-content;
       min-width: 180px;
+      width: 100%;
 
       &__trigger {
         width: 100%;
@@ -157,7 +158,7 @@ export class CustomSelectComponent {
 
   isOpen = false;
 
-  constructor(private elementRef: ElementRef) {}
+  constructor(private elementRef: ElementRef) { }
 
   get selectedLabel(): string {
     return this.options.find(o => o.value === this.value)?.label || 'Seleccionar...';
