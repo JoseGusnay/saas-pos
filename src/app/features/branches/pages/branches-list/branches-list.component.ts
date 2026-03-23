@@ -445,7 +445,7 @@ export class BranchesListComponent {
       page: this.currentPage(),
       limit: this.pageSize(),
       search: this.searchQuery(),
-      filterModel: QueryMapper.toAgGridFilterModel(this.filterTree()),
+      filterModel: QueryMapper.toAgGridFilterModel(this.filterTree(), this.availableFields),
       tab: this.activeTab(),
       sortField: this.sortField(),
       sortOrder: this.sortOrder(),

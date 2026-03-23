@@ -15,7 +15,7 @@ export type LogicalOperator = 'AND' | 'OR';
 export interface FilterField {
     id: string;
     label: string;
-    type: 'text' | 'number' | 'select' | 'status';
+    type: 'text' | 'number' | 'date' | 'select' | 'status';
     options?: { label: string; value: string }[];
 }
 
@@ -42,7 +42,7 @@ export interface AgGridFilterCondition {
     filterType?: 'text' | 'number' | 'date' | 'set' | 'boolean';
     type?: FilterOperator;
     filter?: string | number | boolean;
-    filterTo?: number;
+    filterTo?: number | string;
 }
 
 export interface AgGridFilterModel {

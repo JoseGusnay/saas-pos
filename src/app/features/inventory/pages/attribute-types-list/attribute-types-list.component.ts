@@ -397,7 +397,7 @@ export class AttributeTypesListComponent {
     toObservable(computed(() => ({
       page: this.currentPage(), limit: this.pageSize(),
       search: this.searchQuery(), sortField: this.sortField(), sortOrder: this.sortOrder(),
-      tab: this.activeTab(), filterModel: QueryMapper.toAgGridFilterModel(this.filterTree()),
+      tab: this.activeTab(), filterModel: QueryMapper.toAgGridFilterModel(this.filterTree(), this.filterConfig),
       refresh: this.refreshTrigger(),
     }))).pipe(
       debounceTime(300),

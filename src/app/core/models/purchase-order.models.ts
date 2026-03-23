@@ -59,6 +59,11 @@ export interface PurchaseOrderItem {
   totalTaxes: number;
   lineTotal: number;
   taxes?: PurchaseOrderItemTax[];
+  /** Enriched from variant on findOne */
+  trackLots?: boolean;
+  trackExpiry?: boolean;
+  stockTrackable?: boolean;
+  costPrice?: number;
 }
 
 // ── Recepción ─────────────────────────────────────────────────────────────────
@@ -69,7 +74,10 @@ export interface PurchaseOrderReceiptItem {
   orderItemId: string;
   variantId: string;
   quantityReceived: number;
+  unitCost?: number;
   lotId: string | null;
+  lotNumber: string | null;
+  expiryDate: string | null;
   locationId: string | null;
 }
 
@@ -88,19 +96,32 @@ export interface PurchaseOrderReceipt {
 
 // ── Retención ─────────────────────────────────────────────────────────────────
 
+export interface PurchaseOrderRetentionLine {
+  id: string;
+  retentionId: string;
+  codigoImpuesto: string;   // 1=Renta, 2=IVA, 6=ISD
+  codigoRetencion: string;  // Código SRI (303, 312, 9, etc.)
+  baseImponible: number;
+  porcentajeRetener: number;
+  valorRetenido: number;
+}
+
 export interface PurchaseOrderRetention {
   id: string;
   orderId: string;
   retentionNumber: string;
   retentionDate: string;
-  ivaRetentionPercent: number;
-  ivaRetentionAmount: number;
-  rentaRetentionPercent: number;
-  rentaRetentionAmount: number;
+  claveAcceso?: string | null;
+  codSustento?: string | null;
+  codDocSustento?: string | null;
+  pagoLocExt?: string;
+  periodoFiscal?: string | null;
   totalRetained: number;
   notes: string | null;
+  sriStatus?: string;
   emittedByName: string | null;
   createdAt: string;
+  lines?: PurchaseOrderRetentionLine[];
 }
 
 // ── Pago ──────────────────────────────────────────────────────────────────────
@@ -203,6 +224,7 @@ export interface UpdatePurchaseOrderPayload {
 export interface ReceiptItemPayload {
   orderItemId: string;
   quantityReceived: number;
+  unitCost?: number;
   lotNumber?: string;
   expiryDate?: string;
   locationId?: string;
@@ -217,13 +239,19 @@ export interface RegisterReceiptPayload {
   items: ReceiptItemPayload[];
 }
 
+export interface RetentionLinePayload {
+  codigoImpuesto: string;   // 1=Renta, 2=IVA
+  codigoRetencion: string;  // Código SRI
+  baseImponible: number;
+  porcentajeRetener: number;
+}
+
 export interface RegisterRetentionPayload {
   retentionNumber: string;
   retentionDate: string;
-  ivaRetentionPercent?: number;
-  ivaRetentionBase?: number;
-  rentaRetentionPercent?: number;
-  rentaRetentionBase?: number;
+  codSustento?: string;
+  pagoLocExt?: string;
+  lines: RetentionLinePayload[];
   notes?: string;
 }
 

@@ -67,10 +67,25 @@ import { ToastService } from '../../../../../../core/services/toast.service';
             </select>
           </div>
         </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="tipoSujetoRetenido">Tipo Sujeto Retenido</label>
+            <select id="tipoSujetoRetenido" class="form-control" [(ngModel)]="formData.tipoSujetoRetenido" name="tipoSujetoRetenido">
+              <option value="01">Persona Natural</option>
+              <option value="02">Sociedad</option>
+            </select>
+          </div>
+          <div class="form-group" style="display:flex;align-items:flex-end;">
+          </div>
+        </div>
         <div class="form-switches">
           <div class="form-check">
             <input id="obligadoContabilidad" type="checkbox" [(ngModel)]="formData.obligadoContabilidad" name="obligadoContabilidad" />
             <label for="obligadoContabilidad">Obligado a llevar contabilidad</label>
+          </div>
+          <div class="form-check">
+            <input id="parteRelacionada" type="checkbox" [(ngModel)]="formData.parteRelacionada" name="parteRelacionada" />
+            <label for="parteRelacionada">Parte relacionada</label>
           </div>
         </div>
       </div>
@@ -145,6 +160,7 @@ export class SupplierFormComponent {
     return {
       name: '', tipoIdentificacion: 'RUC' as TipoIdentificacion, ruc: '',
       tipoContribuyente: 'PERSONA_NATURAL' as TipoContribuyente, obligadoContabilidad: false, regimenRimpe: '' as string,
+      parteRelacionada: false, tipoSujetoRetenido: '01',
       email: '', phone: '', contactName: '', address: '', isActive: true,
     };
   }
@@ -158,6 +174,8 @@ export class SupplierFormComponent {
       tipoContribuyente:    supplier.tipoContribuyente ?? 'PERSONA_NATURAL',
       obligadoContabilidad: supplier.obligadoContabilidad ?? false,
       regimenRimpe:         supplier.regimenRimpe ?? '',
+      parteRelacionada:     supplier.parteRelacionada ?? false,
+      tipoSujetoRetenido:   supplier.tipoSujetoRetenido ?? '01',
       email:                supplier.email ?? '',
       phone:                supplier.phone ?? '',
       contactName:          supplier.contactName ?? '',
@@ -190,6 +208,8 @@ export class SupplierFormComponent {
       tipoContribuyente:    this.formData.tipoContribuyente,
       obligadoContabilidad: this.formData.obligadoContabilidad,
       regimenRimpe:         (this.formData.regimenRimpe || null) as any,
+      parteRelacionada:     this.formData.parteRelacionada,
+      tipoSujetoRetenido:   this.formData.tipoSujetoRetenido,
       email:                this.formData.email.trim() || undefined,
       phone:                this.formData.phone.trim() || undefined,
       contactName:          this.formData.contactName.trim() || undefined,

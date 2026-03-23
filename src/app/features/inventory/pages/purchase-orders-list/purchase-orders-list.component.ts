@@ -20,7 +20,13 @@ import { environment } from '../../../../../environments/environment';
 import { PageHeaderComponent } from '../../../../shared/components/list-ui/page-header/page-header.component';
 import { ListToolbarComponent } from '../../../../shared/components/list-ui/list-toolbar/list-toolbar.component';
 import { PaginationComponent } from '../../../../shared/components/list-ui/pagination/pagination.component';
+import { DataCardComponent } from '../../../../shared/components/list-ui/data-card/data-card.component';
 import { DrawerComponent } from '../../../../shared/components/ui/drawer/drawer';
+import { DatePickerComponent } from '../../../../shared/components/ui/date-picker/date-picker';
+import { CustomSelectComponent, SelectOption } from '../../../../shared/components/ui/custom-select/custom-select.component';
+import { QueryNodeComponent } from '../../../../core/components/query-node/query-node.component';
+import { QueryMapper } from '../../../../core/utils/query-mapper.util';
+import { FilterNode, FilterGroup, FilterField, FilterRule } from '../../../../core/models/query-builder.models';
 import { ModalComponent } from '../../../../shared/components/ui/modal/modal';
 import { FormButtonComponent } from '../../../../shared/components/ui/form-button/form-button';
 import { SkeletonComponent } from '../../../../shared/components/ui/skeleton/skeleton';
@@ -39,36 +45,67 @@ import {
 // ─── Receipt form model ───────────────────────────────────────────────────────
 
 interface ReceiptFormItem {
-  orderItemId:      string;
-  variantId:        string;
-  productName:      string;
-  variantName:      string;
-  sku:              string;
-  unitOfMeasure:    string;
-  quantityOrdered:  number;
+  orderItemId: string;
+  variantId: string;
+  productName: string;
+  variantName: string;
+  sku: string;
+  unitOfMeasure: string;
+  quantityOrdered: number;
   quantityReceived: number;
-  qtyToReceive:     number;
-  trackLots:        boolean;
-  trackExpiry:      boolean;
-  lotNumber:        string;
-  expiryDate:       string;
-  locationId:       string;
+  qtyToReceive: number;
+  unitCost: number;
+  trackLots: boolean;
+  trackExpiry: boolean;
+  lotNumber: string;
+  expiryDate: string;
+  locationId: string;
 }
 
-const IVA_RETENTION_OPTIONS = [
-  { value: 0,   label: '0%' },
-  { value: 30,  label: '30%' },
-  { value: 70,  label: '70%' },
-  { value: 100, label: '100%' },
+const IVA_RETENTION_CODES = [
+  { codigoRetencion: '9', label: '30% bienes', porcentaje: 30 },
+  { codigoRetencion: '10', label: '70% servicios', porcentaje: 70 },
+  { codigoRetencion: '1', label: '10% bienes', porcentaje: 10 },
+  { codigoRetencion: '2', label: '20% servicios', porcentaje: 20 },
+  { codigoRetencion: '3', label: '100% liq.compra', porcentaje: 100 },
 ];
-const RENTA_RETENTION_OPTIONS = [
-  { value: 0,    label: '0%' },
-  { value: 1,    label: '1%' },
-  { value: 1.75, label: '1.75%' },
-  { value: 2,    label: '2%' },
-  { value: 8,    label: '8%' },
-  { value: 10,   label: '10%' },
+const RENTA_RETENTION_CODES = [
+  { codigoRetencion: '303', label: '2% bienes muebles', porcentaje: 2 },
+  { codigoRetencion: '304', label: '2% bienes a sociedad', porcentaje: 2 },
+  { codigoRetencion: '307', label: '3% servicios', porcentaje: 3 },
+  { codigoRetencion: '308', label: '5% serv. profesionales', porcentaje: 5 },
+  { codigoRetencion: '309', label: '1% compras', porcentaje: 1 },
+  { codigoRetencion: '310', label: '1.75% combustibles', porcentaje: 1.75 },
+  { codigoRetencion: '323', label: '8% arrendamiento', porcentaje: 8 },
+  { codigoRetencion: '332', label: '10% honorarios', porcentaje: 10 },
 ];
+
+const COD_SUSTENTO_OPTIONS: SelectOption[] = [
+  { value: '01', label: '01 — Compra de bienes' },
+  { value: '02', label: '02 — Servicios' },
+  { value: '03', label: '03 — Bienes no producidos' },
+  { value: '04', label: '04 — Comisiones' },
+  { value: '05', label: '05 — Activos fijos' },
+  { value: '06', label: '06 — Seguros' },
+  { value: '07', label: '07 — Rendimientos financieros' },
+  { value: '08', label: '08 — Loterías y apuestas' },
+  { value: '09', label: '09 — Dividendos' },
+  { value: '10', label: '10 — Préstamos' },
+];
+
+const PAGO_LOC_EXT_OPTIONS: SelectOption[] = [
+  { value: '01', label: 'Local' },
+  { value: '02', label: 'Exterior' },
+];
+
+interface RetentionFormLine {
+  codigoImpuesto: string;
+  codigoRetencion: string;
+  label: string;
+  baseImponible: number;
+  porcentajeRetener: number;
+  valorRetenido: number;
+}
 const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
   (Object.entries(PAYMENT_METHOD_LABELS) as [PaymentMethod, string][]).map(
     ([value, label]) => ({ value, label })
@@ -84,7 +121,7 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
     PageHeaderComponent, ListToolbarComponent, PaginationComponent,
     DrawerComponent, ModalComponent, FormButtonComponent,
     SkeletonComponent, EmptyStateComponent, SpinnerComponent,
-    ActionsMenuComponent, NgIconComponent
+    ActionsMenuComponent, NgIconComponent, DatePickerComponent, CustomSelectComponent, DataCardComponent, QueryNodeComponent
   ],
   providers: [
     provideIcons({
@@ -110,77 +147,100 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
       <app-list-toolbar
         searchPlaceholder="Buscar por # orden o proveedor..."
         [searchQuery]="searchQuery()"
-        [activeFiltersCount]="0"
-        [viewMode]="'list'"
-        [showViewToggle]="false"
+        [activeFiltersCount]="activeFiltersCount()"
+        [viewMode]="viewMode()"
         (searchChange)="onSearch($event)"
+        (viewModeChange)="viewMode.set($event)"
+        (openFilters)="openFiltersDrawer()"
+        (clearFilters)="clearAllFilters()"
       ></app-list-toolbar>
 
       <!-- Branch filter -->
       <div class="toolbar-extras">
-        <select class="select-filter" [ngModel]="filterBranch()" (ngModelChange)="filterBranch.set($event); currentPage.set(1)">
-          <option value="">Todas las sucursales</option>
-          @for (b of branches(); track b.id) { <option [value]="b.id">{{ b.name }}</option> }
-        </select>
+        <app-custom-select
+          [options]="branchOptions()"
+          [value]="filterBranch()"
+          (valueChange)="filterBranch.set($event); currentPage.set(1)"
+        ></app-custom-select>
       </div>
 
-      <!-- List -->
-      <div class="orders-list">
+      <!-- Orders list/grid -->
+      <div [ngClass]="viewMode() === 'grid' ? 'orders-grid' : 'orders-list'">
         @if (isLoading()) {
-          @for (n of [1,2,3,4,5]; track n) {
-            <div class="order-row skeleton-row">
-              <app-skeleton width="110px" height="22px" radius="6px"></app-skeleton>
-              <div style="flex:1;display:flex;flex-direction:column;gap:4px">
-                <app-skeleton width="180px" height="1rem"></app-skeleton>
-                <app-skeleton width="120px" height="0.8rem"></app-skeleton>
+          @for (n of [1,2,3,4,5,6]; track n) {
+            @if (viewMode() === 'grid') {
+              <div class="data-card skeleton-card">
+                <header style="display:flex;justify-content:space-between;margin-bottom:12px">
+                  <div style="display:flex;flex-direction:column;gap:6px">
+                    <app-skeleton width="110px" height="1rem"></app-skeleton>
+                    <app-skeleton width="150px" height="0.8rem"></app-skeleton>
+                  </div>
+                  <app-skeleton width="28px" height="28px" shape="circle"></app-skeleton>
+                </header>
+                <div style="display:flex;flex-direction:column;gap:8px">
+                  <app-skeleton width="80px" height="1.25rem"></app-skeleton>
+                  <div style="display:flex;gap:6px">
+                    <app-skeleton width="70px" height="18px" radius="999px"></app-skeleton>
+                    <app-skeleton width="60px" height="18px" radius="999px"></app-skeleton>
+                  </div>
+                </div>
               </div>
-              <app-skeleton width="70px" height="22px" radius="6px"></app-skeleton>
-              <app-skeleton width="90px" height="1rem"></app-skeleton>
-              <app-skeleton width="90px" height="0.8rem"></app-skeleton>
-              <app-skeleton width="32px" height="32px" shape="circle"></app-skeleton>
-            </div>
+            } @else {
+              <div class="order-row skeleton-row">
+                <app-skeleton width="110px" height="22px" radius="6px"></app-skeleton>
+                <div style="flex:1;display:flex;flex-direction:column;gap:4px">
+                  <app-skeleton width="180px" height="1rem"></app-skeleton>
+                  <app-skeleton width="120px" height="0.8rem"></app-skeleton>
+                </div>
+                <app-skeleton width="70px" height="22px" radius="6px"></app-skeleton>
+                <app-skeleton width="90px" height="1rem"></app-skeleton>
+                <app-skeleton width="32px" height="32px" shape="circle"></app-skeleton>
+              </div>
+            }
           }
         } @else if (orders().length > 0) {
           @for (order of orders(); track order.id) {
-            <div class="order-row" (click)="onViewDetail(order)">
-
-              <!-- Order number chip -->
-              <span class="order-number">#{{ order.orderNumber }}</span>
-
-              <!-- Main info -->
-              <div class="order-info">
-                <span class="order-supplier">{{ order.supplierName || 'Proveedor' }}</span>
-                <span class="order-sub">
-                  <ng-icon name="lucideWarehouse" size="11"></ng-icon>
-                  {{ order.branchName }}
-                  &nbsp;·&nbsp;
-                  {{ order.itemCount || 0 }} ítem{{ (order.itemCount || 0) !== 1 ? 's' : '' }}
-                  &nbsp;·&nbsp;
-                  {{ paymentConditionLabel(order.paymentCondition) }}
+            @if (viewMode() === 'grid') {
+              <app-data-card
+                [title]="order.supplierName || 'Proveedor'"
+                [status]="orderStatusLabel(order.status)"
+                [statusConfig]="order.status === 'RECIBIDA' || order.status === 'CERRADA' ? 'active' : order.status === 'ANULADA' ? 'inactive' : 'warning'"
+                [details]="[
+                  { icon: 'lucideHash', text: order.orderNumber },
+                  { icon: 'lucideBanknote', text: (order.total | currency:'USD':'symbol':'1.2-2') + '' },
+                  { icon: 'lucideCalendar', text: (order.createdAt | date:'dd/MM/yy') + '' }
+                ]"
+                [actions]="getActions(order)"
+                (actionClick)="handleAction($event, order)"
+                (click)="onViewDetail(order)"
+              ></app-data-card>
+            } @else {
+              <div class="order-row" (click)="onViewDetail(order)">
+                <span class="order-number">#{{ order.orderNumber }}</span>
+                <div class="order-info">
+                  <span class="order-supplier">{{ order.supplierName || 'Proveedor' }}</span>
+                  <span class="order-sub">
+                    <ng-icon name="lucideWarehouse" size="11"></ng-icon>
+                    {{ order.branchName }}
+                    &nbsp;·&nbsp;
+                    {{ order.itemCount || 0 }} ítem{{ (order.itemCount || 0) !== 1 ? 's' : '' }}
+                    &nbsp;·&nbsp;
+                    {{ paymentConditionLabel(order.paymentCondition) }}
+                  </span>
+                </div>
+                <div class="order-total">{{ +order.total | currency:'USD':'symbol':'1.2-2' }}</div>
+                <span class="badge-payment" [class]="paymentBadgeClass(order.paymentStatus)">
+                  {{ paymentStatusLabel(order.paymentStatus) }}
                 </span>
+                <span class="badge-order" [class]="orderBadgeClass(order.status)">
+                  {{ orderStatusLabel(order.status) }}
+                </span>
+                <span class="order-date">{{ order.createdAt | date:'dd/MM/yy' }}</span>
+                <div (click)="$event.stopPropagation()">
+                  <app-actions-menu [actions]="getActions(order)" (actionClick)="handleAction($event, order)"></app-actions-menu>
+                </div>
               </div>
-
-              <!-- Total -->
-              <div class="order-total">{{ +order.total | currency:'USD':'symbol':'1.2-2' }}</div>
-
-              <!-- Payment status badge -->
-              <span class="badge-payment" [class]="paymentBadgeClass(order.paymentStatus)">
-                {{ paymentStatusLabel(order.paymentStatus) }}
-              </span>
-
-              <!-- Order status badge -->
-              <span class="badge-order" [class]="orderBadgeClass(order.status)">
-                {{ orderStatusLabel(order.status) }}
-              </span>
-
-              <!-- Date -->
-              <span class="order-date">{{ order.createdAt | date:'dd/MM/yy' }}</span>
-
-              <!-- Actions (stop propagation) -->
-              <div (click)="$event.stopPropagation()">
-                <app-actions-menu [actions]="getActions(order)" (actionClick)="handleAction($event, order)"></app-actions-menu>
-              </div>
-            </div>
+            }
           }
         } @else {
           <div class="orders-empty">
@@ -374,7 +434,25 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
                           @if (r.isPartial) { <span class="badge-partial">Parcial</span> }
                         </div>
                         @if (r.sriAuthorizationNumber) {
-                          <p class="dtab-card__sub">Autorización SRI: {{ r.sriAuthorizationNumber }}</p>
+                          <p class="dtab-card__sub">Autorización: {{ r.sriAuthorizationNumber }}</p>
+                        }
+                        @if (r.receiptItems.length) {
+                          <div class="receipt-items-detail">
+                            @for (ri of r.receiptItems; track ri.id) {
+                              <div class="receipt-item-row">
+                                <span class="receipt-item-qty">{{ ri.quantityReceived }} un.</span>
+                                @if (ri.unitCost) {
+                                  <span class="receipt-item-cost">@ {{ ri.unitCost | currency:'USD':'symbol':'1.2-4' }}</span>
+                                }
+                                @if (ri.lotNumber) {
+                                  <span class="receipt-item-lot">Lote: {{ ri.lotNumber }}</span>
+                                }
+                                @if (ri.expiryDate) {
+                                  <span class="receipt-item-expiry">Vence: {{ ri.expiryDate | date:'dd/MM/yy' }}</span>
+                                }
+                              </div>
+                            }
+                          </div>
                         }
                         @if (r.receivedByName) {
                           <p class="dtab-card__sub">Recibido por: {{ r.receivedByName }}</p>
@@ -396,18 +474,18 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
                           <span class="dtab-card__date">{{ r.retentionDate | date:'dd/MM/yyyy' }}</span>
                         </div>
                         <div class="dtab-card__grid">
-                          @if (r.ivaRetentionPercent > 0) {
-                            <span>IVA {{ r.ivaRetentionPercent }}%</span>
-                            <span>{{ +r.ivaRetentionAmount | currency:'USD':'symbol':'1.2-2' }}</span>
-                          }
-                          @if (r.rentaRetentionPercent > 0) {
-                            <span>Renta {{ r.rentaRetentionPercent }}%</span>
-                            <span>{{ +r.rentaRetentionAmount | currency:'USD':'symbol':'1.2-2' }}</span>
+                          @for (line of r.lines ?? []; track $index) {
+                            <span>{{ line.codigoImpuesto === '1' ? 'Renta' : 'IVA' }} {{ line.porcentajeRetener }}% (cód. {{ line.codigoRetencion }})</span>
+                            <span>{{ +line.valorRetenido | currency:'USD':'symbol':'1.2-2' }}</span>
                           }
                           <span class="fw">Total retenido</span>
                           <span class="fw">{{ +r.totalRetained | currency:'USD':'symbol':'1.2-2' }}</span>
                         </div>
                         @if (r.emittedByName) { <p class="dtab-card__sub">Emitido por: {{ r.emittedByName }}</p> }
+                        @if (r.sriStatus) {
+                          <span class="dtab-card__sri-status" [class]="'sri-' + r.sriStatus.toLowerCase()">SRI: {{ r.sriStatus }}</span>
+                        }
+                        <button type="button" class="dtab-card__xml-btn" (click)="previewRetentionXml(d.id, r.id)">Ver XML</button>
                       </div>
                     }
                   }
@@ -448,7 +526,7 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
             @if (s === 'APROBADA' || s === 'RECIBIDA_PARCIAL') {
               <app-form-button label="Reg. Recepción" variant="secondary" icon="lucidePackageCheck" (click)="openReceiptDrawer()"></app-form-button>
             }
-            @if (s === 'APROBADA' || s === 'RECIBIDA_PARCIAL' || s === 'RECIBIDA') {
+            @if (s === 'RECIBIDA_PARCIAL' || s === 'RECIBIDA' || s === 'CERRADA') {
               <app-form-button label="Retención" variant="secondary" icon="lucideShieldCheck" (click)="openRetentionModal()"></app-form-button>
               <app-form-button label="Registrar Pago" icon="lucideCreditCard" (click)="openPaymentModal()"></app-form-button>
             }
@@ -489,7 +567,7 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
             </div>
             <div class="form-group">
               <label class="form-label">Fecha de factura *</label>
-              <input class="form-control" type="date" [(ngModel)]="receiptForm.supplierInvoiceDate" />
+              <app-date-picker [(ngModel)]="receiptForm.supplierInvoiceDate" placeholder="Seleccionar fecha..."></app-date-picker>
             </div>
             <div class="form-group form-group--full">
               <label class="form-label">N° Autorización SRI <span class="optional">(opcional)</span></label>
@@ -507,8 +585,9 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
             <div class="ri-head">
               <span>Producto</span>
               <span class="r">Pedido</span>
-              <span class="r">Ya recibido</span>
-              <span class="r">A recibir ahora</span>
+              <span class="r">Recibido</span>
+              <span class="r">A recibir</span>
+              <span class="r">Costo</span>
             </div>
             @for (ri of receiptForm.items; track ri.orderItemId) {
               <div class="ri-row">
@@ -523,17 +602,34 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
                     [max]="ri.quantityOrdered - ri.quantityReceived"
                     [(ngModel)]="ri.qtyToReceive" />
                 </div>
+                <div class="r">
+                  <input type="number" class="cell-input num-input" min="0" step="0.01"
+                    [(ngModel)]="ri.unitCost" />
+                </div>
               </div>
-              @if (ri.trackLots && ri.qtyToReceive > 0) {
+              @if ((ri.trackLots || selectedWarehouseHasLocations) && ri.qtyToReceive > 0) {
                 <div class="ri-extra">
-                  <div class="ri-extra-field">
-                    <label>N.o de Lote *</label>
-                    <input type="text" class="form-control" [(ngModel)]="ri.lotNumber" placeholder="Ej: LOTE-2026-001" />
-                  </div>
+                  @if (ri.trackLots) {
+                    <div class="ri-extra-field">
+                      <label>N.o de Lote *</label>
+                      <input type="text" class="form-control" [(ngModel)]="ri.lotNumber" placeholder="Ej: LOTE-2026-001" />
+                    </div>
+                  }
                   @if (ri.trackExpiry) {
                     <div class="ri-extra-field">
                       <label>Fecha de Vencimiento *</label>
-                      <input type="date" class="form-control" [(ngModel)]="ri.expiryDate" />
+                      <app-date-picker [(ngModel)]="ri.expiryDate" placeholder="Vencimiento..." [disablePast]="true"></app-date-picker>
+                    </div>
+                  }
+                  @if (selectedWarehouseHasLocations && warehouseLocations().length > 0) {
+                    <div class="ri-extra-field">
+                      <label>Ubicación</label>
+                      <select class="form-control" [(ngModel)]="ri.locationId">
+                        <option value="">{{ receiptForm.defaultLocationId ? 'Usar default' : 'Seleccionar...' }}</option>
+                        @for (loc of warehouseLocations(); track loc.id) {
+                          <option [value]="loc.id">{{ loc.name }} {{ loc.code ? '(' + loc.code + ')' : '' }}</option>
+                        }
+                      </select>
                     </div>
                   }
                 </div>
@@ -557,43 +653,63 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
             <div class="form-group">
               <label class="form-label">N° Retención *</label>
               <input class="form-control" type="text" [(ngModel)]="retentionForm.retentionNumber" placeholder="001-001-000000001" />
+              <span class="form-hint">Formato: XXX-XXX-XXXXXXXXX</span>
             </div>
             <div class="form-group">
               <label class="form-label">Fecha *</label>
-              <input class="form-control" type="date" [(ngModel)]="retentionForm.retentionDate" />
+              <app-date-picker [(ngModel)]="retentionForm.retentionDate" placeholder="Seleccionar fecha..."></app-date-picker>
             </div>
 
-            <div class="form-group">
-              <label class="form-label">% Retención IVA</label>
-              <select class="form-control" [(ngModel)]="retentionForm.ivaRetentionPercent" (ngModelChange)="calcRetentionIva()">
-                @for (opt of ivaRetentionOpts; track opt.value) {
-                  <option [value]="opt.value">{{ opt.label }}</option>
-                }
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Base IVA</label>
-              <input class="form-control" type="number" step="0.01" [(ngModel)]="retentionForm.ivaRetentionBase" (ngModelChange)="calcRetentionIva()" />
+            <!-- Líneas de retención -->
+            <div class="form-group form-group--full">
+              <label class="form-label">Líneas de Retención</label>
+              @for (line of retentionForm.lines; track $index) {
+                <div class="ret-line">
+                  <div class="ret-line__type">{{ line.codigoImpuesto === '1' ? 'RENTA' : 'IVA' }}</div>
+                  <app-custom-select
+                    class="ret-line__code"
+                    [options]="line.codigoImpuesto === '1' ? rentaRetentionOptions : ivaRetentionOptions"
+                    [value]="line.codigoRetencion"
+                    (valueChange)="line.codigoRetencion = $event; onRetentionCodeChange(line)"
+                  ></app-custom-select>
+                  <div class="ret-line__base-wrap">
+                    <input class="form-control ret-line__base" type="number" step="0.01" [(ngModel)]="line.baseImponible" (ngModelChange)="recalcRetentionLine(line)" placeholder="Base" />
+                    <span class="ret-line__hint">{{ line.codigoImpuesto === '1' ? 'Base: subtotal' : 'Base: impuestos' }}</span>
+                  </div>
+                  <span class="ret-line__result">{{ line.valorRetenido | currency:'USD':'symbol':'1.2-2' }}</span>
+                  <button type="button" class="ret-line__remove" (click)="removeRetentionLine($index)">×</button>
+                </div>
+              }
+              <div class="ret-line__actions">
+                <button type="button" class="ret-add-btn" (click)="addRetentionLine('1')">+ Renta</button>
+                <button type="button" class="ret-add-btn" (click)="addRetentionLine('2')">+ IVA</button>
+              </div>
             </div>
 
-            <div class="form-group">
-              <label class="form-label">% Retención Renta</label>
-              <select class="form-control" [(ngModel)]="retentionForm.rentaRetentionPercent" (ngModelChange)="calcRetentionRenta()">
-                @for (opt of rentaRetentionOpts; track opt.value) {
-                  <option [value]="opt.value">{{ opt.label }}</option>
-                }
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Base Renta</label>
-              <input class="form-control" type="number" step="0.01" [(ngModel)]="retentionForm.rentaRetentionBase" (ngModelChange)="calcRetentionRenta()" />
-            </div>
-
-            <!-- Computed totals preview -->
+            <!-- Totals preview -->
             <div class="form-group form-group--full retention-preview">
-              <div class="ret-row"><span>Ret. IVA ({{ retentionForm.ivaRetentionPercent }}%)</span><span>{{ retentionForm.ivaRetentionAmount | currency:'USD':'symbol':'1.2-2' }}</span></div>
-              <div class="ret-row"><span>Ret. Renta ({{ retentionForm.rentaRetentionPercent }}%)</span><span>{{ retentionForm.rentaRetentionAmount | currency:'USD':'symbol':'1.2-2' }}</span></div>
-              <div class="ret-row ret-total"><span>Total retenido</span><span>{{ retentionForm.ivaRetentionAmount + retentionForm.rentaRetentionAmount | currency:'USD':'symbol':'1.2-2' }}</span></div>
+              @for (line of retentionForm.lines; track $index) {
+                <div class="ret-row"><span>{{ line.label }}</span><span>{{ line.valorRetenido | currency:'USD':'symbol':'1.2-2' }}</span></div>
+              }
+              <div class="ret-row ret-total"><span>Total retenido</span><span>{{ retentionTotal | currency:'USD':'symbol':'1.2-2' }}</span></div>
+            </div>
+
+            <!-- Opciones SRI opcionales -->
+            <div class="form-group">
+              <label class="form-label">Cód. Sustento <span class="optional">(opcional)</span></label>
+              <app-custom-select
+                [options]="codSustentoOptions"
+                [value]="retentionForm.codSustento"
+                (valueChange)="retentionForm.codSustento = $event"
+              ></app-custom-select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Pago <span class="optional">(opcional)</span></label>
+              <app-custom-select
+                [options]="pagoLocExtOptions"
+                [value]="retentionForm.pagoLocExt"
+                (valueChange)="retentionForm.pagoLocExt = $event"
+              ></app-custom-select>
             </div>
 
             <div class="form-group form-group--full">
@@ -621,7 +737,7 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
             </div>
             <div class="form-group">
               <label class="form-label">Fecha de pago *</label>
-              <input class="form-control" type="date" [(ngModel)]="paymentForm.paymentDate" />
+              <app-date-picker [(ngModel)]="paymentForm.paymentDate" placeholder="Seleccionar fecha..."></app-date-picker>
             </div>
             <div class="form-group form-group--full">
               <label class="form-label">Método de pago *</label>
@@ -657,6 +773,24 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
 
 
       <!-- ═══════════════════════════════════════════════════════════════════
+           ADVANCED FILTERS DRAWER
+      ════════════════════════════════════════════════════════════════════ -->
+      <app-drawer [isOpen]="isFiltersOpen()" title="Filtros Avanzados" (close)="isFiltersOpen.set(false)" size="md">
+        <div drawerBody>
+          <app-query-node
+            [node]="$any(filterTreeDraft())"
+            [availableFields]="filterConfig"
+            [isRoot]="true"
+            (nodeChange)="filterTreeDraft.set($any($event))"
+          ></app-query-node>
+        </div>
+        <div drawerFooter class="drawer-footer-actions">
+          <app-form-button label="Limpiar" variant="secondary" (click)="clearAllFilters()"></app-form-button>
+          <app-form-button label="Aplicar" (click)="applyFilters()"></app-form-button>
+        </div>
+      </app-drawer>
+
+      <!-- ═══════════════════════════════════════════════════════════════════
            APPROVE / CANCEL / DELETE MODALS
       ════════════════════════════════════════════════════════════════════ -->
       <app-modal [isOpen]="isApproveModalOpen()" title="Aprobar Orden" (close)="isApproveModalOpen.set(false)">
@@ -684,14 +818,90 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
           <app-form-button label="Eliminar" variant="danger" icon="lucideTrash2" [loading]="isActioning()" (click)="confirmDelete()"></app-form-button>
         </div>
       </app-modal>
+
+      <!-- XML Preview Modal -->
+      <app-modal [isOpen]="isXmlPreviewOpen()" title="XML Comprobante de Retención" (close)="isXmlPreviewOpen.set(false)">
+        <div modalBody>
+          <pre class="xml-preview">{{ xmlPreviewContent() }}</pre>
+        </div>
+        <div modalFooter class="modal-footer-actions">
+          <app-form-button label="Cerrar" variant="secondary" (click)="isXmlPreviewOpen.set(false)"></app-form-button>
+        </div>
+      </app-modal>
     </div>
   `,
   styles: [`
     .orders-page { display: flex; flex-direction: column; min-height: 100%; width: 100%; gap: 0; }
+    .orders-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; margin-top: 0.5rem; }
     .orders-list { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.5rem; }
-    .orders-empty { display: flex; justify-content: center; padding: 4rem 1rem; }
+    .orders-empty { grid-column: 1 / -1; display: flex; justify-content: center; padding: 4rem 1rem; }
+    .skeleton-card { pointer-events: none; background: var(--color-bg-surface); border-radius: var(--radius-lg); border: 1px solid var(--color-border-light); padding: 20px; }
 
-    .toolbar-extras { display: flex; gap: 0.75rem; align-items: center; padding: 0.5rem 0 0.5rem; flex-wrap: wrap; }
+    /* ── Responsive ────────────────────────────────────────────────────── */
+    @media (max-width: 768px) {
+      .orders-grid { grid-template-columns: 1fr; gap: 0.75rem; }
+
+      /* Order row → stacked card */
+      .order-row {
+        flex-wrap: wrap; gap: 0.5rem; padding: 0.75rem;
+      }
+      .order-number { min-width: unset; }
+      .order-info { width: 100%; order: -1; }
+      .order-sub { flex-wrap: wrap; }
+      .order-total { margin-left: auto; }
+      .order-date { width: 100%; text-align: left; margin-top: 0.25rem; }
+
+      /* Detail drawer */
+      .detail-meta { grid-template-columns: 1fr; }
+      .detail-totals { align-self: stretch; min-width: unset; }
+
+      /* Items table responsive */
+      .items-tbl th, .items-tbl td { padding: 0.375rem 0.25rem; font-size: 11px; }
+
+      /* Detail tabs scroll */
+      .dtabs-header { overflow-x: auto; -webkit-overflow-scrolling: touch; flex-wrap: nowrap; }
+      .dtab-btn { white-space: nowrap; flex-shrink: 0; padding: 0.5rem 0.625rem; font-size: var(--font-size-xs); }
+
+      /* Forms 1 col */
+      .form-grid { grid-template-columns: 1fr; }
+      .form-group--full { grid-column: span 1; }
+
+      /* Receipt items stacked */
+      .ri-head { display: none; }
+      .ri-row {
+        grid-template-columns: 1fr 1fr;
+        gap: 0.375rem;
+      }
+      .ri-prod { grid-column: 1 / -1; }
+      .ri-extra { grid-template-columns: 1fr; }
+
+      /* Retention lines stacked */
+      .ret-line { flex-wrap: wrap; gap: 0.375rem; }
+      .ret-line__code { min-width: 100%; }
+      .ret-line__base { width: 100%; }
+      .ret-line__result { text-align: left; }
+
+      /* Footer actions */
+      .drawer-footer-actions, .modal-footer-actions {
+        flex-direction: column;
+      }
+      .drawer-footer-actions ::ng-deep .btn,
+      .modal-footer-actions ::ng-deep .btn { width: 100%; }
+
+      /* Toolbar extras */
+      .toolbar-extras { flex-direction: column; align-items: stretch; }
+    }
+
+    @media (max-width: 480px) {
+      .order-row { padding: 0.625rem; }
+      .detail-head { flex-direction: column; }
+      .detail-head__badges { width: 100%; }
+      .dtab-card__head { flex-direction: column; align-items: flex-start; gap: 0.25rem; }
+      .dtab-card__amount { margin-left: 0; }
+      .ri-row { grid-template-columns: 1fr; }
+    }
+
+    .toolbar-extras { display: flex; gap: 0.75rem;  padding: 0.5rem 0 0.5rem; flex-wrap: wrap; }
     .select-filter { padding: 0.375rem 0.75rem; border-radius: var(--radius-md); border: 1px solid var(--color-border-light); background: var(--color-bg-surface); color: var(--color-text-main); font-size: var(--font-size-sm); cursor: pointer; }
 
     /* Order row */
@@ -699,10 +909,9 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
       display: flex; align-items: center; gap: 0.875rem; padding: 0.875rem 1.25rem;
       background: var(--color-bg-surface); border: 1px solid var(--color-border-light);
       border-radius: var(--radius-lg); cursor: pointer; transition: all var(--transition-base);
-      position: relative; z-index: 1;
+      position: relative;
     }
-    .order-row:hover { transform: translateX(4px); border-color: var(--color-accent-primary); z-index: 10; }
-    .order-row:has(.actions-menu-open) { z-index: 50; }
+    .order-row:hover { border-color: var(--color-accent-primary); background: var(--color-bg-hover); }
     .skeleton-row { pointer-events: none; }
 
     .order-number { font-family: monospace; font-size: var(--font-size-xs); font-weight: var(--font-weight-semibold); color: var(--color-text-muted); white-space: nowrap; min-width: 110px; }
@@ -799,8 +1008,8 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
     /* Receipt items */
     .receipt-items-title { font-size: var(--font-size-sm); font-weight: var(--font-weight-semibold); color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin: 1.25rem 0 0.625rem; }
     .receipt-items { display: flex; flex-direction: column; }
-    .ri-head { display: grid; grid-template-columns: 1fr 80px 90px 110px; gap: 0.5rem; padding: 0.375rem 0.25rem; border-bottom: 2px solid var(--color-border-light); margin-bottom: 0.25rem; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-muted); font-weight: 600; }
-    .ri-row { display: grid; grid-template-columns: 1fr 80px 90px 110px; gap: 0.5rem; align-items: center; padding: 0.5rem 0.25rem; border-bottom: 1px solid var(--color-border-subtle); }
+    .ri-head { display: grid; grid-template-columns: 1fr 70px 70px 90px 80px; gap: 0.5rem; padding: 0.375rem 0.25rem; border-bottom: 2px solid var(--color-border-light); margin-bottom: 0.25rem; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-muted); font-weight: 600; }
+    .ri-row { display: grid; grid-template-columns: 1fr 70px 70px 90px 80px; gap: 0.5rem; align-items: center; padding: 0.5rem 0.25rem; border-bottom: 1px solid var(--color-border-subtle); }
     .ri-prod { display: flex; flex-direction: column; gap: 2px; font-size: var(--font-size-sm); }
     .ri-sku { font-size: var(--font-size-xs); color: var(--color-text-muted); font-family: monospace; }
     .ri-extra {
@@ -813,6 +1022,59 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
     }
     .ri-extra-field { display: flex; flex-direction: column; gap: 4px; }
     .ri-extra-field label { font-size: var(--font-size-xs); font-weight: var(--font-weight-medium); color: var(--color-text-muted); }
+
+    .form-hint { font-size: var(--font-size-xs); color: var(--color-text-muted); margin-top: 2px; }
+    .receipt-items-detail { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--color-border-subtle); }
+    .receipt-item-row { display: flex; align-items: center; gap: 8px; font-size: var(--font-size-xs); color: var(--color-text-muted); flex-wrap: wrap; }
+    .receipt-item-qty { font-weight: var(--font-weight-semibold); color: var(--color-text-main); min-width: 50px; }
+    .receipt-item-cost { color: var(--color-text-main); font-weight: var(--font-weight-medium); }
+    .receipt-item-lot, .receipt-item-expiry { padding: 1px 6px; background: var(--color-bg-canvas); border-radius: var(--radius-sm); font-size: 10px; }
+    .badge-partial { padding: 1px 6px; border-radius: 999px; background: #fef9c3; color: #854d0e; font-size: 10px; font-weight: var(--font-weight-semibold); }
+
+    .xml-preview {
+      background: var(--color-bg-canvas); border: 1px solid var(--color-border-light);
+      border-radius: var(--radius-md); padding: 16px; font-size: 11px;
+      font-family: 'SFMono-Regular', Consolas, monospace; color: var(--color-text-main);
+      overflow-x: auto; white-space: pre-wrap; word-break: break-all;
+      max-height: 60vh; overflow-y: auto; margin: 0; line-height: 1.5;
+    }
+    .dtab-card__xml-btn {
+      display: inline-block; margin-top: 6px; padding: 3px 10px;
+      border: 1px solid var(--color-border-light); border-radius: var(--radius-sm);
+      background: var(--color-bg-surface); color: var(--color-text-muted);
+      font-size: 10px; font-family: inherit; cursor: pointer;
+      &:hover { border-color: var(--color-accent-primary); color: var(--color-accent-primary); }
+    }
+    .dtab-card__sri-status {
+      display: inline-block; margin-top: 4px; padding: 2px 8px; border-radius: 999px;
+      font-size: 10px; font-weight: var(--font-weight-semibold);
+      &.sri-pendiente { background: #fef9c3; color: #854d0e; }
+      &.sri-generado { background: #dbeafe; color: #1e40af; }
+      &.sri-firmado { background: #dbeafe; color: #1e40af; }
+      &.sri-enviado { background: rgba(79, 70, 229, 0.08); color: var(--color-accent-primary); }
+      &.sri-autorizado { background: var(--color-success-bg); color: var(--color-success-text); }
+      &.sri-rechazado { background: var(--color-danger-bg); color: var(--color-danger-text); }
+    }
+
+    /* Retention lines */
+    .ret-line {
+      display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0;
+      border-bottom: 1px solid var(--color-border-subtle);
+    }
+    .ret-line__type { font-size: var(--font-size-xs); font-weight: var(--font-weight-semibold); color: var(--color-accent-primary); min-width: 45px; }
+    .ret-line__code { flex: 1; min-width: 120px; }
+    .ret-line__base { width: 100px; text-align: right; }
+    .ret-line__base-wrap { display: flex; flex-direction: column; gap: 2px; }
+    .ret-line__hint { font-size: 9px; color: var(--color-text-muted); }
+    .ret-line__result { font-size: var(--font-size-sm); font-weight: var(--font-weight-semibold); color: var(--color-text-main); min-width: 70px; text-align: right; }
+    .ret-line__remove { border: none; background: transparent; color: var(--color-danger-text); cursor: pointer; font-size: 18px; padding: 0 4px; }
+    .ret-line__actions { display: flex; gap: 0.5rem; padding-top: 0.5rem; }
+    .ret-add-btn {
+      border: 1px dashed var(--color-border-light); background: transparent; padding: 0.25rem 0.75rem;
+      border-radius: var(--radius-sm); font-size: var(--font-size-xs); color: var(--color-text-muted);
+      cursor: pointer; font-family: inherit;
+      &:hover { border-color: var(--color-accent-primary); color: var(--color-accent-primary); }
+    }
 
     /* Retention preview */
     .retention-preview { background: var(--color-bg-subtle); border-radius: var(--radius-md); padding: 0.75rem 1rem; display: flex; flex-direction: column; gap: 0.375rem; }
@@ -830,48 +1092,96 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
   `]
 })
 export class PurchaseOrdersListComponent {
-  private orderService  = inject(PurchaseOrderService);
+  private orderService = inject(PurchaseOrderService);
   private branchService = inject(BranchService);
-  private toastService  = inject(ToastService);
-  private router        = inject(Router);
-  private http          = inject(HttpClient);
+  private toastService = inject(ToastService);
+  private router = inject(Router);
+  private http = inject(HttpClient);
 
-  readonly ivaRetentionOpts   = IVA_RETENTION_OPTIONS;
-  readonly rentaRetentionOpts = RENTA_RETENTION_OPTIONS;
-  readonly paymentMethods     = PAYMENT_METHODS;
+  readonly ivaRetentionCodes = IVA_RETENTION_CODES;
+  readonly rentaRetentionCodes = RENTA_RETENTION_CODES;
+  readonly ivaRetentionOptions: SelectOption[] = IVA_RETENTION_CODES.map(c => ({ value: c.codigoRetencion, label: c.label }));
+  readonly rentaRetentionOptions: SelectOption[] = RENTA_RETENTION_CODES.map(c => ({ value: c.codigoRetencion, label: c.label }));
+  readonly codSustentoOptions = COD_SUSTENTO_OPTIONS;
+  readonly pagoLocExtOptions = PAGO_LOC_EXT_OPTIONS;
+  readonly paymentMethods = PAYMENT_METHODS;
 
   tabs = [
-    { label: 'Todas',          value: '' },
-    { label: 'Borrador',       value: 'BORRADOR' },
-    { label: 'Aprobada',       value: 'APROBADA' },
-    { label: 'Rec. Parcial',   value: 'RECIBIDA_PARCIAL' },
-    { label: 'Recibida',       value: 'RECIBIDA' },
-    { label: 'Cerrada',        value: 'CERRADA' },
-    { label: 'Anulada',        value: 'ANULADA' },
+    { label: 'Todas', value: '' },
+    { label: 'Borrador', value: 'BORRADOR' },
+    { label: 'Aprobada', value: 'APROBADA' },
+    { label: 'Rec. Parcial', value: 'RECIBIDA_PARCIAL' },
+    { label: 'Recibida', value: 'RECIBIDA' },
+    { label: 'Cerrada', value: 'CERRADA' },
+    { label: 'Anulada', value: 'ANULADA' },
   ];
 
-  activeTab       = signal('');
-  searchQuery     = signal('');
-  filterBranch    = signal('');
-  currentPage     = signal(1);
-  pageSize        = signal(20);
-  refreshTrigger  = signal(0);
-  isLoading       = signal(true);
+  activeTab = signal('');
+  searchQuery = signal('');
+  viewMode = signal<'grid' | 'list'>('grid');
+  filterBranch = signal('');
+  currentPage = signal(1);
+  pageSize = signal(20);
+  refreshTrigger = signal(0);
+  isLoading = signal(true);
 
-  isDetailOpen      = signal(false);
-  isDetailLoading   = signal(false);
-  detailTab         = signal<'receipts' | 'retentions' | 'payments'>('receipts');
-  detail            = signal<PurchaseOrder | null>(null);
+  // ── Advanced Filters ─────────────────────────────────────────────────
+  isFiltersOpen = signal(false);
+  private readonly emptyFilter: FilterGroup = { type: 'group', id: 'root', logicalOperator: 'AND', children: [] };
+  filterTreeDraft = signal<FilterGroup>(this.emptyFilter);
+  appliedFilterTree = signal<FilterGroup>(this.emptyFilter);
 
-  isActioning       = signal(false);
-  actionTargetId    = signal<string | null>(null);
+  readonly filterConfig: FilterField[] = [
+    { id: 'order_number', label: 'N° de Orden', type: 'text' },
+    { id: 'total', label: 'Total', type: 'number' },
+    { id: 'subtotal', label: 'Subtotal', type: 'number' },
+    { id: 'total_paid', label: 'Total Pagado', type: 'number' },
+    { id: 'created_at', label: 'Fecha Creación', type: 'date' },
+    { id: 'expected_delivery_date', label: 'Fecha Entrega Esperada', type: 'date' },
+    { id: 'due_date', label: 'Fecha Vencimiento Pago', type: 'date' },
+    {
+      id: 'payment_condition', label: 'Condición de Pago', type: 'select', options: [
+        { label: 'Contado', value: 'CONTADO' },
+        { label: 'Crédito 15 días', value: 'CREDITO_15' },
+        { label: 'Crédito 30 días', value: 'CREDITO_30' },
+        { label: 'Crédito 60 días', value: 'CREDITO_60' },
+        { label: 'Crédito 90 días', value: 'CREDITO_90' },
+      ]
+    },
+    {
+      id: 'document_type', label: 'Tipo Documento', type: 'select', options: [
+        { label: 'Factura', value: 'FACTURA' },
+        { label: 'Liquidación de Compra', value: 'LIQUIDACION_COMPRA' },
+      ]
+    },
+  ];
 
-  isApproveModalOpen  = signal(false);
-  isCancelModalOpen   = signal(false);
-  isDeleteModalOpen   = signal(false);
+  activeFiltersCount = computed(() => {
+    const count = (node: FilterNode): number => {
+      if (node.type === 'group') return (node as FilterGroup).children.reduce((a, c) => a + count(c), 0);
+      const rule = node as FilterRule;
+      if (['blank', 'notBlank'].includes(rule.operator)) return 1;
+      return rule.value && String(rule.value).trim() !== '' ? 1 : 0;
+    };
+    return count(this.appliedFilterTree());
+  });
+
+  isDetailOpen = signal(false);
+  isDetailLoading = signal(false);
+  detailTab = signal<'receipts' | 'retentions' | 'payments'>('receipts');
+  detail = signal<PurchaseOrder | null>(null);
+
+  isActioning = signal(false);
+  actionTargetId = signal<string | null>(null);
+
+  isApproveModalOpen = signal(false);
+  isCancelModalOpen = signal(false);
+  isDeleteModalOpen = signal(false);
   isReceiptDrawerOpen = signal(false);
   isRetentionModalOpen = signal(false);
-  isPaymentModalOpen  = signal(false);
+  isPaymentModalOpen = signal(false);
+  isXmlPreviewOpen = signal(false);
+  xmlPreviewContent = signal('');
 
   // ─── Receipt form ─────────────────────────────────────────────────────────
   warehouses = signal<{ id: string; name: string; hasLocations: boolean }[]>([]);
@@ -886,27 +1196,31 @@ export class PurchaseOrdersListComponent {
     notes: string;
     items: ReceiptFormItem[];
   } = {
-    warehouseId: '',
-    defaultLocationId: '',
-    supplierInvoiceNumber: '',
-    supplierInvoiceDate: '',
-    sriAuthorizationNumber: '',
-    notes: '',
-    items: [],
-  };
+      warehouseId: '',
+      defaultLocationId: '',
+      supplierInvoiceNumber: '',
+      supplierInvoiceDate: '',
+      sriAuthorizationNumber: '',
+      notes: '',
+      items: [],
+    };
 
   // ─── Retention form ───────────────────────────────────────────────────────
-  retentionForm = {
-    retentionNumber: '',
-    retentionDate: new Date().toISOString().slice(0, 10),
-    ivaRetentionPercent: 0,
-    ivaRetentionBase: 0,
-    ivaRetentionAmount: 0,
-    rentaRetentionPercent: 0,
-    rentaRetentionBase: 0,
-    rentaRetentionAmount: 0,
-    notes: '',
-  };
+  retentionForm: {
+    retentionNumber: string;
+    retentionDate: string;
+    codSustento: string;
+    pagoLocExt: string;
+    notes: string;
+    lines: RetentionFormLine[];
+  } = {
+      retentionNumber: '',
+      retentionDate: new Date().toISOString().slice(0, 10),
+      codSustento: '01',
+      pagoLocExt: '01',
+      notes: '',
+      lines: [],
+    };
 
   // ─── Payment form ─────────────────────────────────────────────────────────
   paymentForm = {
@@ -923,16 +1237,21 @@ export class PurchaseOrdersListComponent {
     { initialValue: { data: [] as any[], total: 0 } }
   );
   branches = computed<any[]>(() => (this.branchesResponse() as any)?.data ?? []);
+  branchOptions = computed<SelectOption[]>(() => [
+    { value: '', label: 'Todas las sucursales' },
+    ...this.branches().map((b: any) => ({ value: b.id, label: b.name })),
+  ]);
 
   // ─── Orders list reactive ─────────────────────────────────────────────────
   private readonly response = toSignal(
     toObservable(computed(() => ({
-      page:     this.currentPage(),
-      limit:    this.pageSize(),
-      search:   this.searchQuery(),
-      status:   this.activeTab(),
+      page: this.currentPage(),
+      limit: this.pageSize(),
+      search: this.searchQuery(),
+      status: this.activeTab(),
       branchId: this.filterBranch(),
-      refresh:  this.refreshTrigger()
+      filterModel: QueryMapper.toAgGridFilterModel(this.appliedFilterTree(), this.filterConfig),
+      refresh: this.refreshTrigger()
     }))).pipe(
       debounceTime(300),
       tap(() => this.isLoading.set(true)),
@@ -943,7 +1262,7 @@ export class PurchaseOrdersListComponent {
     )
   );
 
-  orders     = computed(() => this.response()?.data ?? []);
+  orders = computed(() => this.response()?.data ?? []);
   totalItems = computed(() => this.response()?.total ?? 0);
 
   // ─── Label helpers ────────────────────────────────────────────────────────
@@ -979,42 +1298,65 @@ export class PurchaseOrdersListComponent {
       { id: 'view', label: 'Ver detalle', icon: 'lucideEye' }
     ];
     if (order.status === 'BORRADOR') {
-      actions.push({ id: 'edit',    label: 'Editar',      icon: 'lucidePencil' });
-      actions.push({ id: 'approve', label: 'Aprobar',     icon: 'lucideCheck' });
-      actions.push({ id: 'cancel',  label: 'Anular',      icon: 'lucideX',        variant: 'danger' });
-      actions.push({ id: 'delete',  label: 'Eliminar',    icon: 'lucideTrash2',   variant: 'danger' });
+      actions.push({ id: 'edit', label: 'Editar', icon: 'lucidePencil' });
+      actions.push({ id: 'approve', label: 'Aprobar', icon: 'lucideCheck' });
+      actions.push({ id: 'cancel', label: 'Anular', icon: 'lucideX', variant: 'danger' });
+      actions.push({ id: 'delete', label: 'Eliminar', icon: 'lucideTrash2', variant: 'danger' });
     }
     if (order.status === 'APROBADA' || order.status === 'RECIBIDA_PARCIAL') {
-      actions.push({ id: 'receipt',   label: 'Reg. Recepción', icon: 'lucidePackageCheck' });
-      actions.push({ id: 'retention', label: 'Retención',      icon: 'lucideShieldCheck' });
-      actions.push({ id: 'payment',   label: 'Registrar Pago', icon: 'lucideCreditCard' });
-      actions.push({ id: 'cancel',    label: 'Anular',         icon: 'lucideX', variant: 'danger' });
+      actions.push({ id: 'receipt', label: 'Reg. Recepción', icon: 'lucidePackageCheck' });
+      actions.push({ id: 'cancel', label: 'Anular', icon: 'lucideX', variant: 'danger' });
     }
-    if (order.status === 'RECIBIDA') {
-      actions.push({ id: 'retention', label: 'Retención',      icon: 'lucideShieldCheck' });
-      actions.push({ id: 'payment',   label: 'Registrar Pago', icon: 'lucideCreditCard' });
+    if (order.status === 'RECIBIDA_PARCIAL' || order.status === 'RECIBIDA' || order.status === 'CERRADA') {
+      actions.push({ id: 'retention', label: 'Retención', icon: 'lucideShieldCheck' });
+      actions.push({ id: 'payment', label: 'Registrar Pago', icon: 'lucideCreditCard' });
     }
     if (order.status !== 'ANULADA') {
-      actions.push({ id: 'duplicate', label: 'Duplicar',       icon: 'lucideCopy' });
+      actions.push({ id: 'duplicate', label: 'Duplicar', icon: 'lucideCopy' });
     }
     return actions;
   }
 
   handleAction(action: ActionItem, order: PurchaseOrder) {
-    if (action.id === 'view')      { this.onViewDetail(order); return; }
-    if (action.id === 'edit')      { this.onEdit(order); return; }
-    if (action.id === 'approve')   { this.onViewDetail(order, () => this.openApproveModal()); return; }
-    if (action.id === 'receipt')   { this.onViewDetail(order, () => this.openReceiptDrawer()); return; }
-    if (action.id === 'retention') { this.onViewDetail(order, () => this.openRetentionModal()); return; }
-    if (action.id === 'payment')   { this.onViewDetail(order, () => this.openPaymentModal()); return; }
-    if (action.id === 'duplicate')  { this.onDuplicate(order); return; }
-    if (action.id === 'cancel')    { this.actionTargetId.set(order.id); this.isCancelModalOpen.set(true); }
-    if (action.id === 'delete')    { this.actionTargetId.set(order.id); this.isDeleteModalOpen.set(true); }
+    if (action.id === 'view') { this.onViewDetail(order); return; }
+    if (action.id === 'edit') { this.onEdit(order); return; }
+    if (action.id === 'duplicate') { this.onDuplicate(order); return; }
+    if (action.id === 'cancel') { this.loadDetailThen(order, () => { this.isCancelModalOpen.set(true); }); return; }
+    if (action.id === 'delete') { this.loadDetailThen(order, () => { this.isDeleteModalOpen.set(true); }); return; }
+    if (action.id === 'approve') { this.loadDetailThen(order, () => this.openApproveModal()); return; }
+    if (action.id === 'receipt') { this.loadDetailThen(order, () => this.openReceiptDrawer()); return; }
+    if (action.id === 'retention') { this.loadDetailThen(order, () => this.openRetentionModal()); return; }
+    if (action.id === 'payment') { this.loadDetailThen(order, () => this.openPaymentModal()); return; }
+  }
+
+  /** Carga datos de la OC sin abrir el drawer de detalle, luego ejecuta callback */
+  private loadDetailThen(order: PurchaseOrder, callback: () => void) {
+    this.orderService.findOne(order.id).subscribe({
+      next: d => { this.detail.set(d); callback(); },
+      error: () => this.toastService.error('Error al cargar la orden')
+    });
   }
 
   onTabChange(tab: string) { this.activeTab.set(tab); this.currentPage.set(1); }
-  onSearch(q: string)      { this.searchQuery.set(q); this.currentPage.set(1); }
-  onNew()                  { this.router.navigate(['/inventario/ordenes-compra/nueva']); }
+  onSearch(q: string) { this.searchQuery.set(q); this.currentPage.set(1); }
+  openFiltersDrawer() {
+    this.filterTreeDraft.set(structuredClone(this.appliedFilterTree()));
+    this.isFiltersOpen.set(true);
+  }
+  applyFilters() {
+    this.appliedFilterTree.set(this.filterTreeDraft());
+    this.currentPage.set(1);
+    this.isFiltersOpen.set(false);
+  }
+  clearAllFilters() {
+    this.filterTreeDraft.set({ ...this.emptyFilter });
+    this.appliedFilterTree.set({ ...this.emptyFilter });
+    this.searchQuery.set('');
+    this.filterBranch.set('');
+    this.currentPage.set(1);
+    this.isFiltersOpen.set(false);
+  }
+  onNew() { this.router.navigate(['/inventario/ordenes-compra/nueva']); }
   onEdit(order: PurchaseOrder) { this.router.navigate(['/inventario/ordenes-compra', order.id, 'editar']); }
 
   onWarehouseChange(warehouseId: string) {
@@ -1074,7 +1416,7 @@ export class PurchaseOrdersListComponent {
   openReceiptDrawer() {
     const d = this.detail();
     if (!d) return;
-    this.receiptForm.warehouseId            = '';
+    this.receiptForm.warehouseId = '';
     this.warehouseLocations.set([]);
 
     // Cargar bodegas activas
@@ -1085,26 +1427,34 @@ export class PurchaseOrdersListComponent {
       }
     });
 
-    this.receiptForm.supplierInvoiceNumber  = '';
-    this.receiptForm.supplierInvoiceDate    = '';
+    this.receiptForm.supplierInvoiceNumber = '';
+    this.receiptForm.supplierInvoiceDate = '';
     this.receiptForm.sriAuthorizationNumber = '';
-    this.receiptForm.notes                  = '';
-    this.receiptForm.items = (d.items ?? []).map(item => ({
-      orderItemId:      item.id,
-      variantId:        item.variantId,
-      productName:      item.productName ?? '',
-      variantName:      item.variantName ?? '',
-      sku:              item.sku ?? '',
-      unitOfMeasure:    (item as any).unitOfMeasure ?? 'UN',
-      quantityOrdered:  item.quantityOrdered,
-      quantityReceived: item.quantityReceived,
-      qtyToReceive:     item.quantityOrdered - item.quantityReceived,
-      trackLots:        (item as any).trackLots ?? false,
-      trackExpiry:      (item as any).trackExpiry ?? false,
-      lotNumber:        '',
-      expiryDate:       '',
-      locationId:       '',
-    }));
+    this.receiptForm.notes = '';
+    this.receiptForm.items = (d.items ?? [])
+      .filter(item => (item.stockTrackable !== false) && (+item.quantityOrdered - +item.quantityReceived > 0))
+      .map(item => ({
+        orderItemId: item.id,
+        variantId: item.variantId,
+        productName: item.productName ?? '',
+        variantName: item.variantName ?? '',
+        sku: item.sku ?? '',
+        unitOfMeasure: (item as any).unitOfMeasure ?? 'UN',
+        quantityOrdered: item.quantityOrdered,
+        quantityReceived: item.quantityReceived,
+        qtyToReceive: item.quantityOrdered - item.quantityReceived,
+        unitCost: Number(item.unitCost ?? item.costPrice ?? 0),
+        trackLots: item.trackLots ?? false,
+        trackExpiry: item.trackExpiry ?? false,
+        lotNumber: '',
+        expiryDate: '',
+        locationId: '',
+      }));
+
+    if (this.receiptForm.items.length === 0) {
+      this.toastService.error('No hay items pendientes de recepción o ninguno maneja stock.');
+      return;
+    }
     this.isReceiptDrawerOpen.set(true);
   }
 
@@ -1113,50 +1463,96 @@ export class PurchaseOrdersListComponent {
     const tipo = (d as any)?.supplierTipoContribuyente;
     const rimpe = (d as any)?.supplierRegimenRimpe;
 
-    // Sugerir retención IVA según tipo de contribuyente
-    let suggestedIvaRetention = 30; // default para bienes
-    if (rimpe === 'POPULAR') suggestedIvaRetention = 100;
+    // Sugerir códigos según tipo de contribuyente
+    const suggestedIvaCodigo = rimpe === 'POPULAR' ? '3' : '9'; // 100% o 30%
+    const suggestedRentaCodigo = rimpe === 'POPULAR' ? '' : '303'; // 0% o 2% bienes
 
-    // Sugerir retención IR según tipo
-    let suggestedRentaRetention = 2; // bienes muebles (2026)
-    if (rimpe === 'POPULAR') suggestedRentaRetention = 0;
-    else if (tipo === 'SOCIEDAD') suggestedRentaRetention = 2;
-    else if (tipo === 'PERSONA_NATURAL') suggestedRentaRetention = 2;
+    const ivaCode = IVA_RETENTION_CODES.find(c => c.codigoRetencion === suggestedIvaCodigo);
+    const rentaCode = RENTA_RETENTION_CODES.find(c => c.codigoRetencion === suggestedRentaCodigo);
 
-    this.retentionForm.retentionNumber         = '';
-    this.retentionForm.retentionDate           = new Date().toISOString().slice(0, 10);
-    this.retentionForm.ivaRetentionPercent      = suggestedIvaRetention;
-    this.retentionForm.ivaRetentionBase         = d ? +d.totalTaxes || 0 : 0;
-    this.retentionForm.ivaRetentionAmount       = 0;
-    this.retentionForm.rentaRetentionPercent    = suggestedRentaRetention;
-    this.retentionForm.rentaRetentionBase       = d ? +d.subtotal : 0;
-    this.retentionForm.rentaRetentionAmount     = 0;
-    this.retentionForm.notes                   = '';
-    this.calcRetentionIva();
-    this.calcRetentionRenta();
+    const lines: RetentionFormLine[] = [];
+    if (rentaCode) {
+      lines.push({
+        codigoImpuesto: '1',
+        codigoRetencion: rentaCode.codigoRetencion,
+        label: `Renta: ${rentaCode.label}`,
+        baseImponible: d ? +d.subtotal : 0,
+        porcentajeRetener: rentaCode.porcentaje,
+        valorRetenido: d ? +(+d.subtotal * rentaCode.porcentaje / 100).toFixed(2) : 0,
+      });
+    }
+    if (ivaCode) {
+      lines.push({
+        codigoImpuesto: '2',
+        codigoRetencion: ivaCode.codigoRetencion,
+        label: `IVA: ${ivaCode.label}`,
+        baseImponible: d ? +d.totalTaxes || 0 : 0,
+        porcentajeRetener: ivaCode.porcentaje,
+        valorRetenido: d ? +((+d.totalTaxes || 0) * ivaCode.porcentaje / 100).toFixed(2) : 0,
+      });
+    }
+
+    this.retentionForm.retentionNumber = '';
+    this.retentionForm.retentionDate = new Date().toISOString().slice(0, 10);
+    this.retentionForm.codSustento = '01';
+    this.retentionForm.pagoLocExt = '01';
+    this.retentionForm.notes = '';
+    this.retentionForm.lines = lines;
     this.isRetentionModalOpen.set(true);
+  }
+
+  recalcRetentionLine(line: RetentionFormLine) {
+    line.valorRetenido = +(line.baseImponible * line.porcentajeRetener / 100).toFixed(2);
+  }
+
+  get retentionTotal(): number {
+    return this.retentionForm.lines.reduce((sum, l) => sum + l.valorRetenido, 0);
+  }
+
+  removeRetentionLine(index: number) {
+    this.retentionForm.lines.splice(index, 1);
+  }
+
+  addRetentionLine(tipo: '1' | '2') {
+    const d = this.detail();
+    this.retentionForm.lines.push({
+      codigoImpuesto: tipo,
+      codigoRetencion: '',
+      label: tipo === '1' ? 'Renta' : 'IVA',
+      baseImponible: tipo === '1' ? (d ? +d.subtotal : 0) : (d ? +d.totalTaxes || 0 : 0),
+      porcentajeRetener: 0,
+      valorRetenido: 0,
+    });
+  }
+
+  onRetentionCodeChange(line: RetentionFormLine) {
+    const codes = line.codigoImpuesto === '1' ? RENTA_RETENTION_CODES : IVA_RETENTION_CODES;
+    const found = codes.find(c => c.codigoRetencion === line.codigoRetencion);
+    if (found) {
+      line.porcentajeRetener = found.porcentaje;
+      line.label = `${line.codigoImpuesto === '1' ? 'Renta' : 'IVA'}: ${found.label}`;
+      this.recalcRetentionLine(line);
+    }
   }
 
   openPaymentModal() {
     const d = this.detail();
-    this.paymentForm.amount        = d ? +(+d.total - +d.totalPaid).toFixed(2) : 0;
+    this.paymentForm.amount = d ? +(+d.total - +d.totalPaid).toFixed(2) : 0;
     this.paymentForm.paymentMethod = 'TRANSFERENCIA';
-    this.paymentForm.paymentDate   = new Date().toISOString().slice(0, 10);
-    this.paymentForm.reference     = '';
-    this.paymentForm.notes         = '';
+    this.paymentForm.paymentDate = new Date().toISOString().slice(0, 10);
+    this.paymentForm.reference = '';
+    this.paymentForm.notes = '';
     this.isPaymentModalOpen.set(true);
   }
 
-  // ─── Retention calculations ───────────────────────────────────────────────
-
-  calcRetentionIva() {
-    this.retentionForm.ivaRetentionAmount =
-      +(this.retentionForm.ivaRetentionBase * this.retentionForm.ivaRetentionPercent / 100).toFixed(2);
-  }
-
-  calcRetentionRenta() {
-    this.retentionForm.rentaRetentionAmount =
-      +(this.retentionForm.rentaRetentionBase * this.retentionForm.rentaRetentionPercent / 100).toFixed(2);
+  previewRetentionXml(orderId: string, retentionId: string) {
+    this.orderService.generateRetentionXml(orderId, retentionId).subscribe({
+      next: (res) => {
+        this.xmlPreviewContent.set(res.xml);
+        this.isXmlPreviewOpen.set(true);
+      },
+      error: (err: any) => this.toastService.error(err?.error?.message || 'Error al generar XML')
+    });
   }
 
   // ─── Submit actions ───────────────────────────────────────────────────────
@@ -1197,11 +1593,12 @@ export class PurchaseOrdersListComponent {
       sriAuthorizationNumber: sriAuthorizationNumber || undefined,
       notes: notes || undefined,
       items: items.filter(i => i.qtyToReceive > 0).map(i => ({
-        orderItemId:      i.orderItemId,
+        orderItemId: i.orderItemId,
         quantityReceived: i.qtyToReceive,
-        lotNumber:        i.trackLots && i.lotNumber ? i.lotNumber : undefined,
-        expiryDate:       i.trackExpiry && i.expiryDate ? i.expiryDate : undefined,
-        locationId:       i.locationId || this.receiptForm.defaultLocationId || undefined,
+        unitCost: i.unitCost || undefined,
+        lotNumber: i.trackLots && i.lotNumber ? i.lotNumber : undefined,
+        expiryDate: i.trackExpiry && i.expiryDate ? i.expiryDate : undefined,
+        locationId: i.locationId || this.receiptForm.defaultLocationId || undefined,
       })),
     };
     if (payload.items.length === 0) {
@@ -1244,14 +1641,28 @@ export class PurchaseOrdersListComponent {
       this.toastService.error('Completa el número y fecha de retención');
       return;
     }
+    if (!f.lines.length) {
+      this.toastService.error('Agrega al menos una línea de retención');
+      return;
+    }
+    for (const line of f.lines) {
+      if (!line.codigoRetencion) {
+        this.toastService.error('Selecciona el código de retención para cada línea');
+        return;
+      }
+    }
     const payload: RegisterRetentionPayload = {
-      retentionNumber:       f.retentionNumber,
-      retentionDate:         f.retentionDate,
-      ivaRetentionPercent:   f.ivaRetentionPercent || undefined,
-      ivaRetentionBase:      f.ivaRetentionPercent ? f.ivaRetentionBase : undefined,
-      rentaRetentionPercent: f.rentaRetentionPercent || undefined,
-      rentaRetentionBase:    f.rentaRetentionPercent ? f.rentaRetentionBase : undefined,
-      notes:                 f.notes || undefined,
+      retentionNumber: f.retentionNumber,
+      retentionDate: f.retentionDate,
+      codSustento: f.codSustento || undefined,
+      pagoLocExt: f.pagoLocExt || undefined,
+      lines: f.lines.map(l => ({
+        codigoImpuesto: l.codigoImpuesto,
+        codigoRetencion: l.codigoRetencion,
+        baseImponible: l.baseImponible,
+        porcentajeRetener: l.porcentajeRetener,
+      })),
+      notes: f.notes || undefined,
     };
     this.isActioning.set(true);
     this.orderService.registerRetention(id, payload).subscribe({
@@ -1277,11 +1688,11 @@ export class PurchaseOrdersListComponent {
       return;
     }
     const payload: RegisterPaymentPayload = {
-      amount:        f.amount,
+      amount: f.amount,
       paymentMethod: f.paymentMethod,
-      paymentDate:   f.paymentDate,
-      reference:     f.reference || undefined,
-      notes:         f.notes || undefined,
+      paymentDate: f.paymentDate,
+      reference: f.reference || undefined,
+      notes: f.notes || undefined,
     };
     this.isActioning.set(true);
     this.orderService.registerPayment(id, payload).subscribe({

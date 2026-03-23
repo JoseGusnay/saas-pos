@@ -24,6 +24,11 @@ export class PurchaseOrderService {
     if (filters?.status)     params = params.set('status',     filters.status);
     if (filters?.supplierId) params = params.set('supplierId', filters.supplierId);
     if (filters?.branchId)   params = params.set('branchId',   filters.branchId);
+    if (filters?.sortField)  params = params.set('sortField',  filters.sortField);
+    if (filters?.sortOrder)  params = params.set('sortOrder',  filters.sortOrder);
+    if (filters?.filterModel && Object.keys(filters.filterModel).length > 0) {
+      params = params.set('filterModel', JSON.stringify(filters.filterModel));
+    }
     return this.http.get<any>(this.apiUrl, { params }).pipe(map(r => r?.data ?? r));
   }
 
@@ -61,6 +66,10 @@ export class PurchaseOrderService {
 
   cancel(id: string): Observable<PurchaseOrder> {
     return this.http.post<any>(`${this.apiUrl}/${id}/cancel`, {}).pipe(map(r => r?.data ?? r));
+  }
+
+  generateRetentionXml(orderId: string, retentionId: string): Observable<{ claveAcceso: string; xml: string }> {
+    return this.http.get<any>(`${this.apiUrl}/${orderId}/retention/${retentionId}/xml`).pipe(map(r => r?.data ?? r));
   }
 
   remove(id: string): Observable<any> {

@@ -26,13 +26,13 @@ import {
   lucideInbox,
   lucidePlus
 } from '@ng-icons/lucide';
-import { 
-  Observable, 
-  Subject, 
-  debounceTime, 
-  distinctUntilChanged, 
-  finalize, 
-  takeUntil 
+import {
+  Observable,
+  Subject,
+  debounceTime,
+  distinctUntilChanged,
+  finalize,
+  takeUntil
 } from 'rxjs';
 import { SearchSelectOption } from '../../../models/search-select.models';
 import { SkeletonComponent } from '../skeleton/skeleton';
@@ -86,93 +86,111 @@ import { SkeletonComponent } from '../skeleton/skeleton';
         </div>
       </button>
 
-      <!-- Dropdown -->
-      @if (isOpen()) {
+      <!-- Desktop Dropdown -->
+      @if (isOpen() && !isMobile()) {
         <div class="search-select__menu animation-slide-up" [style]="menuStyle()">
-          <!-- Search Box -->
-          <div class="search-box">
-            <ng-icon name="lucideSearch" class="search-icon"></ng-icon>
-            <input 
-              #searchInput
-              type="text" 
-              [placeholder]="searchPlaceholder"
-              [(ngModel)]="searchQuery"
-              (input)="onSearchInput($event)"
-              (keydown.escape)="close()"
-            >
-            @if (isLoading()) {
-              <ng-icon name="lucideLoader2" class="spin-icon"></ng-icon>
-            } @else if (searchQuery()) {
-              <button class="clear-search" (click)="resetSearch()">
-                <ng-icon name="lucideX"></ng-icon>
-              </button>
-            }
+          <ng-container *ngTemplateOutlet="menuContent"></ng-container>
+        </div>
+      }
+
+      <!-- Mobile Bottom Sheet -->
+      @if (isOpen() && isMobile()) {
+        <div class="ss-backdrop" (click)="close()"></div>
+        <div class="ss-sheet">
+          <div class="ss-sheet__handle"></div>
+          <div class="ss-sheet__header">
+            <span class="ss-sheet__title">{{ placeholder }}</span>
+            <button type="button" class="ss-sheet__close" (click)="close()">
+              <ng-icon name="lucideX"></ng-icon>
+            </button>
           </div>
+          <ng-container *ngTemplateOutlet="menuContent"></ng-container>
+        </div>
+      }
 
-          <!-- Options List -->
-          <div class="options-container" #optionsList (scroll)="onScroll($event)">
-            @if (initialLoading() && !options().length) {
-              <div class="skeletons">
-                @for (i of [1,2,3,4,5,6]; track i) {
-                  <div class="option-item" style="pointer-events: none;">
-                    <div class="option-content">
-                      <app-skeleton width="28px" height="28px" shape="circle"></app-skeleton>
-                      <div class="option-text">
-                        <app-skeleton width="140px" height="14px"></app-skeleton>
-                        <app-skeleton width="90px" height="10px" style="margin-top: 4px;"></app-skeleton>
-                      </div>
-                    </div>
-                  </div>
-                }
-              </div>
-            } @else {
-              @for (option of options(); track option.value) {
-                <div 
-                  class="option-item" 
-                  [class.is-selected]="isSelected(option)"
-                  (click)="select(option)"
-                >
-                  <div class="option-content">
-                    @if (option.icon) {
-                      <ng-icon [name]="option.icon" class="option-icon"></ng-icon>
-                    }
-                    <div class="option-text">
-                      <span class="label">{{ option.label }}</span>
-                      @if (option.description) {
-                        <span class="description">{{ option.description }}</span>
-                      }
-                    </div>
-                  </div>
-                  @if (isSelected(option)) {
-                    <ng-icon name="lucideCheck" class="check-icon"></ng-icon>
-                  }
-                </div>
-              }
-
-              @if (isLoadingMore()) {
-                <div class="load-more-spinner">
-                   <ng-icon name="lucideLoader2" class="spin"></ng-icon>
-                   <span>Cargando más...</span>
-                </div>
-              }
-
-              @if (!options().length && !isLoading()) {
-                <div class="empty-results">
-                  <ng-icon name="lucideInbox"></ng-icon>
-                  <span>No se encontraron resultados</span>
-                </div>
-              }
-            }
-          </div>
-
-          @if (createNewLabel) {
-            <button type="button" class="create-new-btn" (click)="onCreateNew()">
-              <ng-icon name="lucidePlus"></ng-icon>
-              {{ createNewLabel }}
+      <!-- Shared menu content template -->
+      <ng-template #menuContent>
+        <div class="search-box">
+          <ng-icon name="lucideSearch" class="search-icon"></ng-icon>
+          <input
+            #searchInput
+            type="text"
+            [placeholder]="searchPlaceholder"
+            [(ngModel)]="searchQuery"
+            (input)="onSearchInput($event)"
+            (keydown.escape)="close()"
+          >
+          @if (isLoading()) {
+            <ng-icon name="lucideLoader2" class="spin-icon"></ng-icon>
+          } @else if (searchQuery()) {
+            <button class="clear-search" (click)="resetSearch()">
+              <ng-icon name="lucideX"></ng-icon>
             </button>
           }
         </div>
-      }
+
+        <div class="options-container" #optionsList (scroll)="onScroll($event)">
+          @if (initialLoading() && !options().length) {
+            <div class="skeletons">
+              @for (i of [1,2,3,4,5,6]; track i) {
+                <div class="option-item" style="pointer-events: none;">
+                  <div class="option-content">
+                    <app-skeleton width="28px" height="28px" shape="circle"></app-skeleton>
+                    <div class="option-text">
+                      <app-skeleton width="140px" height="14px"></app-skeleton>
+                      <app-skeleton width="90px" height="10px" style="margin-top: 4px;"></app-skeleton>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          } @else {
+            @for (option of options(); track option.value) {
+              <div
+                class="option-item"
+                [class.is-selected]="isSelected(option)"
+                (click)="select(option)"
+              >
+                <div class="option-content">
+                  @if (option.icon) {
+                    <ng-icon [name]="option.icon" class="option-icon"></ng-icon>
+                  }
+                  <div class="option-text">
+                    <span class="label">{{ option.label }}</span>
+                    @if (option.description) {
+                      <span class="description">{{ option.description }}</span>
+                    }
+                  </div>
+                </div>
+                @if (isSelected(option)) {
+                  <ng-icon name="lucideCheck" class="check-icon"></ng-icon>
+                }
+              </div>
+            }
+
+            @if (isLoadingMore()) {
+              <div class="load-more-spinner">
+                <ng-icon name="lucideLoader2" class="spin"></ng-icon>
+                <span>Cargando más...</span>
+              </div>
+            }
+
+            @if (!options().length && !isLoading()) {
+              <div class="empty-results">
+                <ng-icon name="lucideInbox"></ng-icon>
+                <span>No se encontraron resultados</span>
+              </div>
+            }
+          }
+        </div>
+
+        @if (createNewLabel) {
+          <button type="button" class="create-new-btn" (click)="onCreateNew()">
+            <ng-icon name="lucidePlus"></ng-icon>
+            {{ createNewLabel }}
+          </button>
+        }
+      </ng-template>
     </div>
   `,
   styles: [`
@@ -182,7 +200,7 @@ import { SkeletonComponent } from '../skeleton/skeleton';
 
       &__trigger {
         width: 100%;
-        min-height: 42px;
+        min-height: 34px;
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -248,7 +266,20 @@ import { SkeletonComponent } from '../skeleton/skeleton';
       .spin-icon { animation: spin 1s linear infinite; color: var(--color-primary); }
     }
 
-    .options-container { flex: 1; overflow-y: auto; padding: 4px; display: flex; flex-direction: column; gap: 2px; }
+    .options-container { flex: 1; overflow-y: auto; padding: 4px; display: flex; flex-direction: column; gap: 2px; -webkit-overflow-scrolling: touch; }
+
+    .empty-results {
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+      padding: 32px 20px; color: var(--color-text-muted); text-align: center;
+      ng-icon { font-size: 28px; opacity: 0.4; }
+      span { font-size: var(--font-size-sm); }
+    }
+
+    .load-more-spinner {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 12px; color: var(--color-text-muted); font-size: var(--font-size-xs);
+      .spin { animation: spin 1s linear infinite; }
+    }
 
     .option-item {
       display: flex;
@@ -291,11 +322,57 @@ import { SkeletonComponent } from '../skeleton/skeleton';
       &:hover { background: rgba(79, 70, 229, 0.06); }
     }
 
+    /* ── Mobile Bottom Sheet ──────────────────────────────── */
+    .ss-backdrop {
+      position: fixed; inset: 0; background: rgba(0, 0, 0, 0.4);
+      z-index: 9998; animation: ssFadeIn 0.2s ease;
+    }
+
+    .ss-sheet {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 9999;
+      background: var(--color-bg-surface);
+      border-radius: 16px 16px 0 0;
+      max-height: 75vh;
+      display: flex; flex-direction: column;
+      animation: ssSheetUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+
+      .search-box { border-radius: 0; }
+      .options-container { flex: 1; max-height: none; }
+      .option-item { padding: 14px 20px; border-radius: 0; border-bottom: 1px solid var(--color-border-subtle); }
+      .option-item:last-child { border-bottom: none; }
+      .create-new-btn { border-radius: 0; }
+    }
+
+    .ss-sheet__handle {
+      width: 36px; height: 4px; border-radius: 2px;
+      background: var(--color-border-light); margin: 8px auto 0;
+    }
+
+    .ss-sheet__header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 20px 4px;
+    }
+
+    .ss-sheet__title {
+      font-size: var(--font-size-sm); font-weight: var(--font-weight-semibold);
+      color: var(--color-text-main);
+    }
+
+    .ss-sheet__close {
+      display: flex; align-items: center; justify-content: center;
+      width: 28px; height: 28px; border: none; border-radius: 50%;
+      background: var(--color-bg-hover); color: var(--color-text-muted);
+      cursor: pointer; font-size: 14px;
+      &:hover { background: var(--color-border-light); }
+    }
+
     @keyframes spin { from { transform: rotate(0); } to { transform: rotate(360deg); } }
     @keyframes slideInUp {
       from { opacity: 0; transform: translateY(8px) scale(0.98); }
       to { opacity: 1; transform: translateY(0) scale(1); }
     }
+    @keyframes ssFadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes ssSheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
     .animation-slide-up { animation: slideInUp 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
   `]
 })
@@ -326,16 +403,17 @@ export class SearchSelectComponent implements AfterViewInit, ControlValueAccesso
   }
 
   isOpen = signal(false);
+  isMobile = signal(false);
   value = signal<any>(null);
   searchQuery = signal('');
   options = signal<SearchSelectOption[]>([]);
-  
+
   private selectedOptionsMap = signal<Map<any, SearchSelectOption>>(new Map());
-  
+
   isLoading = signal(false);
   isLoadingMore = signal(false);
   initialLoading = signal(false);
-  
+
   currentPage = 1;
   hasMore = true;
   disabled = false;
@@ -369,12 +447,12 @@ export class SearchSelectComponent implements AfterViewInit, ControlValueAccesso
     return String(currentVal);
   });
 
-  onChange = (_: any) => {};
-  onTouched = () => {};
+  onChange = (_: any) => { };
+  onTouched = () => { };
 
   constructor() {
     this.setupSearch();
-    
+
     effect(() => {
       const val = this.value();
       const init = this._initialOption();
@@ -385,16 +463,16 @@ export class SearchSelectComponent implements AfterViewInit, ControlValueAccesso
           map.set(init.value, init);
         }
         if (this.multiple && Array.isArray(val)) {
-           inits.forEach(o => {
-              if (val.includes(o.value)) map.set(o.value, o);
-           });
+          inits.forEach(o => {
+            if (val.includes(o.value)) map.set(o.value, o);
+          });
         }
         return new Map(map);
       });
     }, { allowSignalWrites: true });
   }
 
-  ngAfterViewInit() {}
+  ngAfterViewInit() { }
 
   ngOnDestroy() {
     this.destroy$.next();
@@ -419,34 +497,42 @@ export class SearchSelectComponent implements AfterViewInit, ControlValueAccesso
   }
 
   open() {
-    document.addEventListener('scroll', this._scrollHandler, { capture: true, passive: true });
-    const rect = this.containerElement?.nativeElement.getBoundingClientRect();
-    if (rect) {
-      const spaceBelow = window.innerHeight - rect.bottom;
-      const menuMaxHeight = 320;
-      const openUp = spaceBelow < menuMaxHeight && rect.top > spaceBelow;
-      const maxHeight = this.createNewLabel ? '270px' : '320px';
-      this.menuStyle.set({
-        position: 'fixed',
-        width: `${rect.width}px`,
-        left: `${rect.left}px`,
-        ...(openUp
-          ? { bottom: `${window.innerHeight - rect.top + 4}px`, top: 'auto' }
-          : { top: `${rect.bottom + 4}px`, bottom: 'auto' }),
-        zIndex: '9999',
-        maxHeight,
-      });
+    this.isMobile.set(typeof window !== 'undefined' && window.innerWidth <= 768);
+
+    if (!this.isMobile()) {
+      document.addEventListener('scroll', this._scrollHandler, { capture: true, passive: true });
+      const rect = this.containerElement?.nativeElement.getBoundingClientRect();
+      if (rect) {
+        const spaceBelow = window.innerHeight - rect.bottom;
+        const menuMaxHeight = 320;
+        const openUp = spaceBelow < menuMaxHeight && rect.top > spaceBelow;
+        const maxHeight = this.createNewLabel ? '270px' : '320px';
+        this.menuStyle.set({
+          position: 'fixed',
+          width: `${Math.max(rect.width, 240)}px`,
+          left: `${rect.left}px`,
+          ...(openUp
+            ? { bottom: `${window.innerHeight - rect.top + 4}px`, top: 'auto' }
+            : { top: `${rect.bottom + 4}px`, bottom: 'auto' }),
+          zIndex: '9999',
+          maxHeight,
+        });
+      }
+    } else {
+      document.body.style.overflow = 'hidden';
     }
+
     this.isOpen.set(true);
     if (this.options().length === 0) {
       this.initialLoading.set(true);
       this.loadResults(true);
     }
-    setTimeout(() => this.searchInputElement?.nativeElement.focus(), 0);
+    setTimeout(() => this.searchInputElement?.nativeElement.focus(), 100);
   }
 
   close() {
     document.removeEventListener('scroll', this._scrollHandler, { capture: true });
+    document.body.style.overflow = '';
     this.isOpen.set(false);
     this.onTouched();
   }
@@ -510,7 +596,7 @@ export class SearchSelectComponent implements AfterViewInit, ControlValueAccesso
 
   private loadResults(reset = false) {
     if (!this.searchFn) return;
-    if (reset) { this.currentPage = 1; this.isLoading.set(true); } 
+    if (reset) { this.currentPage = 1; this.isLoading.set(true); }
     else { this.isLoadingMore.set(true); }
 
     this.searchFn(this.searchQuery(), this.currentPage).pipe(
@@ -541,7 +627,7 @@ export class SearchSelectComponent implements AfterViewInit, ControlValueAccesso
   menuStyle = signal<Record<string, string>>({});
   @HostListener('document:click', ['$event'])
   onClickOutside(event: Event) {
-    if (this.isOpen() && !this.containerElement?.nativeElement.contains(event.target as Node)) {
+    if (this.isOpen() && !this.isMobile() && !this.containerElement?.nativeElement.contains(event.target as Node)) {
       this.close();
     }
   }

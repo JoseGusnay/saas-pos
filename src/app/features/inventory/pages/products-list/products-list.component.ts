@@ -518,7 +518,7 @@ export class ProductsListComponent {
       page: this.currentPage(),
       limit: this.pageSize(),
       search: this.searchQuery(),
-      filterModel: QueryMapper.toAgGridFilterModel(this.filterTree()),
+      filterModel: QueryMapper.toAgGridFilterModel(this.filterTree(), this.filterConfig),
       tab: this.activeTab(),
       typeFilter: this.typeFilter(),
       sortField: this.sortField(),

@@ -10,6 +10,8 @@ export interface Supplier {
   tipoContribuyente: TipoContribuyente;
   obligadoContabilidad: boolean;
   regimenRimpe: RegimenRimpe;
+  parteRelacionada: boolean;
+  tipoSujetoRetenido: string;
   email?: string | null;
   phone?: string | null;
   address?: string | null;
@@ -26,6 +28,8 @@ export interface CreateSupplierPayload {
   tipoContribuyente?: TipoContribuyente;
   obligadoContabilidad?: boolean;
   regimenRimpe?: RegimenRimpe;
+  parteRelacionada?: boolean;
+  tipoSujetoRetenido?: string;
   email?: string;
   phone?: string;
   address?: string;

@@ -20,6 +20,7 @@ import { environment } from '../../../../../environments/environment';
 
 import { SearchSelectComponent } from '../../../../shared/components/ui/search-select/search-select';
 import { DatePickerComponent } from '../../../../shared/components/ui/date-picker/date-picker';
+import { CustomSelectComponent, SelectOption } from '../../../../shared/components/ui/custom-select/custom-select.component';
 import { SearchSelectOption } from '../../../../shared/models/search-select.models';
 import { FormButtonComponent } from '../../../../shared/components/ui/form-button/form-button';
 import { SpinnerComponent } from '../../../../shared/components/ui/spinner/spinner';
@@ -55,18 +56,23 @@ interface LineItem {
 function calcLine(item: LineItem) {
   const base = item.quantityOrdered * item.unitCost;
   const disc = base * (item.discountPercent / 100);
-  const sub  = base - disc;
+  const sub = base - disc;
   const totalTaxRate = item.taxDetails.reduce((sum, t) => sum + t.percentage, 0);
   const taxes = +(sub * totalTaxRate / 100).toFixed(2);
   return { base, disc, sub, taxes, lineTotal: sub + taxes };
 }
 
+const DOC_TYPE_OPTIONS: SelectOption[] = [
+  { value: 'FACTURA', label: 'Factura' },
+  { value: 'LIQUIDACION_COMPRA', label: 'Liquidación de Compra' },
+];
+
 const PAYMENT_CONDITIONS: { value: PaymentCondition; label: string; short: string }[] = [
-  { value: 'CONTADO',    label: 'Contado',         short: 'Contado'  },
-  { value: 'CREDITO_15', label: 'Crédito 15 días',  short: '15 días'  },
-  { value: 'CREDITO_30', label: 'Crédito 30 días',  short: '30 días'  },
-  { value: 'CREDITO_60', label: 'Crédito 60 días',  short: '60 días'  },
-  { value: 'CREDITO_90', label: 'Crédito 90 días',  short: '90 días'  },
+  { value: 'CONTADO', label: 'Contado', short: 'Contado' },
+  { value: 'CREDITO_15', label: 'Crédito 15 días', short: '15 días' },
+  { value: 'CREDITO_30', label: 'Crédito 30 días', short: '30 días' },
+  { value: 'CREDITO_60', label: 'Crédito 60 días', short: '60 días' },
+  { value: 'CREDITO_90', label: 'Crédito 90 días', short: '90 días' },
 ];
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -74,7 +80,7 @@ const PAYMENT_CONDITIONS: { value: PaymentCondition; label: string; short: strin
 @Component({
   selector: 'app-purchase-order-form',
   standalone: true,
-  imports: [CommonModule, FormsModule, SearchSelectComponent, DatePickerComponent, FormButtonComponent, SpinnerComponent, NgIconComponent],
+  imports: [CommonModule, FormsModule, SearchSelectComponent, DatePickerComponent, FormButtonComponent, SpinnerComponent, NgIconComponent, CustomSelectComponent],
   providers: [
     provideIcons({ lucidePlus, lucideTrash2, lucideSave, lucideArrowLeft, lucidePackagePlus, lucideCheck, lucideBuilding2, lucideTruck, lucideFileText, lucidePrinter, lucideCalendar })
   ],
@@ -135,12 +141,13 @@ const PAYMENT_CONDITIONS: { value: PaymentCondition; label: string; short: strin
               <span>IDENTIFICACIÓN DEL PROVEEDOR</span>
             </div>
             <div class="doc-card__body">
-              <div class="doc-type-row">
+              <div class="logi-field">
                 <label class="doc-type-label">Tipo de Documento:</label>
-                <select class="doc-type-select" [(ngModel)]="documentType">
-                  <option value="FACTURA">Factura</option>
-                  <option value="LIQUIDACION_COMPRA">Liquidación de Compra</option>
-                </select>
+                <app-custom-select
+                  [options]="docTypeOptions"
+                  [value]="documentType"
+                  (valueChange)="documentType = $any($event)"
+                ></app-custom-select>
               </div>
               <div class="vendor-search">
                 <app-search-select
@@ -304,6 +311,7 @@ const PAYMENT_CONDITIONS: { value: PaymentCondition; label: string; short: strin
                           [multiple]="true"
                           [searchFn]="searchTaxesFn"
                           [initialOptions]="getTaxOptions(item)"
+                          [ngModel]="item.taxIds"
                           (selectionChange)="onItemTaxChange($event, $index)"
                         ></app-search-select>
                       </td>
@@ -602,44 +610,45 @@ const PAYMENT_CONDITIONS: { value: PaymentCondition; label: string; short: strin
   `]
 })
 export class PurchaseOrderFormComponent implements OnInit {
-  private orderService  = inject(PurchaseOrderService);
+  private orderService = inject(PurchaseOrderService);
   private branchService = inject(BranchService);
-  private toastService  = inject(ToastService);
-  private router        = inject(Router);
-  private route         = inject(ActivatedRoute);
-  private http          = inject(HttpClient);
+  private toastService = inject(ToastService);
+  private router = inject(Router);
+  private route = inject(ActivatedRoute);
+  private http = inject(HttpClient);
 
   private taxSvc = inject(TaxService);
+  readonly docTypeOptions = DOC_TYPE_OPTIONS;
   readonly paymentConditions = PAYMENT_CONDITIONS;
-  readonly today             = new Date();
+  readonly today = new Date();
 
-  isEdit             = signal(false);
-  editId             = signal<string | null>(null);
-  editOrderNumber    = signal('');
-  isLoadingOrder     = signal(false);
-  isSaving           = signal(false);
+  isEdit = signal(false);
+  editId = signal<string | null>(null);
+  editOrderNumber = signal('');
+  isLoadingOrder = signal(false);
+  isSaving = signal(false);
   savingAndApproving = signal(false);
 
   // Form state
-  selectedSupplierId    = signal('');
-  selectedSupplierName  = signal('');
-  selectedSupplierRuc   = signal('');
+  selectedSupplierId = signal('');
+  selectedSupplierName = signal('');
+  selectedSupplierRuc = signal('');
   selectedSupplierEmail = signal('');
   selectedSupplierPhone = signal('');
 
-  selectedBranchId      = signal('');
+  selectedBranchId = signal('');
   documentType: 'FACTURA' | 'LIQUIDACION_COMPRA' = 'FACTURA';
   paymentCondition: PaymentCondition = 'CONTADO';
-  expectedDeliveryDate  = '';
-  deliveryAddress       = '';
-  internalNotes         = '';
+  expectedDeliveryDate = '';
+  deliveryAddress = '';
+  internalNotes = '';
 
-  initialSupplier          = signal<SearchSelectOption | undefined>(undefined);
-  initialBranch            = signal<SearchSelectOption | undefined>(undefined);
-  initialPaymentCondition  = signal<SearchSelectOption | undefined>(
+  initialSupplier = signal<SearchSelectOption | undefined>(undefined);
+  initialBranch = signal<SearchSelectOption | undefined>(undefined);
+  initialPaymentCondition = signal<SearchSelectOption | undefined>(
     { value: 'CONTADO', label: 'Contado' }
   );
-  variantSelectorReset     = signal<SearchSelectOption | undefined>(undefined);
+  variantSelectorReset = signal<SearchSelectOption | undefined>(undefined);
 
   private itemsSignal = signal<LineItem[]>([]);
   items = this.itemsSignal.asReadonly();
@@ -651,10 +660,10 @@ export class PurchaseOrderFormComponent implements OnInit {
 
   private calcs = computed(() => this.itemsSignal().map(calcLine));
 
-  subtotal      = computed(() => this.calcs().reduce((s, c) => s + c.sub,  0));
+  subtotal = computed(() => this.calcs().reduce((s, c) => s + c.sub, 0));
   totalDiscount = computed(() => this.calcs().reduce((s, c) => s + c.disc, 0));
-  totalTaxes    = computed(() => this.calcs().reduce((s, c) => s + c.taxes, 0));
-  total         = computed(() => this.subtotal() + this.totalTaxes());
+  totalTaxes = computed(() => this.calcs().reduce((s, c) => s + c.taxes, 0));
+  total = computed(() => this.subtotal() + this.totalTaxes());
 
   taxBreakdown = computed(() => {
     const map = new Map<string, { name: string; base: number; amount: number }>();
@@ -750,7 +759,11 @@ export class PurchaseOrderFormComponent implements OnInit {
   };
 
   variantSearchFn = (query: string, page: number): Observable<{ data: SearchSelectOption[]; hasMore: boolean }> => {
-    const params = new HttpParams().set('q', query).set('page', page).set('limit', 20);
+    const params = new HttpParams()
+      .set('search', query)
+      .set('page', String(page))
+      .set('limit', '20')
+      .set('isPurchasable', 'true');
     return this.http.get<any>(`${environment.apiUrl}/business/products/variants/search`, { params }).pipe(
       map(res => {
         const payload = res?.data ?? res;
@@ -760,7 +773,7 @@ export class PurchaseOrderFormComponent implements OnInit {
             value: v.variantId,
             label: `${v.productName}${v.variantName ? ' — ' + v.variantName : ''}`,
             description: `SKU: ${v.sku ?? '—'}`,
-            meta: { sku: v.sku, productName: v.productName, variantName: v.variantName, costPrice: v.costPrice }
+            meta: { sku: v.sku, productName: v.productName, variantName: v.variantName, costPrice: v.costPrice, taxes: v.taxes ?? [] }
           })),
           hasMore: payload?.hasMore ?? false
         };
@@ -792,29 +805,29 @@ export class PurchaseOrderFormComponent implements OnInit {
           const pc = PAYMENT_CONDITIONS.find(p => p.value === this.paymentCondition);
           this.initialPaymentCondition.set({ value: this.paymentCondition, label: pc?.label ?? this.paymentCondition });
           this.expectedDeliveryDate = order.expectedDeliveryDate?.slice(0, 10) ?? '';
-          this.deliveryAddress    = order.deliveryAddress ?? '';
-          this.internalNotes      = order.internalNotes ?? '';
+          this.deliveryAddress = order.deliveryAddress ?? '';
+          this.internalNotes = order.internalNotes ?? '';
           this.initialSupplier.set({
-            value:       order.supplierId,
-            label:       order.supplierName ?? '',
+            value: order.supplierId,
+            label: order.supplierName ?? '',
             description: order.supplierRuc ? `RUC: ${order.supplierRuc}` : '',
           });
           this.selectedSupplierName.set(order.supplierName ?? '');
           this.selectedSupplierRuc.set(order.supplierRuc ?? '');
           this.itemsSignal.set((order.items ?? []).map(item => ({
-            variantId:       item.variantId,
-            variantLabel:    item.variantName
+            variantId: item.variantId,
+            variantLabel: item.variantName
               ? `${item.productName} — ${item.variantName}`
               : (item.productName ?? item.variantId),
-            productName:     item.productName ?? '',
-            variantName:     item.variantName ?? '',
-            sku:             item.sku ?? '',
-            unitOfMeasure:   (item as any).unitOfMeasure ?? 'UN',
+            productName: item.productName ?? '',
+            variantName: item.variantName ?? '',
+            sku: item.sku ?? '',
+            unitOfMeasure: (item as any).unitOfMeasure ?? 'UN',
             quantityOrdered: item.quantityOrdered,
-            unitCost:        Number(item.unitCost),
+            unitCost: Number(item.unitCost),
             discountPercent: Number(item.discountPercent ?? 0),
-            taxIds:          (item.taxes ?? []).map((t: any) => t.taxId),
-            taxDetails:      (item.taxes ?? []).map((t: any) => ({ id: t.taxId, name: t.taxName?.split(' (')[0] ?? '', percentage: +t.taxRate })),
+            taxIds: (item.taxes ?? []).map((t: any) => t.taxId),
+            taxDetails: (item.taxes ?? []).map((t: any) => ({ id: t.taxId, name: t.taxName?.split(' (')[0] ?? '', percentage: +t.taxRate })),
           })));
           this.isLoadingOrder.set(false);
         },
@@ -856,17 +869,17 @@ export class PurchaseOrderFormComponent implements OnInit {
     }
     const m = (opt as any).meta ?? {};
     this.itemsSignal.update(items => [...items, {
-      variantId:       opt.value,
-      variantLabel:    opt.label,
-      productName:     m.productName ?? '',
-      variantName:     m.variantName ?? '',
-      sku:             m.sku ?? '',
-      unitOfMeasure:   'UN',
+      variantId: opt.value,
+      variantLabel: opt.label,
+      productName: m.productName ?? '',
+      variantName: m.variantName ?? '',
+      sku: m.sku ?? '',
+      unitOfMeasure: 'UN',
       quantityOrdered: 1,
-      unitCost:        Number(m.costPrice ?? 0),
+      unitCost: Number(m.costPrice ?? 0),
       discountPercent: 0,
-      taxIds:          [],
-      taxDetails:      [],
+      taxIds: (m.taxes ?? []).map((t: any) => t.taxId),
+      taxDetails: (m.taxes ?? []).map((t: any) => ({ id: t.taxId, name: t.name, percentage: Number(t.percentage) })),
     }]);
     this.variantSelectorReset.set(undefined);
   }
@@ -887,22 +900,22 @@ export class PurchaseOrderFormComponent implements OnInit {
     this.savingAndApproving.set(approve);
 
     const base = {
-      documentType:         this.documentType,
-      supplierId:           this.selectedSupplierId(),
-      branchId:             this.selectedBranchId(),
-      paymentCondition:     this.paymentCondition,
+      documentType: this.documentType,
+      supplierId: this.selectedSupplierId(),
+      branchId: this.selectedBranchId(),
+      paymentCondition: this.paymentCondition,
       expectedDeliveryDate: this.expectedDeliveryDate || undefined,
-      deliveryAddress:      this.deliveryAddress.trim() || undefined,
-      internalNotes:        this.internalNotes.trim() || undefined,
+      deliveryAddress: this.deliveryAddress.trim() || undefined,
+      internalNotes: this.internalNotes.trim() || undefined,
       items: this.itemsSignal().map(i => ({
-        variantId:       i.variantId,
-        variantName:     i.variantName || undefined,
-        sku:             i.sku || undefined,
-        productName:     i.productName || undefined,
+        variantId: i.variantId,
+        variantName: i.variantName || undefined,
+        sku: i.sku || undefined,
+        productName: i.productName || undefined,
         quantityOrdered: i.quantityOrdered,
-        unitCost:        i.unitCost,
+        unitCost: i.unitCost,
         discountPercent: i.discountPercent || undefined,
-        taxIds:          i.taxIds.length ? i.taxIds : undefined,
+        taxIds: i.taxIds.length ? i.taxIds : undefined,
       } as PurchaseOrderItemPayload)),
     };
 

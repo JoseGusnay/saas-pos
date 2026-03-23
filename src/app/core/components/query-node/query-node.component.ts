@@ -2,12 +2,14 @@ import { Component, EventEmitter, Input, Output, forwardRef, signal } from '@ang
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IconComponent } from '../../layout/atoms/icon/icon.component';
+import { DatePickerComponent } from '../../../shared/components/ui/date-picker/date-picker';
+import { CustomSelectComponent } from '../../../shared/components/ui/custom-select/custom-select.component';
 import { FilterNode, FilterGroup, FilterRule, FilterField, LogicalOperator, FilterOperator } from '../../models/query-builder.models';
 
 @Component({
     selector: 'app-query-node',
     standalone: true,
-    imports: [CommonModule, FormsModule, IconComponent, forwardRef(() => QueryNodeComponent)],
+    imports: [CommonModule, FormsModule, IconComponent, DatePickerComponent, CustomSelectComponent, forwardRef(() => QueryNodeComponent)],
     templateUrl: './query-node.component.html',
     styleUrl: './query-node.component.scss'
 })
@@ -45,6 +47,8 @@ export class QueryNodeComponent {
                 return ['equals', 'notEqual', 'greaterThan', 'lessThan', 'inRange', 'blank', 'notBlank'];
             case 'text':
                 return ['contains', 'notContains', 'equals', 'notEqual', 'startsWith', 'endsWith', 'blank', 'notBlank'];
+            case 'date':
+                return ['equals', 'notEqual', 'greaterThan', 'lessThan', 'inRange', 'blank', 'notBlank'];
             case 'status':
             case 'select':
                 return ['equals', 'notEqual', 'blank', 'notBlank'];

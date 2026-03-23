@@ -93,12 +93,19 @@
 
     @if (showValueInput) {
         @if (currentField?.type === 'select' && currentFieldOptions.length > 0) {
-            <select class="qb-input qb-select" [ngModel]="ruleNode.value" (ngModelChange)="onSelectValueChange($event)">
-                <option value="" disabled>Seleccionar...</option>
-                @for (opt of currentFieldOptions; track opt.value) {
-                    <option [value]="opt.value">{{ opt.label }}</option>
-                }
-            </select>
+            <app-custom-select
+                class="qb-value-select"
+                [options]="currentFieldOptions"
+                [value]="ruleNode.value"
+                (valueChange)="onSelectValueChange($event)"
+            ></app-custom-select>
+        } @else if (currentField?.type === 'date' && ruleNode.operator === 'inRange') {
+            <div class="qb-date-range">
+                <app-date-picker [ngModel]="ruleNode.value" (ngModelChange)="onValueChange($event)" placeholder="Desde"></app-date-picker>
+                <app-date-picker [ngModel]="ruleNode.valueTo" (ngModelChange)="onValueToChange($event)" placeholder="Hasta"></app-date-picker>
+            </div>
+        } @else if (currentField?.type === 'date') {
+            <app-date-picker class="qb-date" [ngModel]="ruleNode.value" (ngModelChange)="onValueChange($event)" placeholder="Seleccionar fecha..."></app-date-picker>
         } @else if (ruleNode.operator === 'inRange') {
             <input class="qb-input qb-input--half" [ngModel]="ruleNode.value" (ngModelChange)="onValueChange($event)"
                 placeholder="Desde" type="number">

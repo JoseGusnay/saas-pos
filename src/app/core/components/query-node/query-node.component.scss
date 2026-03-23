@@ -325,6 +325,24 @@
     }
 }
 
+.qb-value-select {
+    width: 160px;
+    flex-shrink: 0;
+}
+
+.qb-date {
+    width: 160px;
+    flex-shrink: 0;
+}
+
+.qb-date-range {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+
+    app-date-picker { width: 140px; flex-shrink: 0; }
+}
+
 .qb-select {
     cursor: pointer;
     appearance: none;
