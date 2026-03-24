@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { unsavedChangesGuard } from '../../core/guards/unsaved-changes.guard';
 
 export const INVENTORY_ROUTES: Routes = [
   {
@@ -79,11 +80,13 @@ export const INVENTORY_ROUTES: Routes = [
   {
     path: 'ordenes-compra/nueva',
     loadComponent: () => import('./pages/purchase-order-form/purchase-order-form.component').then(m => m.PurchaseOrderFormComponent),
+    canDeactivate: [unsavedChangesGuard],
     data: { breadcrumb: 'Nueva Orden de Compra' }
   },
   {
     path: 'ordenes-compra/:id/editar',
     loadComponent: () => import('./pages/purchase-order-form/purchase-order-form.component').then(m => m.PurchaseOrderFormComponent),
+    canDeactivate: [unsavedChangesGuard],
     data: { breadcrumb: 'Editar Orden de Compra' }
   }
 ];

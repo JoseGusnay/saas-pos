@@ -521,6 +521,17 @@ export class SearchSelectComponent implements AfterViewInit, ControlValueAccesso
   private _initialOption = signal<SearchSelectOption | undefined>(undefined);
   @Input() set initialOption(val: SearchSelectOption | undefined) {
     this._initialOption.set(val);
+    // Sync value when initialOption is set externally (e.g. edit mode preload)
+    if (val && !this.multiple) {
+      this.value.set(val.value);
+      this.selectedOptionsMap.update(map => {
+        map.set(val.value, val);
+        return new Map(map);
+      });
+    } else if (!val && !this.multiple) {
+      this.value.set(null);
+      this.selectedOptionsMap.set(new Map());
+    }
   }
 
   private _initialOptions = signal<SearchSelectOption[]>([]);

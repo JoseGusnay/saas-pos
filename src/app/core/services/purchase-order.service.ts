@@ -72,6 +72,14 @@ export class PurchaseOrderService {
     return this.http.get<any>(`${this.apiUrl}/${orderId}/retention/${retentionId}/xml`).pipe(map(r => r?.data ?? r));
   }
 
+  removePayment(orderId: string, paymentId: string): Observable<any> {
+    return this.http.delete<any>(`${this.apiUrl}/${orderId}/payment/${paymentId}`).pipe(map(r => r?.data ?? r));
+  }
+
+  removeRetention(orderId: string, retentionId: string): Observable<any> {
+    return this.http.delete<any>(`${this.apiUrl}/${orderId}/retention/${retentionId}`).pipe(map(r => r?.data ?? r));
+  }
+
   remove(id: string): Observable<any> {
     return this.http.delete<any>(`${this.apiUrl}/${id}`).pipe(map(r => r?.data ?? r));
   }

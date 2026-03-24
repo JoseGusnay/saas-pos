@@ -157,17 +157,21 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
 
       <!-- Branch filter -->
       <div class="toolbar-extras">
-        <app-custom-select
-          [options]="branchOptions()"
-          [value]="filterBranch()"
-          (valueChange)="filterBranch.set($event); currentPage.set(1)"
-        ></app-custom-select>
+        <div class="toolbar-filter">
+          <ng-icon name="lucideBuilding2" size="14"></ng-icon>
+          <span class="toolbar-filter__label">Sucursal:</span>
+          <app-custom-select
+            [options]="branchOptions()"
+            [value]="filterBranch()"
+            (valueChange)="filterBranch.set($event); currentPage.set(1)"
+          ></app-custom-select>
+        </div>
       </div>
 
       <!-- Orders list/grid -->
       <div [ngClass]="viewMode() === 'grid' ? 'orders-grid' : 'orders-list'">
         @if (isLoading()) {
-          @for (n of [1,2,3,4,5,6]; track n) {
+          @for (n of (viewMode() === 'grid' ? [1,2,3,4,5,6] : [1,2,3,4,5,6,7,8]); track n) {
             @if (viewMode() === 'grid') {
               <div class="data-card skeleton-card">
                 <header style="display:flex;justify-content:space-between;margin-bottom:12px">
@@ -247,9 +251,9 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
             <app-empty-state
               icon="lucideClipboardList"
               [title]="searchQuery() ? 'Sin resultados' : 'Sin órdenes de compra'"
-              [description]="searchQuery() ? 'Intenta con otros términos.' : 'Crea la primera orden de compra.'"
-              [actionLabel]="searchQuery() ? undefined : 'Nueva Orden'"
-              (action)="onNew()"
+              [description]="searchQuery() ? 'Intenta con otros términos de búsqueda.' : 'Crea la primera orden de compra.'"
+              [actionLabel]="searchQuery() ? 'Limpiar búsqueda' : 'Nueva Orden'"
+              (action)="searchQuery() ? clearAllFilters() : onNew()"
             ></app-empty-state>
           </div>
         }
@@ -363,7 +367,7 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
                             @if (item.variantName) { <span class="itbl-variant">{{ item.variantName }}</span> }
                             @if (item.sku) { <span class="itbl-sku">{{ item.sku }}</span> }
                           </td>
-                          <td class="r">{{ $any(item).unitOfMeasure ?? 'UN' }}</td>
+                          <td class="r">{{ item.unitAbbreviation ?? 'UN' }}</td>
                           <td class="r">{{ item.quantityOrdered }}</td>
                           <td class="r">
                             <span [class.qty-partial]="item.quantityReceived > 0 && item.quantityReceived < item.quantityOrdered"
@@ -485,7 +489,14 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
                         @if (r.sriStatus) {
                           <span class="dtab-card__sri-status" [class]="'sri-' + r.sriStatus.toLowerCase()">SRI: {{ r.sriStatus }}</span>
                         }
-                        <button type="button" class="dtab-card__xml-btn" (click)="previewRetentionXml(d.id, r.id)">Ver XML</button>
+                        <div class="dtab-card__actions">
+                          <button type="button" class="dtab-card__xml-btn" (click)="previewRetentionXml(d.id, r.id)">Ver XML</button>
+                          @if (r.sriStatus !== 'AUTORIZADO' && d.status !== 'ANULADA') {
+                            <button type="button" class="dtab-card__delete-btn" [disabled]="isActioning()" (click)="deleteRetention(d.id, r.id)">
+                              <ng-icon name="lucideTrash2" size="14"></ng-icon> Eliminar
+                            </button>
+                          }
+                        </div>
                       </div>
                     }
                   }
@@ -505,6 +516,11 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
                         </div>
                         @if (p.reference) { <p class="dtab-card__sub">Ref: {{ p.reference }}</p> }
                         @if (p.paidByName) { <p class="dtab-card__sub">Por: {{ p.paidByName }}</p> }
+                        @if (d.status !== 'ANULADA') {
+                          <button type="button" class="dtab-card__delete-btn" [disabled]="isActioning()" (click)="deletePayment(d.id, p.id)">
+                            <ng-icon name="lucideTrash2" size="14"></ng-icon> Eliminar
+                          </button>
+                        }
                       </div>
                     }
                   }
@@ -523,7 +539,7 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
               <app-form-button label="Editar" variant="secondary" icon="lucidePencil" (click)="onEdit(detail()!)"></app-form-button>
               <app-form-button label="Aprobar" icon="lucideCheck" [loading]="isActioning()" (click)="openApproveModal()"></app-form-button>
             }
-            @if (s === 'APROBADA' || s === 'RECIBIDA_PARCIAL') {
+            @if ((s === 'APROBADA' || s === 'RECIBIDA_PARCIAL') && (detail()!.items ?? []).some(i => +i.quantityReceived < +i.quantityOrdered)) {
               <app-form-button label="Reg. Recepción" variant="secondary" icon="lucidePackageCheck" (click)="openReceiptDrawer()"></app-form-button>
             }
             @if (s === 'RECIBIDA_PARCIAL' || s === 'RECIBIDA' || s === 'CERRADA') {
@@ -666,6 +682,17 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
               <label class="form-label">Fecha *</label>
               <app-date-picker [(ngModel)]="retentionForm.retentionDate" placeholder="Seleccionar fecha..."></app-date-picker>
             </div>
+
+            @if ((detail()?.receipts ?? []).length > 1) {
+              <div class="form-group form-group--full">
+                <label class="form-label">Factura asociada</label>
+                <app-custom-select
+                  [options]="receiptOptions()"
+                  [value]="retentionForm.receiptId"
+                  (valueChange)="retentionForm.receiptId = $any($event)"
+                ></app-custom-select>
+              </div>
+            }
 
             <!-- Líneas de retención -->
             <div class="form-group form-group--full">
@@ -826,6 +853,24 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
         </div>
       </app-modal>
 
+      <!-- Delete Payment Modal -->
+      <app-modal [isOpen]="isDeletePaymentModalOpen()" title="Eliminar Pago" (close)="isDeletePaymentModalOpen.set(false)">
+        <div modalBody>¿Eliminar este pago? Se recalculará el saldo de la orden.</div>
+        <div modalFooter class="modal-footer-actions">
+          <app-form-button label="Cancelar" variant="secondary" (click)="isDeletePaymentModalOpen.set(false)"></app-form-button>
+          <app-form-button label="Eliminar Pago" variant="danger" icon="lucideTrash2" [loading]="isActioning()" (click)="confirmDeletePayment()"></app-form-button>
+        </div>
+      </app-modal>
+
+      <!-- Delete Retention Modal -->
+      <app-modal [isOpen]="isDeleteRetentionModalOpen()" title="Eliminar Retención" (close)="isDeleteRetentionModalOpen.set(false)">
+        <div modalBody>¿Eliminar esta retención? Los datos fiscales asociados se perderán.</div>
+        <div modalFooter class="modal-footer-actions">
+          <app-form-button label="Cancelar" variant="secondary" (click)="isDeleteRetentionModalOpen.set(false)"></app-form-button>
+          <app-form-button label="Eliminar Retención" variant="danger" icon="lucideTrash2" [loading]="isActioning()" (click)="confirmDeleteRetention()"></app-form-button>
+        </div>
+      </app-modal>
+
       <!-- XML Preview Modal -->
       <app-modal [isOpen]="isXmlPreviewOpen()" title="XML Comprobante de Retención" (close)="isXmlPreviewOpen.set(false)">
         <div modalBody>
@@ -900,7 +945,14 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
       .ri-row { grid-template-columns: 1fr; }
     }
 
-    .toolbar-extras { display: flex; gap: 0.75rem;  padding: 0.5rem 0 0.5rem; flex-wrap: wrap; }
+    .toolbar-extras { display: flex; gap: 0.75rem; padding: 0.25rem 0; flex-wrap: wrap; }
+    .toolbar-filter {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 10px; border-radius: var(--radius-md);
+      border: 1px solid var(--color-border-light); background: var(--color-bg-surface);
+      font-size: var(--font-size-xs); color: var(--color-text-muted);
+    }
+    .toolbar-filter__label { font-weight: var(--font-weight-semibold); white-space: nowrap; }
     .select-filter { padding: 0.375rem 0.75rem; border-radius: var(--radius-md); border: 1px solid var(--color-border-light); background: var(--color-bg-surface); color: var(--color-text-main); font-size: var(--font-size-sm); cursor: pointer; }
 
     /* Order row */
@@ -921,7 +973,7 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
     .order-date { font-size: var(--font-size-xs); color: var(--color-text-muted); white-space: nowrap; }
 
     /* Status badges */
-    .badge-order, .badge-payment {
+    .badge-order, .badge-payment, .badge-partial, .dtab-card__sri-status {
       padding: 3px 10px; border-radius: 99px; font-size: 11px;
       font-weight: 600; white-space: nowrap; width: fit-content;
     }
@@ -989,7 +1041,7 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
     .dtab-card__amount { font-weight: var(--font-weight-bold); color: var(--color-text-main); margin-left: auto; }
     .dtab-card__sub { font-size: var(--font-size-xs); color: var(--color-text-muted); margin: 0.125rem 0 0; }
     .dtab-card__grid { display: grid; grid-template-columns: 1fr auto; gap: 0.25rem 1rem; font-size: var(--font-size-sm); }
-    .badge-partial { padding: 2px 8px; border-radius: 99px; background: var(--color-warning-bg); color: var(--color-warning-text); font-size: 10px; font-weight: 600; }
+    .badge-partial { background: var(--color-warning-bg); color: var(--color-warning-text); }
 
     /* ── Form shared styles ────────────────────────────────────────────────── */
     .form-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; }
@@ -1007,7 +1059,14 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
     /* Receipt items */
     .receipt-items-title { font-size: var(--font-size-sm); font-weight: var(--font-weight-semibold); color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin: 1.25rem 0 0.625rem; }
     .receipt-items { display: flex; flex-direction: column; gap: 0.5rem; }
-    .ri-head { display: none; }
+    .ri-head {
+      display: grid; grid-template-columns: 1fr repeat(4, 80px);
+      gap: 0.5rem; padding: 0.5rem 0.75rem;
+      font-size: 10px; font-weight: var(--font-weight-semibold);
+      text-transform: uppercase; letter-spacing: 0.05em;
+      color: var(--color-text-muted); border-bottom: 1px solid var(--color-border-subtle);
+    }
+    @media (max-width: 768px) { .ri-head { display: none; } }
     .ri-row {
       display: flex; flex-direction: column; gap: 0.5rem;
       padding: 0.75rem; border: 1px solid var(--color-border-subtle);
@@ -1034,7 +1093,7 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
     .receipt-item-qty { font-weight: var(--font-weight-semibold); color: var(--color-text-main); min-width: 50px; }
     .receipt-item-cost { color: var(--color-text-main); font-weight: var(--font-weight-medium); }
     .receipt-item-lot, .receipt-item-expiry { padding: 1px 6px; background: var(--color-bg-canvas); border-radius: var(--radius-sm); font-size: 10px; }
-    .badge-partial { padding: 1px 6px; border-radius: 999px; background: var(--color-warning-bg); color: var(--color-warning-text); font-size: 10px; font-weight: var(--font-weight-semibold); }
+    .badge-partial { background: var(--color-warning-bg); color: var(--color-warning-text); }
 
     .xml-preview {
       background: var(--color-bg-canvas); border: 1px solid var(--color-border-light);
@@ -1043,16 +1102,26 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
       overflow-x: auto; white-space: pre-wrap; word-break: break-all;
       max-height: 60vh; overflow-y: auto; margin: 0; line-height: 1.5;
     }
+    .dtab-card__actions {
+      display: flex; gap: 6px; margin-top: 6px; align-items: center;
+    }
     .dtab-card__xml-btn {
-      display: inline-block; margin-top: 6px; padding: 3px 10px;
+      display: inline-block; padding: 3px 10px;
       border: 1px solid var(--color-border-light); border-radius: var(--radius-sm);
       background: var(--color-bg-surface); color: var(--color-text-muted);
       font-size: 10px; font-family: inherit; cursor: pointer;
       &:hover { border-color: var(--color-accent-primary); color: var(--color-accent-primary); }
     }
+    .dtab-card__delete-btn {
+      display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px;
+      border: 1px solid var(--color-border-light); border-radius: var(--radius-sm);
+      background: var(--color-bg-surface); color: var(--color-text-muted);
+      font-size: 10px; font-family: inherit; cursor: pointer;
+      &:hover { border-color: var(--color-danger); color: var(--color-danger); }
+      &:disabled { opacity: 0.5; cursor: not-allowed; }
+    }
     .dtab-card__sri-status {
-      display: inline-block; margin-top: 4px; padding: 2px 8px; border-radius: 999px;
-      font-size: 10px; font-weight: var(--font-weight-semibold);
+      display: inline-block; margin-top: 4px;
       &.sri-pendiente { background: var(--color-warning-bg); color: var(--color-warning-text); }
       &.sri-generado { background: var(--color-info-bg); color: var(--color-info-text); }
       &.sri-firmado { background: var(--color-info-bg); color: var(--color-info-text); }
@@ -1176,6 +1245,12 @@ export class PurchaseOrdersListComponent {
   isDetailLoading = signal(false);
   detailTab = signal<'receipts' | 'retentions' | 'payments'>('receipts');
   detail = signal<PurchaseOrder | null>(null);
+  receiptOptions = computed(() =>
+    (this.detail()?.receipts ?? []).map(r => ({
+      value: r.id,
+      label: `${r.supplierInvoiceNumber} (${r.supplierInvoiceDate})`,
+    }))
+  );
 
   isActioning = signal(false);
   actionTargetId = signal<string | null>(null);
@@ -1183,6 +1258,10 @@ export class PurchaseOrdersListComponent {
   isApproveModalOpen = signal(false);
   isCancelModalOpen = signal(false);
   isDeleteModalOpen = signal(false);
+  isDeletePaymentModalOpen = signal(false);
+  isDeleteRetentionModalOpen = signal(false);
+  pendingDeletePaymentId = signal('');
+  pendingDeleteRetentionId = signal('');
   isReceiptDrawerOpen = signal(false);
   isRetentionModalOpen = signal(false);
   isPaymentModalOpen = signal(false);
@@ -1221,6 +1300,7 @@ export class PurchaseOrdersListComponent {
 
   // ─── Retention form ───────────────────────────────────────────────────────
   retentionForm: {
+    receiptId: string;
     retentionNumber: string;
     retentionDate: string;
     codSustento: string;
@@ -1228,6 +1308,7 @@ export class PurchaseOrdersListComponent {
     notes: string;
     lines: RetentionFormLine[];
   } = {
+      receiptId: '',
       retentionNumber: '',
       retentionDate: new Date().toISOString().slice(0, 10),
       codSustento: '01',
@@ -1453,7 +1534,7 @@ export class PurchaseOrdersListComponent {
         productName: item.productName ?? '',
         variantName: item.variantName ?? '',
         sku: item.sku ?? '',
-        unitOfMeasure: (item as any).unitOfMeasure ?? 'UN',
+        unitOfMeasure: item.unitAbbreviation ?? 'UN',
         quantityOrdered: item.quantityOrdered,
         quantityReceived: item.quantityReceived,
         qtyToReceive: item.quantityOrdered - item.quantityReceived,
@@ -1506,6 +1587,8 @@ export class PurchaseOrdersListComponent {
       });
     }
 
+    const receipts = d?.receipts ?? [];
+    this.retentionForm.receiptId = receipts.length > 0 ? receipts[receipts.length - 1].id : '';
     this.retentionForm.retentionNumber = '';
     this.retentionForm.retentionDate = new Date().toISOString().slice(0, 10);
     this.retentionForm.codSustento = '01';
@@ -1668,6 +1751,7 @@ export class PurchaseOrdersListComponent {
     const payload: RegisterRetentionPayload = {
       retentionNumber: f.retentionNumber,
       retentionDate: f.retentionDate,
+      receiptId: f.receiptId || undefined,
       codSustento: f.codSustento || undefined,
       pagoLocExt: f.pagoLocExt || undefined,
       lines: f.lines.map(l => ({
@@ -1710,9 +1794,9 @@ export class PurchaseOrdersListComponent {
     };
     this.isActioning.set(true);
     this.orderService.registerPayment(id, payload).subscribe({
-      next: d => {
+      next: () => {
         this.toastService.success('Pago registrado');
-        this.detail.set(d);
+        this.orderService.findOne(id).subscribe(d => this.detail.set(d));
         this.refreshTrigger.update(v => v + 1);
         this.isActioning.set(false);
         this.isPaymentModalOpen.set(false);
@@ -1755,6 +1839,56 @@ export class PurchaseOrdersListComponent {
       },
       error: (err: any) => {
         this.toastService.error(err?.error?.message || 'Error al eliminar');
+        this.isActioning.set(false);
+      }
+    });
+  }
+
+  deletePayment(orderId: string, paymentId: string) {
+    this.pendingDeletePaymentId.set(paymentId);
+    this.isDeletePaymentModalOpen.set(true);
+  }
+
+  confirmDeletePayment() {
+    const orderId = this.detail()?.id;
+    const paymentId = this.pendingDeletePaymentId();
+    if (!orderId || !paymentId) return;
+    this.isActioning.set(true);
+    this.orderService.removePayment(orderId, paymentId).subscribe({
+      next: () => {
+        this.toastService.success('Pago eliminado');
+        this.isActioning.set(false);
+        this.isDeletePaymentModalOpen.set(false);
+        this.onViewDetail({ id: orderId } as any);
+        this.refreshTrigger.update(v => v + 1);
+      },
+      error: (err: any) => {
+        this.toastService.error(err?.error?.message || 'Error al eliminar pago');
+        this.isActioning.set(false);
+      }
+    });
+  }
+
+  deleteRetention(orderId: string, retentionId: string) {
+    this.pendingDeleteRetentionId.set(retentionId);
+    this.isDeleteRetentionModalOpen.set(true);
+  }
+
+  confirmDeleteRetention() {
+    const orderId = this.detail()?.id;
+    const retentionId = this.pendingDeleteRetentionId();
+    if (!orderId || !retentionId) return;
+    this.isActioning.set(true);
+    this.orderService.removeRetention(orderId, retentionId).subscribe({
+      next: () => {
+        this.toastService.success('Retención eliminada');
+        this.isActioning.set(false);
+        this.isDeleteRetentionModalOpen.set(false);
+        this.onViewDetail({ id: orderId } as any);
+        this.refreshTrigger.update(v => v + 1);
+      },
+      error: (err: any) => {
+        this.toastService.error(err?.error?.message || 'Error al eliminar retención');
         this.isActioning.set(false);
       }
     });

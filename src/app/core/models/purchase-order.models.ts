@@ -59,7 +59,8 @@ export interface PurchaseOrderItem {
   totalTaxes: number;
   lineTotal: number;
   taxes?: PurchaseOrderItemTax[];
-  /** Enriched from variant on findOne */
+  /** Enriched from backend on findOne */
+  unitAbbreviation?: string | null;
   trackLots?: boolean;
   trackExpiry?: boolean;
   stockTrackable?: boolean;
@@ -109,6 +110,7 @@ export interface PurchaseOrderRetentionLine {
 export interface PurchaseOrderRetention {
   id: string;
   orderId: string;
+  receiptId: string | null;
   retentionNumber: string;
   retentionDate: string;
   claveAcceso?: string | null;
@@ -156,6 +158,7 @@ export interface PurchaseOrder {
   documentType: PurchaseDocumentType;
   supplierId: string;
   branchId: string;
+  warehouseId: string | null;
   status: PurchaseOrderStatus;
   paymentCondition: PaymentCondition;
   paymentStatus: PaymentStatus;
@@ -179,6 +182,7 @@ export interface PurchaseOrder {
   supplierTipoContribuyente?: string;
   supplierRegimenRimpe?: string;
   branchName?: string;
+  warehouseName?: string | null;
   itemCount?: number;
   items?: PurchaseOrderItem[];
   receipts?: PurchaseOrderReceipt[];
@@ -204,6 +208,7 @@ export interface CreatePurchaseOrderPayload {
   documentType?: PurchaseDocumentType;
   supplierId: string;
   branchId: string;
+  warehouseId?: string;
   paymentCondition?: PaymentCondition;
   expectedDeliveryDate?: string;
   deliveryAddress?: string;
@@ -212,8 +217,10 @@ export interface CreatePurchaseOrderPayload {
 }
 
 export interface UpdatePurchaseOrderPayload {
+  documentType?: PurchaseDocumentType;
   supplierId?: string;
   branchId?: string;
+  warehouseId?: string;
   paymentCondition?: PaymentCondition;
   expectedDeliveryDate?: string;
   deliveryAddress?: string;
@@ -249,6 +256,7 @@ export interface RetentionLinePayload {
 export interface RegisterRetentionPayload {
   retentionNumber: string;
   retentionDate: string;
+  receiptId?: string;
   codSustento?: string;
   pagoLocExt?: string;
   lines: RetentionLinePayload[];

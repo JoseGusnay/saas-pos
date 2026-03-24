@@ -5,7 +5,24 @@
       "Bash(ls:*)",
       "Bash(xargs grep:*)",
       "Bash(grep -rn \"WAREHOUSE\\\\|STOCK_\" 'C:\\\\Users\\\\usuario\\\\Documents\\\\proyects personal\\\\netsjs\\\\multitenant-backend\\\\src\\\\modules\\\\b2b\\\\rbac' --include=*.ts)",
-      "Bash(grep -v \"^--$\")"
+      "Bash(grep -v \"^--$\")",
+      "Bash(npx tsc:*)",
+      "Bash(find 'c:\\\\Users\\\\usuario\\\\Documents\\\\proyects personal\\\\angular\\\\saas-pos\\\\src\\\\app\\\\features\\\\inventory\\\\pages\\\\purchase-order-form' -type f \\\\\\(-name *.html -o -name *.scss \\\\\\))",
+      "Bash(find 'c:\\\\Users\\\\usuario\\\\Documents\\\\proyects personal\\\\angular\\\\saas-pos\\\\src\\\\app\\\\features\\\\inventory\\\\pages\\\\purchase-orders-list' -type f \\\\\\(-name *.html -o -name *.scss \\\\\\))",
+      "Bash(find 'c:\\\\Users\\\\usuario\\\\Documents\\\\proyects personal\\\\angular\\\\saas-pos\\\\src\\\\app\\\\features\\\\inventory\\\\components' -type d -name *purchase* -o -name *orden* -o -name *compra*)",
+      "Bash(grep:*)",
+      "Bash(find 'C:\\\\Users\\\\usuario\\\\Documents\\\\proyects personal\\\\angular\\\\saas-pos' -maxdepth 3 -type d -name *api* -o -type d -name *backend* -o -type d -name *nest*)",
+      "Bash(find C:UsersusuarioDocuments -maxdepth 5 -type f -name *.module.ts)",
+      "Bash(find C:UsersusuarioDocuments -maxdepth 5 -type f -path *purchase*order*)",
+      "Bash(find C:UsersusuarioDocuments -maxdepth 5 -type f -name *.controller.ts)",
+      "Bash(find 'C:\\\\Users\\\\usuario\\\\Documents\\\\proyects personal\\\\netsjs' -maxdepth 5 -type f -name *purchase*order*)",
+      "Bash(find 'C:\\\\Users\\\\usuario\\\\Documents\\\\proyects personal\\\\netsjs/osodreamer-pos-v1/src' -type f -name *warehouse*)",
+      "Bash(find 'C:\\\\Users\\\\usuario\\\\Documents\\\\proyects personal\\\\netsjs/osodreamer-pos-v1' -type f -name *migration* -o -name *migrations*)",
+      "Bash(find 'C:\\\\Users\\\\usuario\\\\Documents\\\\proyects personal\\\\netsjs/osodreamer-pos-v1' -type f -name *typeorm* -o -name *database.config*)",
+      "Bash(find 'C:\\\\Users\\\\usuario\\\\Documents\\\\proyects personal\\\\netsjs' -type f -name *purchase*)",
+      "Bash(find 'C:\\\\Users\\\\usuario\\\\Documents\\\\proyects personal\\\\netsjs\\\\multitenant-backend\\\\src' -type d -name *migration*)",
+      "Bash(find 'C:/Users/usuario/Documents/proyects personal/netsjs/multitenant-backend/src' -name *migration* -o -name *Migration*)",
+      "Bash(echo \"EXIT CODE: $?\")"
     ]
   }
 }
