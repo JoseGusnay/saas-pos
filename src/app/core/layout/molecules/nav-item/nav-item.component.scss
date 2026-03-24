@@ -70,13 +70,13 @@
 
     // ESTADO COLAPSADO
     &--collapsed {
-        justify-content: center; // Centramos el icono puro
-        padding: 8px 0; // Removemos padding horizontal para que encaje
+        justify-content: center;
+        padding: 8px 0;
 
         .nav-item__label,
         app-badge,
         .nav-item__chevron {
-            display: none; // Ocultamos el texto, badges y chevrons
+            display: none;
         }
     }
 

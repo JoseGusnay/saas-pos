@@ -5,7 +5,6 @@ import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { switchMap, debounceTime, tap } from 'rxjs';
 
 import { FilterNode, FilterGroup, FilterField, FilterRule } from '../../../../core/models/query-builder.models';
-import { ModalService } from '../../../../core/components/modal/modal.service';
 import { ModalComponent } from '../../../../shared/components/ui/modal/modal';
 import { BranchesAdvancedFilters } from './components/branches-advanced-filters/branches-advanced-filters';
 import { PageHeaderComponent } from '../../../../shared/components/list-ui/page-header/page-header.component';
@@ -56,7 +55,8 @@ import { SpinnerComponent } from '../../../../shared/components/ui/spinner/spinn
     NgIconComponent,
     SpinnerComponent,
     ActionsMenuComponent,
-    FormButtonComponent
+    FormButtonComponent,
+    BranchesAdvancedFilters
   ],
 
   providers: [
@@ -285,9 +285,37 @@ import { SpinnerComponent } from '../../../../shared/components/ui/spinner/spinn
         (pageChange)="currentPage.set($event)"
       ></app-pagination>
 
+      <!-- Drawer de Filtros Avanzados -->
+      <app-drawer
+        [isOpen]="isFiltersOpen()"
+        title="Filtros Avanzados"
+        (close)="isFiltersOpen.set(false)"
+        size="md">
+        <div drawerBody>
+          <app-branches-advanced-filters
+            #advancedFilters
+            [filterTree]="filterTree"
+            [availableFields]="availableFields"
+            (applied)="onFilterTreeChange($event); isFiltersOpen.set(false)"
+          ></app-branches-advanced-filters>
+        </div>
+        <div drawerFooter class="drawer-footer-actions">
+          <app-form-button
+            label="Cancelar"
+            variant="secondary"
+            (click)="isFiltersOpen.set(false)"
+          ></app-form-button>
+          <app-form-button
+            label="Aplicar filtros"
+            variant="primary"
+            (click)="advancedFilters.applyFilters()"
+          ></app-form-button>
+        </div>
+      </app-drawer>
+
       <!-- Drawer para Nueva/Editar Sucursal -->
-      <app-drawer 
-        [isOpen]="isDrawerOpen()" 
+      <app-drawer
+        [isOpen]="isDrawerOpen()"
         [title]="isEditing() ? 'Editar Sucursal' : 'Registrar Nueva Sucursal'"
         [allowClose]="!(branchForm?.isSubmitting)"
         (close)="onDrawerClose()"
@@ -320,55 +348,65 @@ import { SpinnerComponent } from '../../../../shared/components/ui/spinner/spinn
       </app-drawer>
 
       <!-- Modal de Confirmación de Salida -->
-      <app-modal 
-        [isOpen]="isConfirmationModalOpen()" 
+      <app-modal
+        [isOpen]="isConfirmationModalOpen()"
         [title]="'Cambios sin guardar'"
+        size="sm"
         (close)="onCancelExit()">
-        
+
         <div modalBody>
-          Tienes cambios en el formulario que no has guardado. ¿Estás seguro de que quieres salir? Se perderán todos los datos ingresados.
+          Tienes cambios sin guardar. ¿Deseas salir? Se perderán los datos ingresados.
         </div>
 
         <div modalFooter class="modal-footer-actions">
-          <button type="button" class="btn btn-ghost" (click)="onCancelExit()">
-            Continuar Editando
-          </button>
-          <button type="button" class="btn btn-danger" (click)="onConfirmExit()">
-            Salir sin Guardar
-          </button>
+          <app-form-button
+            label="Continuar editando"
+            variant="ghost"
+            type="button"
+            [fullWidth]="false"
+            (click)="onCancelExit()"
+          />
+          <app-form-button
+            label="Salir sin guardar"
+            variant="danger"
+            type="button"
+            [fullWidth]="false"
+            (click)="onConfirmExit()"
+          />
         </div>
       </app-modal>
 
-      <!-- Modal de Confirmación de Eliminación (PREMIUM) -->
-      <app-modal 
-        [isOpen]="isDeleteModalOpen()" 
-        [title]="'Confirmar Eliminación'"
+      <!-- Modal de Confirmación de Eliminación -->
+      <app-modal
+        [isOpen]="isDeleteModalOpen()"
+        [title]="'Confirmar eliminación'"
+        size="sm"
         [allowClose]="!isDeleting()"
         (close)="onCancelDelete()">
-        
+
         <div modalBody>
-          <div class="delete-confirmation">
-            ¿Estás seguro de que deseas eliminar la sucursal <strong>"{{ branchToDelete()?.name }}"</strong>? 
-            Esta acción desactivará el acceso a esta sucursal de forma inmediata.
-          </div>
+          ¿Eliminar la sucursal <strong>"{{ branchToDelete()?.name }}"</strong>?
+          Esta acción desactivará el acceso de forma inmediata.
         </div>
 
         <div modalFooter class="modal-footer-actions">
-          <button type="button" 
-                  class="btn btn-ghost" 
-                  [disabled]="isDeleting()"
-                  (click)="onCancelDelete()">
-            Cerrar
-          </button>
-          <button type="button" 
-                  class="btn btn-danger" 
-                  [disabled]="isDeleting()"
-                  (click)="confirmDelete()">
-            
-            <app-spinner *ngIf="isDeleting()"></app-spinner>
-
-            <span>{{ isDeleting() ? 'Eliminando...' : 'Eliminar Definitivamente' }}</span>
-          </button>
+          <app-form-button
+            label="Cancelar"
+            variant="ghost"
+            type="button"
+            [fullWidth]="false"
+            [disabled]="isDeleting()"
+            (click)="onCancelDelete()"
+          />
+          <app-form-button
+            label="Eliminar"
+            loadingLabel="Eliminando..."
+            variant="danger"
+            type="button"
+            [fullWidth]="false"
+            [loading]="isDeleting()"
+            (click)="confirmDelete()"
+          />
         </div>
       </app-modal>
 
@@ -383,7 +421,6 @@ import { SpinnerComponent } from '../../../../shared/components/ui/spinner/spinn
 export class BranchesListComponent {
   private branchService = inject(BranchService);
   private toastService = inject(ToastService);
-  modalService = inject(ModalService);
 
   // Acciones reutilizables para las tarjetas
   branchActions: ActionItem[] = [
@@ -398,6 +435,7 @@ export class BranchesListComponent {
   isMobile = signal<boolean>(false);
   viewMode = computed(() => this.isMobile() ? 'grid' : this.viewModePreference());
   isDrawerOpen = signal(false);
+  isFiltersOpen = signal(false);
   isConfirmationModalOpen = signal(false);
 
   // SORTING STATE
@@ -644,24 +682,11 @@ export class BranchesListComponent {
   }
 
 
+  @ViewChild('advancedFilters') advancedFiltersRef!: BranchesAdvancedFilters;
+
   openAdvancedFilters() {
-    this.modalService.open(
-      BranchesAdvancedFilters,
-      'Filtros Avanzados',
-      {
-        filterTree: this.filterTree,
-        availableFields: this.availableFields,
-        onFilterTreeChange: this.onFilterTreeChange.bind(this)
-      },
-      'Los filtros se aplican en tiempo real',
-      [
-        {
-          label: 'Hecho',
-          variant: 'primary',
-          action: () => this.modalService.close()
-        }
-      ]
-    );
+    this.isFiltersOpen.set(true);
+    setTimeout(() => this.advancedFiltersRef?.refresh(), 0);
   }
 
   constructor() {
@@ -734,10 +759,15 @@ export class BranchesListComponent {
     const fieldsToTrack = [
       { field: 'name', label: 'Nombre' },
       { field: 'address', label: 'Dirección' },
+      { field: 'city', label: 'Ciudad' },
       { field: 'phone', label: 'Teléfono' },
       { field: 'manager', label: 'Encargado' },
       { field: 'isActive', label: 'Estado' },
-      { field: 'revenue', label: 'Ingresos' }
+      { field: 'isMain', label: 'Sucursal principal' },
+      { field: 'revenue', label: 'Ingresos' },
+      { field: 'codigoEstablecimiento', label: 'Código Establecimiento' },
+      { field: 'dirEstablecimiento', label: 'Dirección Comprobantes' },
+      { field: 'nombreComercialSucursal', label: 'Nombre Comercial' },
     ];
 
     return fieldsToTrack

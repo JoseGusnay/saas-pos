@@ -1,91 +1,50 @@
 import { Component, EventEmitter, Output, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { NgIconComponent, provideIcons } from '@ng-icons/core';
-import { lucideTag, lucideGlobe } from '@ng-icons/lucide';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { BrandService } from '../../../../core/services/brand.service';
 import { ToastService } from '../../../../core/services/toast.service';
 import { Brand } from '../../../../core/models/brand.models';
+import { FieldInputComponent } from '../../../../shared/components/ui/field-input/field-input';
+import { FieldToggleComponent } from '../../../../shared/components/ui/field-toggle/field-toggle';
 
 @Component({
   selector: 'app-brand-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, NgIconComponent],
-  providers: [
-    provideIcons({ lucideTag, lucideGlobe })
-  ],
+  imports: [ReactiveFormsModule, FieldInputComponent, FieldToggleComponent],
   template: `
-    <div class="brand-form-container">
-      <form [formGroup]="brandForm" class="premium-form" (ngSubmit)="onSubmit()">
-        <fieldset [disabled]="isSubmitting()" style="border: none; padding: 0; margin: 0; display: contents;">
+    <form [formGroup]="brandForm" class="bf">
 
-          <div class="form-section">
-            <h3 class="section-title">Información General</h3>
+      <app-field-input
+        label="Nombre de la Marca"
+        formControlName="name"
+        placeholder="Ej: Johnnie Walker, Smirnoff..."
+        [required]="true"
+        [errorMessages]="{ required: 'El nombre es obligatorio', minlength: 'Mínimo 2 caracteres' }"
+      ></app-field-input>
 
-            <div class="form-group" [class.has-error]="brandForm.get('name')?.invalid && brandForm.get('name')?.touched">
-              <label for="name">Nombre de la Marca</label>
-              <div class="input-wrapper">
-                <ng-icon name="lucideTag"></ng-icon>
-                <input
-                  id="name"
-                  type="text"
-                  formControlName="name"
-                  placeholder="Ej: Johnnie Walker, Smirnoff...">
-              </div>
-              @if (brandForm.get('name')?.invalid && brandForm.get('name')?.touched) {
-                <small class="error-msg">El nombre es obligatorio (min. 2 caracteres).</small>
-              }
-            </div>
+      <app-field-input
+        label="País de Origen"
+        formControlName="country"
+        placeholder="Ej: Escocia, Rusia, México..."
+        [optional]="true"
+      ></app-field-input>
 
-            <div class="form-group">
-              <label for="country">País de Origen</label>
-              <div class="input-wrapper">
-                <ng-icon name="lucideGlobe"></ng-icon>
-                <input
-                  id="country"
-                  type="text"
-                  formControlName="country"
-                  placeholder="Ej: Escocia, Rusia, México...">
-              </div>
-            </div>
-          </div>
+      <div class="bf__divider"><span>Estado</span></div>
 
-          <div class="form-section">
-            <h3 class="section-title">Ajustes y Estado</h3>
-            <div class="form-switches">
-              <div class="form-check">
-                <input id="status" type="checkbox" [checked]="brandForm.get('status')?.value === 'ACTIVE'" (change)="toggleStatus($event)">
-                <label for="status">Marca activa</label>
-              </div>
-            </div>
-          </div>
+      <app-field-toggle
+        label="Marca activa"
+        description="Las marcas inactivas no se muestran en el catálogo"
+        formControlName="isActive"
+      ></app-field-toggle>
 
-        </fieldset>
-      </form>
-    </div>
+    </form>
   `,
   styles: [`
-    .brand-form-container {
-      padding: 0;
-      width: 100%;
-      box-sizing: border-box;
-    }
-
-    .premium-form {
+    .bf {
       display: flex;
       flex-direction: column;
-      gap: 1.5rem;
-      width: 100%;
+      gap: 1.25rem;
     }
-
-    .form-section {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-      width: 100%;
-    }
-
-    .section-title {
+    .bf__divider {
       font-size: var(--font-size-xs);
       font-weight: 700;
       color: var(--color-text-muted);
@@ -93,97 +52,6 @@ import { Brand } from '../../../../core/models/brand.models';
       letter-spacing: 0.05em;
       border-bottom: 1px solid var(--color-border-subtle);
       padding-bottom: 0.5rem;
-      margin-bottom: 0.5rem;
-    }
-
-    .form-group {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-
-      label {
-        font-size: var(--font-size-sm);
-        font-weight: var(--font-weight-medium);
-        color: var(--color-text-main);
-      }
-    }
-
-    .input-wrapper {
-      position: relative;
-      display: block;
-
-      ng-icon {
-        position: absolute;
-        left: 0.875rem;
-        top: 50%;
-        transform: translateY(-50%);
-        color: var(--color-text-muted);
-        font-size: 1rem;
-        z-index: 5;
-      }
-
-      input {
-        width: 100%;
-        box-sizing: border-box;
-        padding: 0.625rem 2.875rem 0.625rem 2.5rem;
-        background: var(--color-bg-surface);
-        border: 1px solid var(--color-border-light);
-        border-radius: var(--radius-md);
-        font-size: var(--font-size-base);
-        color: var(--color-text-main);
-        transition: var(--transition-fast);
-        outline: none;
-
-        &::placeholder {
-          color: var(--color-text-muted);
-        }
-
-        &:focus {
-          border-color: var(--color-accent-primary);
-          box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.1);
-        }
-      }
-    }
-
-    .form-switches {
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-      padding-top: 0.5rem;
-    }
-
-    .form-check {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      cursor: pointer;
-
-      input[type="checkbox"] {
-        width: 1rem;
-        height: 1rem;
-        accent-color: var(--color-accent-primary);
-        cursor: pointer;
-      }
-
-      label {
-        font-size: var(--font-size-base);
-        color: var(--color-text-main);
-        cursor: pointer;
-      }
-    }
-
-    .error-msg {
-      font-size: var(--font-size-xs);
-      color: var(--color-danger-text);
-      margin-top: 0.25rem;
-      display: block;
-    }
-
-    .has-error {
-      .input-wrapper input {
-        border-color: var(--color-danger-text) !important;
-        background-color: rgba(var(--color-danger-rgb), 0.02) !important;
-      }
     }
   `]
 })
@@ -193,67 +61,65 @@ export class BrandFormComponent {
   private toastService = inject(ToastService);
 
   @Output() saved = new EventEmitter<Brand>();
-  @Output() cancelled = new EventEmitter<void>();
 
   editingBrandId = signal<string | null>(null);
+  isSubmitting = signal(false);
 
-  brandForm: FormGroup = this.fb.group({
+  brandForm = this.fb.group({
     name: ['', [Validators.required, Validators.minLength(2)]],
     country: [''],
-    status: ['ACTIVE']
+    isActive: [true],
   });
-
-  isSubmitting = signal(false);
 
   setBrand(brand: Brand) {
     this.editingBrandId.set(brand.id);
     this.brandForm.patchValue({
       name: brand.name,
       country: brand.country,
-      status: brand.status
+      isActive: brand.status === 'ACTIVE',
     });
     this.brandForm.markAsPristine();
   }
 
   resetForm() {
     this.editingBrandId.set(null);
-    this.brandForm.reset({ status: 'ACTIVE' });
+    this.brandForm.reset({ isActive: true });
     this.brandForm.markAsPristine();
   }
 
   onSubmit() {
-    if (this.brandForm.invalid || this.isSubmitting()) return;
+    if (this.brandForm.invalid || this.isSubmitting()) {
+      this.brandForm.markAllAsTouched();
+      return;
+    }
 
     this.isSubmitting.set(true);
-    const brandData = this.brandForm.value;
-    const brandId = this.editingBrandId();
+    const v = this.brandForm.getRawValue();
+    const id = this.editingBrandId();
 
-    const request$ = brandId
-      ? this.brandService.update(brandId, brandData)
-      : this.brandService.create(brandData);
+    const payload: any = {
+      name: v.name,
+      country: v.country || undefined,
+      status: v.isActive ? 'ACTIVE' : 'INACTIVE',
+    };
+
+    const request$ = id
+      ? this.brandService.update(id, payload)
+      : this.brandService.create(payload);
 
     request$.subscribe({
       next: (brand) => {
-        this.toastService.success(`Marca ${brandId ? 'actualizada' : 'creada'} correctamente`);
+        this.toastService.success(`Marca ${id ? 'actualizada' : 'creada'} correctamente`);
         this.saved.emit(brand);
         this.isSubmitting.set(false);
         this.resetForm();
       },
       error: (err) => {
-        console.error('Error saving brand:', err);
-        const isEditing = !!this.editingBrandId();
-        this.toastService.error(`Error al ${isEditing ? 'actualizar' : 'crear'} la marca`);
+        this.toastService.error(err?.error?.error ?? `Error al ${id ? 'actualizar' : 'crear'} la marca`);
         this.isSubmitting.set(false);
-      }
+      },
     });
   }
 
-  toggleStatus(event: Event) {
-    const isChecked = (event.target as HTMLInputElement).checked;
-    this.brandForm.get('status')?.setValue(isChecked ? 'ACTIVE' : 'INACTIVE');
-    this.brandForm.markAsDirty();
-  }
-
-  onCancel() { this.cancelled.emit(); }
   hasUnsavedChanges(): boolean { return this.brandForm.dirty; }
 }

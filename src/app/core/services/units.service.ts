@@ -44,4 +44,14 @@ export class UnitsService {
     return this.http.delete<any>(`${this.baseUrl}/${id}`, { withCredentials: true })
       .pipe(map(res => res.data));
   }
+
+  getLogs(id: string): Observable<any[]> {
+    return this.http.get<any>(`${this.baseUrl}/${id}/logs`, { withCredentials: true })
+      .pipe(map(res => res.data));
+  }
+
+  bulkImport(units: Partial<Unit>[]): Observable<{ count: number }> {
+    return this.http.post<any>(`${this.baseUrl}/bulk`, units, { withCredentials: true })
+      .pipe(map(res => res.data));
+  }
 }

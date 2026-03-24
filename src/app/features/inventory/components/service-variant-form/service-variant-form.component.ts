@@ -1,5 +1,5 @@
 import {
-  Component, ChangeDetectionStrategy, inject, signal, input, effect
+  Component, ChangeDetectionStrategy, inject, signal, input, output, effect
 } from '@angular/core';
 import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
 import { map } from 'rxjs';
@@ -55,6 +55,7 @@ export class ServiceVariantFormComponent {
   private taxSvc = inject(TaxService);
 
   initialTaxOptions = input<SearchSelectOption[]>([]);
+  taxOptionsChange = output<SearchSelectOption[]>();
   _taxOptions       = signal<SearchSelectOption[]>([]);
 
   constructor() {
@@ -62,8 +63,8 @@ export class ServiceVariantFormComponent {
   }
 
   onTaxChange(event: SearchSelectOption | SearchSelectOption[] | null) {
-    if (Array.isArray(event))  this._taxOptions.set(event);
-    else if (!event)           this._taxOptions.set([]);
+    if (Array.isArray(event))  { this._taxOptions.set(event); this.taxOptionsChange.emit(event); }
+    else if (!event)           { this._taxOptions.set([]); this.taxOptionsChange.emit([]); }
   }
 
   searchTaxesFn = (query: string) =>

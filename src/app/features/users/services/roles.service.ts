@@ -21,7 +21,6 @@ export interface UpdateRoleDto {
   permissionIds?: string[];
 }
 
-
 @Injectable({
   providedIn: 'root'
 })
@@ -31,7 +30,7 @@ export class RolesService {
 
   getAll(params: any = {}): Observable<any> {
     let httpParams = new HttpParams();
-    
+
     Object.keys(params).forEach(key => {
       if (params[key] !== undefined && params[key] !== null) {
         if (typeof params[key] === 'object') {
@@ -42,11 +41,12 @@ export class RolesService {
       }
     });
 
-    return this.http.get<any>(this.apiUrl, { params: httpParams }).pipe(map(res => res.data));
+    return this.http.get<any>(this.apiUrl, { params: httpParams, withCredentials: true })
+      .pipe(map(res => res.data));
   }
 
   getPermissions(): Observable<any[]> {
-    return this.http.get<any>(`${this.apiUrl}/permissions`).pipe(
+    return this.http.get<any>(`${this.apiUrl}/permissions`, { withCredentials: true }).pipe(
       map(res => {
         if (res && res.data && Array.isArray(res.data)) return res.data;
         if (res && res.data && res.data.data && Array.isArray(res.data.data)) return res.data.data;
@@ -57,19 +57,22 @@ export class RolesService {
   }
 
   create(data: CreateRoleDto): Observable<Role> {
-    return this.http.post<any>(this.apiUrl, data).pipe(map(res => res.data));
+    return this.http.post<any>(this.apiUrl, data, { withCredentials: true })
+      .pipe(map(res => res.data));
   }
 
   update(id: string, data: UpdateRoleDto): Observable<Role> {
-    return this.http.put<any>(`${this.apiUrl}/${id}`, data).pipe(map(res => res.data));
+    return this.http.put<any>(`${this.apiUrl}/${id}`, data, { withCredentials: true })
+      .pipe(map(res => res.data));
   }
 
   delete(id: string): Observable<any> {
-    return this.http.delete<any>(`${this.apiUrl}/${id}`).pipe(map(res => res.data));
+    return this.http.delete<any>(`${this.apiUrl}/${id}`, { withCredentials: true })
+      .pipe(map(res => res.data));
   }
 
   getLogs(id: string): Observable<any[]> {
-    return this.http.get<any>(`${this.apiUrl}/${id}/logs`).pipe(map(res => res.data || res));
+    return this.http.get<any>(`${this.apiUrl}/${id}/logs`, { withCredentials: true })
+      .pipe(map(res => res.data || res));
   }
-
 }

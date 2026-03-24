@@ -1,12 +1,10 @@
 import { Component, computed, inject, signal, ViewChild, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { switchMap, debounceTime, tap, map } from 'rxjs';
+import { switchMap, debounceTime, tap } from 'rxjs';
 import { Router } from '@angular/router';
 
 import { FilterNode, FilterGroup, FilterField, FilterRule } from '../../../../core/models/query-builder.models';
-import { ModalService } from '../../../../core/components/modal/modal.service';
 import { ModalComponent } from '../../../../shared/components/ui/modal/modal';
 import { PageHeaderComponent } from '../../../../shared/components/list-ui/page-header/page-header.component';
 import { ListToolbarComponent } from '../../../../shared/components/list-ui/list-toolbar/list-toolbar.component';
@@ -27,15 +25,13 @@ import { SkeletonComponent } from '../../../../shared/components/ui/skeleton/ske
 import { EmptyStateComponent } from '../../../../shared/components/ui/empty-state/empty-state';
 import { SpinnerComponent } from '../../../../shared/components/ui/spinner/spinner';
 import { ProductImportModalComponent } from '../../components/product-import-modal/product-import-modal';
-import { QueryNodeComponent } from '../../../../core/components/query-node/query-node.component';
+import { ProductsAdvancedFilters } from './components/products-advanced-filters/products-advanced-filters';
 
 @Component({
   selector: 'app-products-list',
   standalone: true,
   imports: [
     CommonModule,
-    FormsModule,
-    ReactiveFormsModule,
     PageHeaderComponent,
     ListToolbarComponent,
     PaginationComponent,
@@ -49,7 +45,7 @@ import { QueryNodeComponent } from '../../../../core/components/query-node/query
     ActionsMenuComponent,
     FormButtonComponent,
     ProductImportModalComponent,
-    QueryNodeComponent,
+    ProductsAdvancedFilters,
     NgIconComponent
   ],
   providers: [
@@ -68,7 +64,8 @@ import { QueryNodeComponent } from '../../../../core/components/query-node/query
       >
         <div headerActions class="ptd">
           <button
-            class="btn btn-primary btn-sm ptd__trigger"
+            type="button"
+            class="ptd__trigger"
             (click)="typeDropdownOpen.set(!typeDropdownOpen()); $event.stopPropagation()"
           >
             <ng-icon name="lucidePlus"></ng-icon>
@@ -122,6 +119,7 @@ import { QueryNodeComponent } from '../../../../core/components/query-node/query
         [searchQuery]="searchQuery()"
         [activeFiltersCount]="activeFiltersCount()"
         [viewMode]="viewModePreference()"
+        [sortOptions]="sortOptions"
         (openFilters)="openAdvancedFilters()"
         (clearFilters)="clearAllFilters()"
         (searchChange)="onSearch($event)"
@@ -336,18 +334,19 @@ import { QueryNodeComponent } from '../../../../core/components/query-node/query
         [isOpen]="isFiltersOpen()"
         title="Filtros Avanzados"
         (close)="isFiltersOpen.set(false)"
+        size="md"
       >
         <div drawerBody>
-          <app-query-node
-            [node]="$any(filterTree())"
+          <app-products-advanced-filters
+            #advancedFilters
+            [filterTree]="filterTree"
             [availableFields]="filterConfig"
-            [isRoot]="true"
-            (nodeChange)="onFilterTreeChange($any($event))"
-          ></app-query-node>
+            (applied)="onFilterApplied($event); isFiltersOpen.set(false)"
+          ></app-products-advanced-filters>
         </div>
         <div drawerFooter class="drawer-footer-actions">
-           <app-form-button label="Limpiar Filtros" variant="secondary" (click)="clearAllFilters()"></app-form-button>
-           <app-form-button label="Aplicar Filtros" (click)="applyFilters()"></app-form-button>
+          <app-form-button label="Cancelar" variant="secondary" type="button" (click)="isFiltersOpen.set(false)"></app-form-button>
+          <app-form-button label="Aplicar filtros" variant="primary" type="button" (click)="advancedFilters.applyFilters()"></app-form-button>
         </div>
       </app-drawer>
 
@@ -355,8 +354,8 @@ import { QueryNodeComponent } from '../../../../core/components/query-node/query
       <app-modal [isOpen]="isDeleteModalOpen()" title="Confirmar Eliminación" (close)="isDeleteModalOpen.set(false)">
         <div modalBody>¿Estás seguro de eliminar "{{ productToDelete()?.name }}"?</div>
         <div modalFooter class="modal-footer-actions">
-          <app-form-button label="Cancelar" variant="secondary" (click)="isDeleteModalOpen.set(false)"></app-form-button>
-          <app-form-button label="Eliminar" variant="danger" icon="lucideTrash2" [loading]="isDeleting()" (click)="confirmDelete()"></app-form-button>
+          <app-form-button label="Cancelar" variant="secondary" type="button" (click)="isDeleteModalOpen.set(false)"></app-form-button>
+          <app-form-button label="Eliminar" variant="danger" type="button" icon="lucideTrash2" [loading]="isDeleting()" (click)="confirmDelete()"></app-form-button>
         </div>
       </app-modal>
 
@@ -379,7 +378,8 @@ export class ProductsListComponent {
   private productService = inject(ProductService);
   private toastService = inject(ToastService);
   private router = inject(Router);
-  modalService = inject(ModalService);
+
+  @ViewChild('advancedFilters') advancedFiltersRef!: ProductsAdvancedFilters;
 
   productActions: ActionItem[] = [
     { id: 'edit', label: 'Editar', icon: 'lucidePencil' },
@@ -436,6 +436,15 @@ export class ProductsListComponent {
   sortOrder = signal<'ASC' | 'DESC'>('DESC');
   
   productTabs = [{ label: 'Todos', value: 'Todos' }, { label: 'Activos', value: 'Activos' }, { label: 'Inactivos', value: 'Inactivos' }];
+
+  sortOptions = [
+    { label: 'Más Recientes', value: 'createdAt:desc' },
+    { label: 'Más Antiguos', value: 'createdAt:asc' },
+    { label: 'Nombre (A-Z)', value: 'name:asc' },
+    { label: 'Nombre (Z-A)', value: 'name:desc' },
+    { label: 'Precio (menor)', value: 'minSalePrice:asc' },
+    { label: 'Precio (mayor)', value: 'minSalePrice:desc' },
+  ];
   
   filterTree = signal<FilterGroup>({ type: 'group', id: 'root', logicalOperator: 'AND', children: [] });
   isFiltersOpen = signal(false);
@@ -467,20 +476,14 @@ export class ProductsListComponent {
     return countLeaves(this.filterTree());
   });
 
-  onFilterTreeChange(newTree: FilterNode) {
-    if (newTree.type === 'group') {
-      this.filterTree.set(newTree as FilterGroup);
-      this.currentPage.set(1);
-    }
+  onFilterApplied(newTree: FilterGroup) {
+    this.filterTree.set(newTree);
+    this.currentPage.set(1);
   }
 
   clearAllFilters() {
     this.filterTree.set({ type: 'group', id: 'root', logicalOperator: 'AND', children: [] });
     this.searchQuery.set('');
-    this.isFiltersOpen.set(false);
-  }
-
-  applyFilters() {
     this.isFiltersOpen.set(false);
   }
 
@@ -667,6 +670,7 @@ export class ProductsListComponent {
 
   openAdvancedFilters() {
     this.isFiltersOpen.set(true);
+    setTimeout(() => this.advancedFiltersRef?.refresh(), 0);
   }
 
   constructor() {

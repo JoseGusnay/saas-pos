@@ -15,6 +15,7 @@ import { SearchSelectOption } from '../../../../shared/models/search-select.mode
 import { FormButtonComponent } from '../../../../shared/components/ui/form-button/form-button';
 import { BarcodeFieldComponent } from '../../../../shared/components/ui/barcode-field/barcode-field.component';
 import { RecipeBuilderComponent } from '../recipe-builder/recipe-builder.component';
+import { FieldInputComponent } from '../../../../shared/components/ui/field-input/field-input';
 import { UnitDrawerComponent } from '../unit-drawer/unit-drawer.component';
 import { PresentationService } from '../../../../core/services/presentation.service';
 import { TaxService } from '../../../../core/services/tax.service';
@@ -28,7 +29,7 @@ import { map } from 'rxjs';
 @Component({
   selector: 'app-variant-drawer',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, NgIconComponent, SearchSelectComponent, FormButtonComponent, BarcodeFieldComponent, RecipeBuilderComponent, UnitDrawerComponent, ToggleSwitchComponent, StockTrackingConfigComponent],
+  imports: [CommonModule, ReactiveFormsModule, NgIconComponent, SearchSelectComponent, FormButtonComponent, BarcodeFieldComponent, RecipeBuilderComponent, FieldInputComponent, UnitDrawerComponent, ToggleSwitchComponent, StockTrackingConfigComponent],
   providers: [
     provideIcons({
       lucideX, lucidePackage, lucideHash, lucideDollarSign,
@@ -49,8 +50,8 @@ import { map } from 'rxjs';
               <ng-icon [name]="isService ? 'lucideWrench' : 'lucidePackage'"></ng-icon>
             </div>
             <div class="header-text">
-              <h3>{{ form.get('name')?.value || 'Nueva Variante' }}</h3>
-              <p>{{ productName || (isService ? 'Servicio' : isRawMaterial ? 'Materia Prima' : 'Producto Físico') }} · {{ isNew ? 'Nueva variante' : 'Variante #' + (index + 1) }}</p>
+              <h3>{{ form.get('name')?.value || (isService ? 'Nueva Modalidad' : isRawMaterial ? 'Nuevo Formato' : 'Nueva Variante') }}</h3>
+              <p>{{ productName || (isService ? 'Servicio' : isRawMaterial ? 'Materia Prima' : 'Producto Físico') }} · {{ isNew ? (isService ? 'Nueva modalidad' : isRawMaterial ? 'Nuevo formato' : 'Nueva variante') : (isService ? 'Modalidad' : isRawMaterial ? 'Formato' : 'Variante') + ' #' + (index + 1) }}</p>
             </div>
           </div>
           <button type="button" class="btn-close" (click)="cancel()">
@@ -65,21 +66,21 @@ import { map } from 'rxjs';
           <div class="section-card">
             <div class="section-kicker"><ng-icon name="lucideTag"></ng-icon> Identidad</div>
             <div class="form-stack">
-              <div class="field" [class.error]="form.get('name')?.invalid && form.get('name')?.touched">
-                <label>Nombre de Variante *</label>
-                <input type="text" formControlName="name" placeholder="Ej: Rojo / XL, 750ml..." autofocus>
-                @if (form.get('name')?.invalid && form.get('name')?.touched) {
-                  <small class="err-msg"><ng-icon name="lucideAlertCircle"></ng-icon> Requerido.</small>
-                }
-              </div>
+              <app-field-input
+                formControlName="name"
+                [label]="isService ? 'Nombre de la Modalidad' : isRawMaterial ? 'Nombre del Formato' : 'Nombre de Variante'"
+                [placeholder]="isService ? 'Ej: Básico, Premium, Express…' : isRawMaterial ? 'Ej: Saco 25kg, Bolsa 1kg…' : 'Ej: Rojo / XL, 750ml...'"
+                [required]="true"
+                [errorMessages]="{ required: 'Requerido.' }"
+              ></app-field-input>
 
-              <div class="field">
-                <label>SKU Interno</label>
-                <div class="input-icon-wrap">
-                  <ng-icon name="lucideHash" class="ic"></ng-icon>
-                  <input type="text" formControlName="sku" placeholder="Ej: CAM-ROJO-XL, BEB-001">
-                </div>
-              </div>
+              <app-field-input
+                formControlName="sku"
+                label="SKU Interno"
+                placeholder="Ej: CAM-ROJO-XL, BEB-001"
+                prefixIcon="lucideHash"
+                [optional]="true"
+              ></app-field-input>
 
               @if (!isService) {
                 <div class="field">
@@ -127,8 +128,8 @@ import { map } from 'rxjs';
               <!-- Variante activa -->
               <div class="pff__toggle-row" (click)="isActiveToggle.toggle()">
                 <div class="pff__toggle-info">
-                  <span class="pff__toggle-label">Variante activa</span>
-                  <small class="pff__toggle-hint">Las variantes inactivas no aparecen en el punto de venta</small>
+                  <span class="pff__toggle-label">{{ isService ? 'Modalidad activa' : isRawMaterial ? 'Formato activo' : 'Variante activa' }}</span>
+                  <small class="pff__toggle-hint">{{ isService ? 'Las modalidades inactivas no aparecen en el punto de venta' : isRawMaterial ? 'Los formatos inactivos no se pueden usar en órdenes de compra' : 'Las variantes inactivas no aparecen en el punto de venta' }}</small>
                 </div>
                 <app-toggle-switch #isActiveToggle formControlName="isActive" size="sm" (click)="$event.stopPropagation()"></app-toggle-switch>
               </div>
@@ -169,11 +170,16 @@ import { map } from 'rxjs';
                   (createNew)="unitCreateOpen.set(true)"
                 ></app-search-select>
               </div>
-              <div class="field">
-                <label>Factor de Conversión <span class="optional">Unidades por paquete base</span></label>
-                <input type="number" formControlName="conversionFactor" min="0.0001" step="0.001" placeholder="Ej: 1, 10, 0.5">
-                <small class="field-hint">Entero para unidades contables (UNIT), decimal para peso o volumen.</small>
-              </div>
+              <app-field-input
+                formControlName="conversionFactor"
+                label="Factor de Conversión"
+                type="number"
+                placeholder="Ej: 1, 10, 0.5"
+                [optional]="true"
+                [min]="0.0001"
+                [step]="0.001"
+                hint="Entero para unidades contables (UNIT), decimal para peso o volumen."
+              ></app-field-input>
             </div>
           </div>
 
@@ -183,51 +189,42 @@ import { map } from 'rxjs';
               <div class="section-kicker"><ng-icon name="lucideSliders"></ng-icon> Atributos</div>
               <div class="form-stack">
                 @for (cat of categoryAttributes; track cat.attributeTypeId) {
-                  <div
-                    class="field"
-                    [class.error]="form.get('attributes')?.get(cat.attributeTypeId)?.invalid && form.get('attributes')?.get(cat.attributeTypeId)?.touched"
-                  >
-                    <label>
-                      {{ cat.attributeType.name }}
-                      @if (cat.attributeType.unit) { <span class="unit-hint">({{ cat.attributeType.unit }})</span> }
-                      @if (cat.isRequired) { <span class="required-dot">*</span> }
-                    </label>
-
-                    @if (cat.attributeType.dataType === 'NUMBER') {
-                      <input
-                        type="number"
-                        [formControlName]="cat.attributeTypeId"
-                        [placeholder]="cat.attributeType.unit ? 'Ej: 750' : ''"
-                      >
-                    } @else if (cat.attributeType.dataType === 'COLOR') {
+                  @if (cat.attributeType.dataType === 'NUMBER') {
+                    <app-field-input
+                      [formControlName]="cat.attributeTypeId"
+                      [label]="cat.attributeType.unit ? cat.attributeType.name + ' (' + cat.attributeType.unit + ')' : cat.attributeType.name"
+                      type="number"
+                      [placeholder]="cat.attributeType.unit ? 'Ej: 750' : ''"
+                      [required]="cat.isRequired"
+                      [optional]="!cat.isRequired"
+                    ></app-field-input>
+                  } @else if (cat.attributeType.dataType === 'COLOR') {
+                    <div class="field">
+                      <label>
+                        {{ cat.attributeType.name }}
+                        @if (cat.isRequired) { <span class="required-dot">*</span> }
+                      </label>
                       <div class="color-field">
                         <input type="color" [formControlName]="cat.attributeTypeId" class="color-input">
-                        <input
-                          type="text"
-                          [formControlName]="cat.attributeTypeId"
-                          placeholder="#000000 o nombre"
-                          class="color-text"
-                        >
+                        <input type="text" [formControlName]="cat.attributeTypeId" placeholder="#000000 o nombre" class="color-text">
                       </div>
-                    } @else if (cat.attributeType.dataType === 'BOOLEAN') {
-                      <div class="pff__toggle-row" (click)="boolToggle.toggle()">
-                        <div class="pff__toggle-info">
-                          <span class="pff__toggle-label">{{ cat.attributeType.name }}</span>
-                        </div>
-                        <app-toggle-switch #boolToggle [formControlName]="cat.attributeTypeId" size="sm" (click)="$event.stopPropagation()"></app-toggle-switch>
+                    </div>
+                  } @else if (cat.attributeType.dataType === 'BOOLEAN') {
+                    <div class="pff__toggle-row" (click)="boolToggle.toggle()">
+                      <div class="pff__toggle-info">
+                        <span class="pff__toggle-label">{{ cat.attributeType.name }}</span>
                       </div>
-                    } @else {
-                      <input
-                        type="text"
-                        [formControlName]="cat.attributeTypeId"
-                        [placeholder]="'Ej: ' + cat.attributeType.name"
-                      >
-                    }
-
-                    @if (form.get('attributes')?.get(cat.attributeTypeId)?.invalid && form.get('attributes')?.get(cat.attributeTypeId)?.touched) {
-                      <small class="err-msg"><ng-icon name="lucideAlertCircle"></ng-icon> Requerido.</small>
-                    }
-                  </div>
+                      <app-toggle-switch #boolToggle [formControlName]="cat.attributeTypeId" size="sm" (click)="$event.stopPropagation()"></app-toggle-switch>
+                    </div>
+                  } @else {
+                    <app-field-input
+                      [formControlName]="cat.attributeTypeId"
+                      [label]="cat.attributeType.name"
+                      [placeholder]="'Ej: ' + cat.attributeType.name"
+                      [required]="cat.isRequired"
+                      [optional]="!cat.isRequired"
+                    ></app-field-input>
+                  }
                 }
               </div>
             </div>
@@ -254,24 +251,28 @@ import { map } from 'rxjs';
 
             <div class="pfc__pricing-row">
               @if (!isRawMaterial) {
-                <div class="pff" [class.pff--error]="form.get('salePrice')?.invalid && form.get('salePrice')?.touched">
-                  <label class="pff__label">Precio de Venta <span class="pff__req">*</span></label>
-                  <div class="pff__price-wrap">
-                    <span class="pff__currency">$</span>
-                    <input class="pff__price-input" type="number" formControlName="salePrice" step="0.01" placeholder="0.00">
-                  </div>
-                  @if (form.get('salePrice')?.invalid && form.get('salePrice')?.touched) {
-                    <small class="pff__error"><ng-icon name="lucideAlertCircle"></ng-icon> Precio de venta requerido.</small>
-                  }
-                </div>
+                <app-field-input
+                  formControlName="salePrice"
+                  label="Precio de Venta"
+                  type="number"
+                  placeholder="0.00"
+                  prefix="$"
+                  [required]="true"
+                  [step]="0.01"
+                  [min]="0"
+                  [errorMessages]="{ required: 'Precio de venta requerido.', min: 'El precio debe ser mayor a 0' }"
+                ></app-field-input>
               }
-              <div class="pff">
-                <label class="pff__label">Costo Neto <span class="pff__optional">Opcional</span></label>
-                <div class="pff__price-wrap">
-                  <span class="pff__currency">$</span>
-                  <input class="pff__price-input" type="number" formControlName="costPrice" step="0.01" placeholder="0.00">
-                </div>
-              </div>
+              <app-field-input
+                formControlName="costPrice"
+                label="Costo Neto"
+                type="number"
+                placeholder="0.00"
+                prefix="$"
+                [optional]="true"
+                [step]="0.01"
+                [min]="0"
+              ></app-field-input>
             </div>
 
             <div class="field">
@@ -313,7 +314,7 @@ import { map } from 'rxjs';
             (click)="cancel()"
           ></app-form-button>
           <app-form-button
-            [label]="isNew ? 'Añadir variante' : 'Guardar variante'"
+            [label]="isNew ? ('Añadir ' + (isService ? 'modalidad' : isRawMaterial ? 'formato' : 'variante')) : ('Guardar ' + (isService ? 'modalidad' : isRawMaterial ? 'formato' : 'variante'))"
             loadingLabel="Guardando..."
             icon="lucideCheck"
             [loading]="false"
@@ -473,37 +474,30 @@ import { map } from 'rxjs';
         flex-wrap: wrap;
         gap: 4px;
       }
-      input {
-        width: 100%;
-        height: 40px;
-        padding: 0 12px;
-        background: var(--color-bg-surface);
-        border: 1px solid var(--color-border-light);
-        border-radius: var(--radius-md);
-        font-size: var(--font-size-base);
-        color: var(--color-text-main);
-        font-family: inherit;
-        outline: none;
-        transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
-        &::placeholder { color: var(--color-text-muted); }
-        &:focus { border-color: var(--color-accent-primary); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.08); }
-      }
-      &.error input { border-color: var(--color-danger-text); &:focus { box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.08); } }
-      .err-msg { font-size: var(--font-size-xs); color: var(--color-danger-text); display: flex; align-items: center; gap: 4px; }
     }
 
-    .unit-hint { font-weight: var(--font-weight-regular); }
     .optional { font-weight: var(--font-weight-regular); color: var(--color-text-muted); font-size: var(--font-size-xs); }
-    .field-hint { font-size: var(--font-size-xs); color: var(--color-text-muted); }
-    .stock-limits { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
     .required-dot { color: var(--color-danger-text); }
 
     .color-field {
       display: flex;
       gap: 0.5rem;
       align-items: center;
-      .color-input { width: 48px; height: 38px; padding: 2px; border-radius: var(--radius-md); cursor: pointer; }
-      .color-text { flex: 1; }
+      .color-input { width: 48px; height: 38px; padding: 2px; border-radius: var(--radius-md); cursor: pointer; border: 1px solid var(--color-border-light); }
+      .color-text {
+        flex: 1;
+        height: 38px;
+        padding: 0 12px;
+        background: var(--color-bg-surface);
+        border: 1px solid var(--color-border-light);
+        border-radius: var(--radius-sm);
+        font-size: var(--font-size-base);
+        color: var(--color-text-main);
+        font-family: inherit;
+        outline: none;
+        &::placeholder { color: var(--color-placeholder); }
+        &:focus { border-color: var(--color-border-focus); box-shadow: var(--shadow-input-focus); }
+      }
     }
 
     .toggle-row {
@@ -569,12 +563,6 @@ import { map } from 'rxjs';
     }
 
 
-
-    .input-icon-wrap {
-      position: relative;
-      .ic { position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: var(--color-text-muted); font-size: 0.875rem; }
-      input { padding-left: 2.25rem !important; }
-    }
 
     .drawer-footer {
       padding: 1.25rem 1.5rem;

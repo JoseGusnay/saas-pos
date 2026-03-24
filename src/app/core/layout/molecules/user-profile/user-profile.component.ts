@@ -8,7 +8,7 @@ import { AuthService } from '../../../services/auth.service';
     standalone: true,
     imports: [IconComponent],
     template: `
-    <button class="user-profile" [class.user-profile--collapsed]="layout.isSidebarCollapsed()">
+    <button class="user-profile" [class.user-profile--collapsed]="layout.isVisuallyCollapsed()">
       <div class="user-profile__content">
         <img 
           [src]="avatarUrl()" 
@@ -17,7 +17,7 @@ import { AuthService } from '../../../services/auth.service';
         />
         
         <!-- Ocultamos los datos cuando el sidebar se hace pequeño (64px) -->
-        @if (!layout.isSidebarCollapsed()) {
+        @if (!layout.isVisuallyCollapsed()) {
           <div class="user-profile__details">
             <span class="user-profile__name">{{ name() }}</span>
             <span class="user-profile__plan">{{ plan() }}</span>
@@ -26,7 +26,7 @@ import { AuthService } from '../../../services/auth.service';
       </div>
       
       <!-- Ocultamos las acciones del usuario (Tema y Ajustes) -->
-      @if (!layout.isSidebarCollapsed()) {
+      @if (!layout.isVisuallyCollapsed()) {
         <div class="user-profile__actions">
           
           <!-- Botón de Alternar Modo Oscuro -->

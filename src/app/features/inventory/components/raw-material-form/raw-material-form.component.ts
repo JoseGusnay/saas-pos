@@ -1,5 +1,5 @@
 import {
-  Component, ChangeDetectionStrategy, inject, signal, input, effect
+  Component, ChangeDetectionStrategy, inject, signal, input, output, effect
 } from '@angular/core';
 import { ControlContainer, ReactiveFormsModule, FormGroup } from '@angular/forms';
 import { CommonModule } from '@angular/common';
@@ -132,6 +132,7 @@ export class RawMaterialFormComponent {
   categoryAttributes = input<CategoryAttributeType[]>([]);
   productName        = input('');
   initialUnitOption  = input<SearchSelectOption | undefined>(undefined);
+  unitOptionChange = output<SearchSelectOption | undefined>();
   _unitOption       = signal<SearchSelectOption | undefined>(undefined);
   unitCreateOpen    = signal(false);
 
@@ -140,13 +141,17 @@ export class RawMaterialFormComponent {
   }
 
   onUnitChange(event: SearchSelectOption | SearchSelectOption[] | null) {
-    if (!Array.isArray(event)) this._unitOption.set(event ?? undefined);
+    if (!Array.isArray(event)) {
+      this._unitOption.set(event ?? undefined);
+      this.unitOptionChange.emit(event ?? undefined);
+    }
   }
 
   onUnitCreated(unit: Unit) {
     const opt: SearchSelectOption = { value: unit.id, label: `${unit.name} (${unit.abbreviation})` };
     this.fg.get('baseUnitId')!.setValue(unit.id);
     this._unitOption.set(opt);
+    this.unitOptionChange.emit(opt);
     this.unitCreateOpen.set(false);
   }
 

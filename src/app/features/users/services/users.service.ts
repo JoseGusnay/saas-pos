@@ -25,7 +25,6 @@ export interface TenantUser {
   phone?: string;
   countryCode?: string;
   roles: UserRole[];
-
   branches: UserBranch[];
   createdAt: string;
   updatedAt: string;
@@ -45,7 +44,7 @@ export class UsersService {
 
   getAll(params: any = {}): Observable<any> {
     let httpParams = new HttpParams();
-    
+
     Object.keys(params).forEach(key => {
       if (params[key] !== undefined && params[key] !== null) {
         if (typeof params[key] === 'object') {
@@ -56,30 +55,37 @@ export class UsersService {
       }
     });
 
-    return this.http.get<any>(this.apiUrl, { params: httpParams }).pipe(map(res => res.data));
+    return this.http.get<any>(this.apiUrl, { params: httpParams, withCredentials: true })
+      .pipe(map(res => res.data));
   }
 
   getById(id: string): Observable<TenantUser> {
-    return this.http.get<any>(`${this.apiUrl}/${id}`).pipe(map(res => res.data));
+    return this.http.get<any>(`${this.apiUrl}/${id}`, { withCredentials: true })
+      .pipe(map(res => res.data));
   }
 
   create(user: any): Observable<TenantUser> {
-    return this.http.post<any>(this.apiUrl, user).pipe(map(res => res.data));
+    return this.http.post<any>(this.apiUrl, user, { withCredentials: true })
+      .pipe(map(res => res.data));
   }
 
   update(id: string, user: any): Observable<TenantUser> {
-    return this.http.patch<any>(`${this.apiUrl}/${id}`, user).pipe(map(res => res.data));
+    return this.http.patch<any>(`${this.apiUrl}/${id}`, user, { withCredentials: true })
+      .pipe(map(res => res.data));
   }
 
   delete(id: string): Observable<any> {
-    return this.http.delete<any>(`${this.apiUrl}/${id}`).pipe(map(res => res.data));
+    return this.http.delete<any>(`${this.apiUrl}/${id}`, { withCredentials: true })
+      .pipe(map(res => res.data));
   }
 
   bulkImport(users: any[]): Observable<{ imported: number; errors: string[] }> {
-    return this.http.post<any>(`${this.apiUrl}/bulk-import`, { users }).pipe(map(res => res.data));
+    return this.http.post<any>(`${this.apiUrl}/bulk-import`, { users }, { withCredentials: true })
+      .pipe(map(res => res.data));
   }
 
   getLogs(id: string): Observable<any[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/${id}/logs`).pipe(map(res => (res as any).data));
+    return this.http.get<any>(`${this.apiUrl}/${id}/logs`, { withCredentials: true })
+      .pipe(map(res => res.data));
   }
 }

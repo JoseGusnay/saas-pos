@@ -59,6 +59,10 @@ export class PhysicalVariantFormComponent {
     return sale > 0 ? ((sale - cost) / sale) * 100 : null;
   });
 
+  // ── Signal outputs ──────────────────────────────────────────────────────
+  taxOptionsChange = output<SearchSelectOption[]>();
+  presentationOptionChange = output<SearchSelectOption | undefined>();
+
   // ── Internal option tracking ─────────────────────────────────────────────
   _taxOptions         = signal<SearchSelectOption[]>([]);
   _presentationOption = signal<SearchSelectOption | undefined>(undefined);
@@ -73,12 +77,15 @@ export class PhysicalVariantFormComponent {
 
   // ── Event handlers ───────────────────────────────────────────────────────
   onTaxChange(event: SearchSelectOption | SearchSelectOption[] | null) {
-    if (Array.isArray(event))  this._taxOptions.set(event);
-    else if (!event)           this._taxOptions.set([]);
+    if (Array.isArray(event))  { this._taxOptions.set(event); this.taxOptionsChange.emit(event); }
+    else if (!event)           { this._taxOptions.set([]); this.taxOptionsChange.emit([]); }
   }
 
   onPresentationChange(event: SearchSelectOption | SearchSelectOption[] | null) {
-    if (!Array.isArray(event)) this._presentationOption.set(event ?? undefined);
+    if (!Array.isArray(event)) {
+      this._presentationOption.set(event ?? undefined);
+      this.presentationOptionChange.emit(event ?? undefined);
+    }
   }
 
   // ── Search functions ─────────────────────────────────────────────────────

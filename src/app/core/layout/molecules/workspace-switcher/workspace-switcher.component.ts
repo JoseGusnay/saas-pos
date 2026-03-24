@@ -7,7 +7,7 @@ import { IconComponent } from '../../atoms/icon/icon.component';
   standalone: true,
   imports: [IconComponent],
   template: `
-    <button class="workspace-switcher" [class.workspace-switcher--collapsed]="layout.isSidebarCollapsed()">
+    <button class="workspace-switcher" [class.workspace-switcher--collapsed]="layout.isVisuallyCollapsed()">
       <!-- Logo genérico para Acme Corp -->
       <div class="workspace-switcher__logo">
         <app-icon name="lucideHexagon"></app-icon>

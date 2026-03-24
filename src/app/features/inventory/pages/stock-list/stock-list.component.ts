@@ -567,7 +567,7 @@ import {
       padding: 0.2rem 0.625rem; border-radius: 6px; font-size: var(--font-size-xs); font-weight: var(--font-weight-semibold);
       white-space: nowrap; flex-shrink: 0;
     }
-    .badge-movement.type--INITIAL    { background: #dbeafe; color: #1e40af; }
+    .badge-movement.type--INITIAL    { background: var(--color-info-bg); color: var(--color-info-text); }
     .badge-movement.type--PURCHASE   { background: #dcfce7; color: #15803d; }
     .badge-movement.type--SALE       { background: #ffedd5; color: #c2410c; }
     .badge-movement.type--ADJUSTMENT { background: #f3e8ff; color: #7e22ce; }

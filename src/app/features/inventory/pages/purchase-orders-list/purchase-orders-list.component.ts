@@ -927,14 +927,14 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
     }
     /* Order status colors */
     .badge-order.borrador        { background: var(--color-border-subtle); color: var(--color-text-muted); }
-    .badge-order.aprobada        { background: #dbeafe; color: #1e40af; }
-    .badge-order.recibida_parcial{ background: #fef9c3; color: #854d0e; }
+    .badge-order.aprobada        { background: var(--color-info-bg); color: var(--color-info-text); }
+    .badge-order.recibida_parcial{ background: var(--color-warning-bg); color: var(--color-warning-text); }
     .badge-order.recibida        { background: var(--color-success-bg); color: var(--color-success-text); }
     .badge-order.cerrada         { background: var(--color-bg-hover); color: var(--color-text-muted); }
     .badge-order.anulada         { background: var(--color-danger-bg); color: var(--color-danger-text); }
     /* Payment status colors */
-    .badge-payment.pendiente     { background: #fef9c3; color: #854d0e; }
-    .badge-payment.pagado_parcial{ background: #dbeafe; color: #1e40af; }
+    .badge-payment.pendiente     { background: var(--color-warning-bg); color: var(--color-warning-text); }
+    .badge-payment.pagado_parcial{ background: var(--color-info-bg); color: var(--color-info-text); }
     .badge-payment.pagado        { background: var(--color-success-bg); color: var(--color-success-text); }
     .badge-payment.vencido       { background: var(--color-danger-bg); color: var(--color-danger-text); }
 
@@ -989,7 +989,7 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
     .dtab-card__amount { font-weight: var(--font-weight-bold); color: var(--color-text-main); margin-left: auto; }
     .dtab-card__sub { font-size: var(--font-size-xs); color: var(--color-text-muted); margin: 0.125rem 0 0; }
     .dtab-card__grid { display: grid; grid-template-columns: 1fr auto; gap: 0.25rem 1rem; font-size: var(--font-size-sm); }
-    .badge-partial { padding: 2px 8px; border-radius: 99px; background: #fef9c3; color: #854d0e; font-size: 10px; font-weight: 600; }
+    .badge-partial { padding: 2px 8px; border-radius: 99px; background: var(--color-warning-bg); color: var(--color-warning-text); font-size: 10px; font-weight: 600; }
 
     /* ── Form shared styles ────────────────────────────────────────────────── */
     .form-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; }
@@ -1034,7 +1034,7 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
     .receipt-item-qty { font-weight: var(--font-weight-semibold); color: var(--color-text-main); min-width: 50px; }
     .receipt-item-cost { color: var(--color-text-main); font-weight: var(--font-weight-medium); }
     .receipt-item-lot, .receipt-item-expiry { padding: 1px 6px; background: var(--color-bg-canvas); border-radius: var(--radius-sm); font-size: 10px; }
-    .badge-partial { padding: 1px 6px; border-radius: 999px; background: #fef9c3; color: #854d0e; font-size: 10px; font-weight: var(--font-weight-semibold); }
+    .badge-partial { padding: 1px 6px; border-radius: 999px; background: var(--color-warning-bg); color: var(--color-warning-text); font-size: 10px; font-weight: var(--font-weight-semibold); }
 
     .xml-preview {
       background: var(--color-bg-canvas); border: 1px solid var(--color-border-light);
@@ -1053,9 +1053,9 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
     .dtab-card__sri-status {
       display: inline-block; margin-top: 4px; padding: 2px 8px; border-radius: 999px;
       font-size: 10px; font-weight: var(--font-weight-semibold);
-      &.sri-pendiente { background: #fef9c3; color: #854d0e; }
-      &.sri-generado { background: #dbeafe; color: #1e40af; }
-      &.sri-firmado { background: #dbeafe; color: #1e40af; }
+      &.sri-pendiente { background: var(--color-warning-bg); color: var(--color-warning-text); }
+      &.sri-generado { background: var(--color-info-bg); color: var(--color-info-text); }
+      &.sri-firmado { background: var(--color-info-bg); color: var(--color-info-text); }
       &.sri-enviado { background: rgba(79, 70, 229, 0.08); color: var(--color-accent-primary); }
       &.sri-autorizado { background: var(--color-success-bg); color: var(--color-success-text); }
       &.sri-rechazado { background: var(--color-danger-bg); color: var(--color-danger-text); }

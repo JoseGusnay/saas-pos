@@ -11,24 +11,25 @@ import { LayoutService } from '../../services/layout.service';
   template: `
     <!-- Inyectamos a :host el relative para controlar a sus absolutos como hermanos libres -->
     @if (route()) {
-      <a 
-        [routerLink]="route()" 
+      <a
+        [routerLink]="route()"
         [routerLinkActive]="'nav-item--active'"
         [routerLinkActiveOptions]="{ exact: exactMatch() }"
         class="nav-item"
-        [class.nav-item--collapsed]="layout.isSidebarCollapsed()"
+        [class.nav-item--collapsed]="layout.isVisuallyCollapsed()"
+        (click)="layout.closeMobileMenu()"
       >
         <app-icon [name]="icon()"></app-icon>
         
         <span class="nav-item__label">{{ label() }}</span>
         
-        @if (badge() && !layout.isSidebarCollapsed()) {
+        @if (badge() && !layout.isVisuallyCollapsed()) {
           <app-badge [text]="badge()!" [variant]="badgeVariant()"></app-badge>
         }
       </a>
       
       <!-- Tooltip estilizado para estado colapsado (Afuera del ancla para esquivar el Text Truncate) -->
-      @if (layout.isSidebarCollapsed()) {
+      @if (layout.isVisuallyCollapsed()) {
         <div class="nav-item__tooltip">{{ label() }}</div>
       }
     } @else {
@@ -36,14 +37,14 @@ import { LayoutService } from '../../services/layout.service';
       <button 
         class="nav-item" 
         [class.nav-item--active]="isActive()"
-        [class.nav-item--collapsed]="layout.isSidebarCollapsed()"
+        [class.nav-item--collapsed]="layout.isVisuallyCollapsed()"
         (click)="onClick.emit()"
       >
         <app-icon [name]="icon()"></app-icon>
         <span class="nav-item__label">{{ label() }}</span>
         
         <!-- Chevron para acordeones, oculto al estar colapsado -->
-        @if (!layout.isSidebarCollapsed()) {
+        @if (!layout.isVisuallyCollapsed()) {
           <app-icon 
             name="lucideChevronRight" 
             class="nav-item__chevron"
@@ -53,7 +54,7 @@ import { LayoutService } from '../../services/layout.service';
       </button>
 
       <!-- Tooltip estilizado para estado colapsado (Afuera del botón para esquivar el Text Truncate) -->
-      @if (layout.isSidebarCollapsed()) {
+      @if (layout.isVisuallyCollapsed()) {
         <div class="nav-item__tooltip">{{ label() }}</div>
       }
     }

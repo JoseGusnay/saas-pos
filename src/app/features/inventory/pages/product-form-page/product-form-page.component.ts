@@ -42,6 +42,7 @@ import { FormButtonComponent } from '../../../../shared/components/ui/form-butto
 import { ModalComponent } from '../../../../shared/components/ui/modal/modal';
 import { FieldInputComponent } from '../../../../shared/components/ui/field-input/field-input';
 
+import { BackButtonComponent } from '../../../../shared/components/ui/back-button/back-button';
 import { SearchSelectOption } from '../../../../shared/models/search-select.models';
 import { CategoryAttributeType, CreateProductPayload } from '../../models/product.model';
 import { map } from 'rxjs';
@@ -67,7 +68,8 @@ import { map } from 'rxjs';
     ComboBuilderComponent,
     ModifierBuilderComponent,
     RecipeBuilderComponent,
-    FieldInputComponent
+    FieldInputComponent,
+    BackButtonComponent
   ],
   providers: [
     provideIcons({
@@ -149,6 +151,70 @@ export class ProductFormPageComponent implements OnInit {
   get isRawMaterial() { return this.typeCtrl.value === 'RAW_MATERIAL'; }
   get isComboPriceFixed() { return this.comboPriceModeCtrl.value === 'FIXED'; }
   get showVariantStep() { return this.hasVariants.value === true; }
+
+  // ── Copy contextual por tipo ────────────────────────────────────────────
+  get typeLabel(): string {
+    if (this.isService) return 'Servicio';
+    if (this.isCombo) return 'Combo';
+    if (this.isRawMaterial) return 'Materia Prima';
+    return 'Producto';
+  }
+
+  get pageTitle(): string {
+    if (this.isEditing()) {
+      if (this.isService) return 'Editar Servicio';
+      if (this.isCombo) return 'Editar Combo';
+      if (this.isRawMaterial) return 'Editar Materia Prima';
+      return 'Editar Producto';
+    }
+    if (this.isService) return 'Nuevo Servicio';
+    if (this.isCombo) return 'Nuevo Combo';
+    if (this.isRawMaterial) return 'Nueva Materia Prima';
+    return 'Nuevo Producto';
+  }
+
+  get variantNoun(): string {
+    if (this.isService) return 'modalidad';
+    if (this.isRawMaterial) return 'formato';
+    return 'variante';
+  }
+
+  get variantNounPlural(): string {
+    if (this.isService) return 'modalidades';
+    if (this.isRawMaterial) return 'formatos';
+    return 'variantes';
+  }
+
+  get variantNounCap(): string {
+    if (this.isService) return 'Modalidad';
+    if (this.isRawMaterial) return 'Formato';
+    return 'Variante';
+  }
+
+  get variantNounPluralCap(): string {
+    if (this.isService) return 'Modalidades';
+    if (this.isRawMaterial) return 'Formatos';
+    return 'Variantes';
+  }
+
+  get step2Title(): string {
+    if (this.isService) return 'Modalidades del Servicio';
+    if (this.isRawMaterial) return 'Formatos del Insumo';
+    return 'Gestión de Variantes';
+  }
+
+  get step2Subtitle(): string {
+    if (this.isService) return 'Configura precio, duración e impuestos por cada modalidad.';
+    if (this.isRawMaterial) return 'Configura costo, unidad y SKU por cada formato.';
+    return 'Configura precio, SKU e impuestos por cada variante.';
+  }
+
+  get imageLabel(): string {
+    if (this.isService) return 'Imagen del Servicio';
+    if (this.isCombo) return 'Imagen del Combo';
+    if (this.isRawMaterial) return 'Imagen del Insumo';
+    return 'Imagen del Producto';
+  }
 
   // ── Lifecycle ─────────────────────────────────────────────────────────────
   ngOnInit() {

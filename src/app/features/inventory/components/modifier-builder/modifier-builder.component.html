@@ -53,9 +53,11 @@
   (close)="closeGroupDrawer()"
 >
 
+  <div drawerBody class="mb__drawer-views" [@slideView]="drawerView()">
+
   <!-- ── Vista: Grupo ────────────────────────────────────────────────────── -->
   @if (drawerView() === 'group' && editingGroup; as grp) {
-    <div drawerBody class="mb__drawer-body" [formGroup]="grp">
+    <div class="mb__drawer-body" [formGroup]="grp">
 
       <app-field-input
         formControlName="name"
@@ -167,7 +169,7 @@
 
   <!-- ── Vista: Opción ───────────────────────────────────────────────────── -->
   @if (drawerView() === 'option' && currentOption; as opt) {
-    <div drawerBody class="mb__drawer-body" [formGroup]="opt">
+    <div class="mb__drawer-body" [formGroup]="opt">
 
       <app-field-input
         formControlName="name"
@@ -250,18 +252,25 @@
     </div>
   }
 
+  </div>
+
   <!-- Footer -->
-  <div drawerFooter class="mb__drawer-footer">
+  <div drawerFooter class="drawer-footer-actions">
     @if (drawerView() === 'option') {
-      <button type="button" class="mb__drawer-btn mb__drawer-btn--ghost" (click)="backToGroup()">
-        <ng-icon name="lucideChevronLeft"></ng-icon>
-        {{ isNewOption() ? 'Cancelar' : 'Volver' }}
-      </button>
-      <button type="button" class="mb__drawer-btn" (click)="doneOption()">
-        {{ isNewOption() ? 'Agregar opción' : 'Guardar opción' }}
-      </button>
+      <app-form-button
+        [label]="isNewOption() ? 'Cancelar' : 'Volver'"
+        variant="secondary"
+        icon="lucideChevronLeft"
+        type="button"
+        (click)="backToGroup()"
+      ></app-form-button>
+      <app-form-button
+        [label]="isNewOption() ? 'Agregar opción' : 'Guardar opción'"
+        type="button"
+        (click)="doneOption()"
+      ></app-form-button>
     } @else {
-      <button type="button" class="mb__drawer-btn" (click)="doneGroup()">Listo</button>
+      <app-form-button label="Listo" type="button" (click)="doneGroup()"></app-form-button>
     }
   </div>
 

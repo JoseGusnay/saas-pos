@@ -2,6 +2,7 @@ import {
   Component, Input, OnInit, OnDestroy, inject, signal, computed,
   ChangeDetectionStrategy, ChangeDetectorRef
 } from '@angular/core';
+import { trigger, transition, style, animate, query, group } from '@angular/animations';
 import { CommonModule } from '@angular/common';
 import {
   AbstractControl, FormArray, FormBuilder, FormGroup,
@@ -20,13 +21,14 @@ import { ProductService } from '../../services/product.service';
 import { FieldInputComponent } from '../../../../shared/components/ui/field-input/field-input';
 import { ToggleSwitchComponent } from '../../../../shared/components/ui/toggle-switch/toggle-switch';
 import { DrawerComponent } from '../../../../shared/components/ui/drawer/drawer';
+import { FormButtonComponent } from '../../../../shared/components/ui/form-button/form-button';
 
 @Component({
   selector: 'app-modifier-builder',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, ReactiveFormsModule, NgIconComponent,
-    FieldInputComponent, ToggleSwitchComponent, DrawerComponent],
+    FieldInputComponent, ToggleSwitchComponent, DrawerComponent, FormButtonComponent],
   providers: [
     provideIcons({
       lucidePlus, lucideTrash2, lucideX, lucideLink,
@@ -34,7 +36,31 @@ import { DrawerComponent } from '../../../../shared/components/ui/drawer/drawer'
     })
   ],
   templateUrl: './modifier-builder.component.html',
-  styleUrl: './modifier-builder.component.scss'
+  styleUrl: './modifier-builder.component.scss',
+  animations: [
+    trigger('slideView', [
+      // group → option (slide left)
+      transition('group => option', [
+        style({ position: 'relative', overflow: 'hidden' }),
+        query(':enter', [style({ position: 'absolute', width: '100%', transform: 'translateX(100%)', opacity: 0 })], { optional: true }),
+        query(':leave', [style({ position: 'absolute', width: '100%' })], { optional: true }),
+        group([
+          query(':leave', [animate('250ms cubic-bezier(0.4, 0, 0.2, 1)', style({ transform: 'translateX(-30%)', opacity: 0 }))], { optional: true }),
+          query(':enter', [animate('250ms cubic-bezier(0.4, 0, 0.2, 1)', style({ transform: 'translateX(0)', opacity: 1 }))], { optional: true }),
+        ])
+      ]),
+      // option → group (slide right)
+      transition('option => group', [
+        style({ position: 'relative', overflow: 'hidden' }),
+        query(':enter', [style({ position: 'absolute', width: '100%', transform: 'translateX(-30%)', opacity: 0 })], { optional: true }),
+        query(':leave', [style({ position: 'absolute', width: '100%' })], { optional: true }),
+        group([
+          query(':leave', [animate('250ms cubic-bezier(0.4, 0, 0.2, 1)', style({ transform: 'translateX(100%)', opacity: 0 }))], { optional: true }),
+          query(':enter', [animate('250ms cubic-bezier(0.4, 0, 0.2, 1)', style({ transform: 'translateX(0)', opacity: 1 }))], { optional: true }),
+        ])
+      ]),
+    ])
+  ]
 })
 export class ModifierBuilderComponent implements OnInit, OnDestroy {
   @Input({ required: true }) formArray!: FormArray;

@@ -1,37 +1,50 @@
-import { Component, Input, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, Input, OnInit, output, signal } from '@angular/core';
 import { QueryNodeComponent } from '../../../../core/components/query-node/query-node.component';
 import { FilterNode, FilterGroup, FilterField } from '../../../../core/models/query-builder.models';
-import { ModalService } from '../../../../core/components/modal/modal.service';
 
 @Component({
   selector: 'app-categories-advanced-filters',
   standalone: true,
-  imports: [CommonModule, QueryNodeComponent],
+  imports: [QueryNodeComponent],
   template: `
-    <div class="categories-page__query-body">
-      <div class="filters-body">
-        <app-query-node
-          [node]="filterTree()"
-          [availableFields]="availableFields"
-          (nodeChange)="onFilterTreeChange($event)"
-        ></app-query-node>
-      </div>
+    <div class="filters-body">
+      <app-query-node
+        [node]="$any(localTree())"
+        [availableFields]="availableFields"
+        [isRoot]="true"
+        (nodeChange)="onLocalChange($any($event))"
+      ></app-query-node>
     </div>
   `,
   styles: [`
-    .categories-page__query-body {
-      /* No internal padding needed as modal-dialog__content already provides it */
-    }
-    .filters-body {
-      min-height: 300px;
-    }
+    .filters-body { min-height: 250px; }
   `]
 })
-export class CategoriesAdvancedFilters {
+export class CategoriesAdvancedFilters implements OnInit {
   @Input({ required: true }) filterTree!: () => FilterGroup;
   @Input({ required: true }) availableFields!: FilterField[];
-  @Input({ required: true }) onFilterTreeChange!: (newTree: FilterNode) => void;
 
-  modalService = inject(ModalService);
+  applied = output<FilterGroup>();
+
+  localTree = signal<FilterGroup>({
+    type: 'group', id: 'root', logicalOperator: 'AND', children: []
+  });
+
+  ngOnInit() {
+    this.localTree.set(structuredClone(this.filterTree()));
+  }
+
+  refresh() {
+    this.localTree.set(structuredClone(this.filterTree()));
+  }
+
+  onLocalChange(node: FilterNode) {
+    if (node.type === 'group') {
+      this.localTree.set(node as FilterGroup);
+    }
+  }
+
+  applyFilters() {
+    this.applied.emit(this.localTree());
+  }
 }

@@ -4,14 +4,7 @@ import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import {
   lucideType, lucideHash, lucideCheckCircle2, lucideXCircle, lucideCalendar, lucideShield
 } from '@ng-icons/lucide';
-import { AttributeType } from '../../models/product.model';
-
-const DATA_TYPE_LABELS: Record<string, string> = {
-  TEXT: 'Texto',
-  NUMBER: 'Numérico',
-  COLOR: 'Color',
-  BOOLEAN: 'Sí/No',
-};
+import { AttributeType, DATA_TYPE_LABELS } from '../../models/product.model';
 
 @Component({
   selector: 'app-attribute-type-detail',
@@ -113,5 +106,5 @@ const DATA_TYPE_LABELS: Record<string, string> = {
 export class AttributeTypeDetailComponent {
   @Input({ required: true }) attr!: AttributeType;
 
-  dataTypeLabel(dt: string): string { return DATA_TYPE_LABELS[dt] ?? dt; }
+  dataTypeLabel(dt: string): string { return DATA_TYPE_LABELS[dt as keyof typeof DATA_TYPE_LABELS] ?? dt; }
 }

@@ -1,14 +1,21 @@
 @use "../../../../../styles/abstracts/mixins" as *;
 
 .page-header {
-    @include flex-between;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
     margin-bottom: 32px;
 
     @media (max-width: 768px) {
-        flex-direction: column;
-        align-items: stretch;
         gap: 12px;
         margin-bottom: 20px;
+    }
+
+    &__top-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
     }
 
     &__title-group {
@@ -34,80 +41,26 @@
         }
     }
 
-    &__tabs {
-        display: flex;
-        gap: 24px;
-        border-bottom: 1px solid var(--color-border-light);
-
-        @media (max-width: 768px) {
-            overflow-x: auto;
-            white-space: nowrap;
-            -webkit-overflow-scrolling: touch;
-            padding-bottom: 2px;
-            gap: 4px;
-
-            &::-webkit-scrollbar {
-                display: none;
-            }
-
-            scrollbar-width: none;
-        }
-    }
-
-    &__tab {
-        background: transparent;
-        border: none;
-        padding: 0 0 12px 0;
-        font-size: var(--font-size-sm);
-        font-weight: var(--font-weight-medium);
-        color: var(--color-text-muted);
-        cursor: pointer;
-        position: relative;
-        transition: color var(--transition-fast);
-        white-space: nowrap;
-
-        @media (max-width: 768px) {
-            padding: 0 8px 10px;
-            font-size: var(--font-size-xs);
-        }
-
-        &:hover {
-            color: var(--color-text-main);
-        }
-
-        &--active {
-            color: var(--color-text-main);
-
-            &::after {
-                content: '';
-                position: absolute;
-                bottom: -1px;
-                left: 0;
-                right: 0;
-                height: 2px;
-                background-color: var(--color-text-main);
-                border-radius: 2px 2px 0 0;
-            }
-        }
-    }
-
     &__actions {
         display: flex;
         gap: 12px;
         align-items: center;
+        flex-shrink: 0;
 
         @media (max-width: 768px) {
-            gap: 8px;
-            align-self: flex-end;
-        }
-    }
+            gap: 6px;
 
-    &__cta {
-        @media (max-width: 768px) {
-            padding: 8px;
-
-            span {
+            // En mobile, ocultar label de botones que tienen icono (solo mostrar icono)
+            ::ng-deep .btn__content ng-icon + span {
                 display: none;
+            }
+
+            // Reducir padding cuando es icon-only
+            ::ng-deep button.btn {
+                &:has(ng-icon) {
+                    padding-left: 8px;
+                    padding-right: 8px;
+                }
             }
         }
     }

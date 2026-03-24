@@ -1,184 +1,122 @@
 import { Component, EventEmitter, Output, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TaxService } from '../../../../../../core/services/tax.service';
 import { ToastService } from '../../../../../../core/services/toast.service';
 import { Tax } from '../../../../../../core/models/tax.models';
-import { NgIconComponent, provideIcons } from '@ng-icons/core';
-import { lucideTag, lucidePercent, lucideHash, lucideFileText } from '@ng-icons/lucide';
+import { FieldInputComponent } from '../../../../../../shared/components/ui/field-input/field-input';
+import { FieldToggleComponent } from '../../../../../../shared/components/ui/field-toggle/field-toggle';
+import { SegmentedToggleComponent, SegmentOption } from '../../../../../../shared/components/ui/segmented-toggle/segmented-toggle';
+import { provideIcons } from '@ng-icons/core';
+import { lucidePercent, lucideDollarSign } from '@ng-icons/lucide';
 
 @Component({
   selector: 'app-tax-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, NgIconComponent],
-  providers: [
-    provideIcons({ lucideTag, lucidePercent, lucideHash, lucideFileText })
-  ],
+  imports: [ReactiveFormsModule, FieldInputComponent, FieldToggleComponent, SegmentedToggleComponent],
+  providers: [provideIcons({ lucidePercent, lucideDollarSign })],
   template: `
-    <div class="tax-form-container">
-      <form [formGroup]="taxForm" class="premium-form" (ngSubmit)="onSubmit()">
-        <fieldset [disabled]="isSubmitting()" style="border: none; padding: 0; margin: 0; display: contents;">
+    <form [formGroup]="taxForm" class="tf">
 
-          <div class="form-section">
-            <h3 class="section-title">Identificación</h3>
+      <app-field-input
+        label="Nombre del Impuesto"
+        formControlName="name"
+        placeholder="Ej: IVA 12%, ICE Bebidas..."
+        [required]="true"
+        [errorMessages]="{ required: 'El nombre es obligatorio', minlength: 'Mínimo 2 caracteres' }"
+      ></app-field-input>
 
-            <div class="form-group" [class.has-error]="taxForm.get('name')?.invalid && taxForm.get('name')?.touched">
-              <label for="name">Nombre del Impuesto *</label>
-              <div class="input-wrapper">
-                <ng-icon name="lucideTag"></ng-icon>
-                <input id="name" type="text" formControlName="name" placeholder="Ej: IVA 12%, ICE Bebidas...">
-              </div>
-              @if (taxForm.get('name')?.invalid && taxForm.get('name')?.touched) {
-                <small class="error-msg">El nombre es obligatorio (mín. 2 caracteres).</small>
-              }
-            </div>
+      <div class="tf__row">
+        <app-field-input
+          label="Código Interno"
+          formControlName="code"
+          placeholder="Ej: IVA12, ICE"
+          [required]="true"
+          [errorMessages]="{ required: 'El código es obligatorio' }"
+        ></app-field-input>
 
-            <div class="form-row">
-              <div class="form-group" [class.has-error]="taxForm.get('code')?.invalid && taxForm.get('code')?.touched">
-                <label for="code">Código Interno *</label>
-                <div class="input-wrapper">
-                  <ng-icon name="lucideHash"></ng-icon>
-                  <input id="code" type="text" formControlName="code" placeholder="Ej: IVA12, ICE">
-                </div>
-                @if (taxForm.get('code')?.invalid && taxForm.get('code')?.touched) {
-                  <small class="error-msg">El código es obligatorio.</small>
-                }
-              </div>
+        <app-field-input
+          label="Código SRI"
+          formControlName="sriCode"
+          placeholder="Cód. tributario"
+          [optional]="true"
+        ></app-field-input>
+      </div>
 
-              <div class="form-group">
-                <label for="sriCode">Código SRI</label>
-                <div class="input-wrapper">
-                  <ng-icon name="lucideFileText"></ng-icon>
-                  <input id="sriCode" type="text" formControlName="sriCode" placeholder="Cód. tributario">
-                </div>
-              </div>
-            </div>
-          </div>
+      <div class="tf__divider"><span>Tipo y Tarifa</span></div>
 
-          <div class="form-section">
-            <h3 class="section-title">Tipo y Tarifa</h3>
+      <div class="tf__field">
+        <label class="tf__label">Tipo de Impuesto <span class="tf__req">*</span></label>
+        <app-segmented-toggle
+          variant="pill"
+          [options]="typeOptions"
+          [value]="taxForm.get('type')!.value"
+          (valueChange)="onTypeChange($event)"
+        ></app-segmented-toggle>
+      </div>
 
-            <div class="form-group">
-              <label>Tipo de Impuesto *</label>
-              <div class="type-selector">
-                <label class="type-option" [class.selected]="taxForm.get('type')?.value === 'PERCENTAGE'">
-                  <input type="radio" formControlName="type" value="PERCENTAGE">
-                  <ng-icon name="lucidePercent"></ng-icon>
-                  <span>Porcentual</span>
-                </label>
-                <label class="type-option" [class.selected]="taxForm.get('type')?.value === 'FIXED'">
-                  <input type="radio" formControlName="type" value="FIXED">
-                  <span class="dollar-symbol">$</span>
-                  <span>Monto Fijo</span>
-                </label>
-              </div>
-            </div>
+      <div class="tf__row">
+        @if (taxForm.get('type')!.value === 'PERCENTAGE') {
+          <app-field-input
+            label="Porcentaje (%)"
+            formControlName="percentage"
+            type="number"
+            placeholder="12.00"
+            [required]="true"
+            [errorMessages]="{ required: 'Porcentaje requerido', min: 'Mínimo 0', max: 'Máximo 100' }"
+          ></app-field-input>
+        }
 
-            <div class="form-row">
-              @if (taxForm.get('type')?.value === 'PERCENTAGE') {
-                <div class="form-group" [class.has-error]="taxForm.get('percentage')?.invalid && taxForm.get('percentage')?.touched">
-                  <label for="percentage">Porcentaje (%)</label>
-                  <div class="input-wrapper">
-                    <ng-icon name="lucidePercent"></ng-icon>
-                    <input id="percentage" type="number" formControlName="percentage" min="0" max="100" step="0.01" placeholder="12.00">
-                  </div>
-                  @if (taxForm.get('percentage')?.invalid && taxForm.get('percentage')?.touched) {
-                    <small class="error-msg">Porcentaje requerido (0–100).</small>
-                  }
-                </div>
-              }
+        <app-field-input
+          label="Monto Fijo ($)"
+          formControlName="fixedAmount"
+          type="number"
+          placeholder="0.00"
+          prefix="$"
+        ></app-field-input>
+      </div>
 
-              <div class="form-group">
-                <label for="fixedAmount">Monto Fijo ($)</label>
-                <div class="input-wrapper">
-                  <span class="input-prefix">$</span>
-                  <input id="fixedAmount" type="number" formControlName="fixedAmount" min="0" step="0.01" placeholder="0.00">
-                </div>
-              </div>
-            </div>
-          </div>
+      <div class="tf__divider"><span>Estado</span></div>
 
-          <div class="form-section">
-            <h3 class="section-title">Estado</h3>
-            <div class="form-switches">
-              <div class="form-check">
-                <input id="isActive" type="checkbox" formControlName="isActive">
-                <label for="isActive">Impuesto activo</label>
-              </div>
-            </div>
-          </div>
+      <app-field-toggle
+        label="Impuesto activo"
+        description="Los impuestos inactivos no se aplican a nuevas ventas"
+        formControlName="isActive"
+      ></app-field-toggle>
 
-        </fieldset>
-      </form>
-    </div>
+    </form>
   `,
   styles: [`
-    .tax-form-container { padding: 0; width: 100%; box-sizing: border-box; }
-
-    .premium-form { display: flex; flex-direction: column; gap: 1.5rem; width: 100%; }
-
-    .form-section {
-      display: flex; flex-direction: column; gap: 1rem; width: 100%;
+    .tf {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
     }
-
-    .section-title {
-      font-size: var(--font-size-xs); font-weight: 700; color: var(--color-text-muted);
-      text-transform: uppercase; letter-spacing: 0.05em;
-      border-bottom: 1px solid var(--color-border-subtle); padding-bottom: 0.5rem;
+    .tf__row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
     }
-
-    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-
-    .form-group { display: flex; flex-direction: column; gap: 0.5rem;
-      label { font-size: var(--font-size-sm); font-weight: var(--font-weight-medium); color: var(--color-text-main); }
+    .tf__divider {
+      font-size: var(--font-size-xs);
+      font-weight: 700;
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-bottom: 1px solid var(--color-border-subtle);
+      padding-bottom: 0.5rem;
     }
-
-    .input-wrapper {
-      position: relative; display: block;
-      ng-icon, .input-prefix {
-        position: absolute; left: 0.875rem; top: 50%; transform: translateY(-50%);
-        color: var(--color-text-muted); font-size: 1rem; z-index: 5;
-        font-style: normal; font-weight: 600;
-      }
-      input {
-        width: 100%; box-sizing: border-box; padding: 0.625rem 1rem 0.625rem 2.5rem;
-        background: var(--color-bg-surface); border: 1px solid var(--color-border-light);
-        border-radius: var(--radius-md); font-size: var(--font-size-base);
-        color: var(--color-text-main); transition: var(--transition-fast); outline: none;
-        &::placeholder { color: var(--color-text-muted); }
-        &:focus { border-color: var(--color-accent-primary); box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.1); }
-      }
+    .tf__field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.375rem;
     }
-
-    .type-selector {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;
-      .type-option {
-        display: flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1rem;
-        border: 1px solid var(--color-border-light); border-radius: var(--radius-md);
-        cursor: pointer; transition: all var(--transition-fast);
-        input[type="radio"] { display: none; }
-        ng-icon, .dollar-symbol { color: var(--color-text-muted); font-size: 1rem; font-weight: 700; }
-        span { font-size: var(--font-size-sm); font-weight: 500; }
-        &.selected {
-          border-color: var(--color-accent-primary);
-          background-color: rgba(var(--color-primary-rgb), 0.05);
-          ng-icon, .dollar-symbol { color: var(--color-accent-primary); }
-        }
-        &:hover:not(.selected) { border-color: var(--color-border-main); }
-      }
+    .tf__label {
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-medium);
+      color: var(--color-text-main);
     }
-
-    .form-switches { padding-top: 0.5rem; }
-    .form-check {
-      display: flex; align-items: center; gap: 0.75rem; cursor: pointer;
-      input[type="checkbox"] { width: 1rem; height: 1rem; accent-color: var(--color-accent-primary); cursor: pointer; }
-      label { font-size: var(--font-size-base); color: var(--color-text-main); cursor: pointer; }
-    }
-
-    .error-msg { font-size: var(--font-size-xs); color: var(--color-danger-text); display: block; }
-    .has-error .input-wrapper input {
-      border-color: var(--color-danger-text) !important;
-      background-color: rgba(var(--color-danger-rgb), 0.02) !important;
+    .tf__req {
+      color: var(--color-danger-text);
     }
   `]
 })
@@ -188,20 +126,29 @@ export class TaxFormComponent {
   private toastService = inject(ToastService);
 
   @Output() saved = new EventEmitter<void>();
-  @Output() cancelled = new EventEmitter<void>();
 
   editingTaxId = signal<string | null>(null);
   isSubmitting = signal(false);
 
-  taxForm: FormGroup = this.fb.group({
+  readonly typeOptions: SegmentOption[] = [
+    { value: 'PERCENTAGE', icon: 'lucidePercent', label: 'Porcentual' },
+    { value: 'FIXED', icon: 'lucideDollarSign', label: 'Monto Fijo' },
+  ];
+
+  taxForm = this.fb.group({
     name: ['', [Validators.required, Validators.minLength(2)]],
     code: ['', Validators.required],
     sriCode: [''],
     type: ['PERCENTAGE', Validators.required],
-    percentage: [null],
+    percentage: [null as number | null],
     fixedAmount: [0],
-    isActive: [true]
+    isActive: [true],
   });
+
+  onTypeChange(value: string) {
+    this.taxForm.get('type')!.setValue(value);
+    this.taxForm.markAsDirty();
+  }
 
   setTax(tax: Tax) {
     this.editingTaxId.set(tax.id);
@@ -212,7 +159,7 @@ export class TaxFormComponent {
       type: tax.type,
       percentage: tax.percentage ?? null,
       fixedAmount: tax.fixedAmount ?? 0,
-      isActive: tax.isActive
+      isActive: tax.isActive,
     });
     this.taxForm.markAsPristine();
   }
@@ -224,14 +171,30 @@ export class TaxFormComponent {
   }
 
   onSubmit() {
-    if (this.taxForm.invalid || this.isSubmitting()) return;
-    this.isSubmitting.set(true);
-    const id = this.editingTaxId();
-    const request$ = id
-      ? this.taxService.update(id, this.taxForm.value)
-      : this.taxService.create(this.taxForm.value);
+    if (this.taxForm.invalid || this.isSubmitting()) {
+      this.taxForm.markAllAsTouched();
+      return;
+    }
 
-    request$.subscribe({
+    this.isSubmitting.set(true);
+    const v = this.taxForm.getRawValue();
+    const id = this.editingTaxId();
+
+    const payload = {
+      name: v.name!,
+      code: v.code!,
+      sriCode: v.sriCode || undefined,
+      type: v.type! as 'PERCENTAGE' | 'FIXED',
+      percentage: v.type === 'PERCENTAGE' ? v.percentage : undefined,
+      fixedAmount: v.fixedAmount ?? 0,
+      isActive: v.isActive ?? true,
+    };
+
+    const req$ = id
+      ? this.taxService.update(id, payload)
+      : this.taxService.create(payload);
+
+    req$.subscribe({
       next: () => {
         this.toastService.success(`Impuesto ${id ? 'actualizado' : 'creado'} correctamente`);
         this.saved.emit();
@@ -239,10 +202,9 @@ export class TaxFormComponent {
         this.resetForm();
       },
       error: (err) => {
-        const msg = err?.error?.message || `Error al ${id ? 'actualizar' : 'crear'} el impuesto`;
-        this.toastService.error(msg);
+        this.toastService.error(err?.error?.error ?? `Error al ${id ? 'actualizar' : 'crear'} el impuesto`);
         this.isSubmitting.set(false);
-      }
+      },
     });
   }
 

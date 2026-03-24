@@ -1,10 +1,10 @@
 <div class="modal-backdrop" *ngIf="isOpen" (click)="onClose()" @backdropAnimation></div>
 
-<div class="modal-container" *ngIf="isOpen" [@modalAnimation]="{ value: '', params: { initialTransform: initialTransform, targetTransform: targetTransform } }">
+<div class="modal-container" [class]="'modal-container modal--' + size" *ngIf="isOpen" [@modalAnimation]="{ value: '', params: { initialTransform: initialTransform, targetTransform: targetTransform } }">
   <header class="modal-header">
     <div class="modal-header-content">
       <h2 class="modal-title">{{ title }}</h2>
-      <button class="modal-close-btn" (click)="onClose()" *ngIf="allowClose">
+      <button type="button" class="modal-close-btn" (click)="onClose()" *ngIf="allowClose">
         <ng-icon name="lucideX"></ng-icon>
       </button>
     </div>

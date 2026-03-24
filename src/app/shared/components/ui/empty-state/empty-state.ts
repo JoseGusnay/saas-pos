@@ -1,14 +1,15 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
-import { lucideSearch, lucideInbox, lucideArrowRight } from '@ng-icons/lucide';
+import { lucideSearch, lucideInbox } from '@ng-icons/lucide';
+import { FormButtonComponent } from '../form-button/form-button';
 
 @Component({
   selector: 'app-empty-state',
   standalone: true,
-  imports: [CommonModule, NgIconComponent],
+  imports: [CommonModule, NgIconComponent, FormButtonComponent],
   providers: [
-    provideIcons({ lucideSearch, lucideInbox, lucideArrowRight })
+    provideIcons({ lucideSearch, lucideInbox })
   ],
   template: `
     <div class="empty-state" [class.empty-state--lg]="size === 'lg'">
@@ -27,12 +28,18 @@ import { lucideSearch, lucideInbox, lucideArrowRight } from '@ng-icons/lucide';
       <h3 class="empty-state__title">{{ title }}</h3>
       <p class="empty-state__description">{{ description }}</p>
       
-      <div class="empty-state__actions" *ngIf="actionLabel">
-        <button class="btn btn-primary" (click)="action.emit()">
-          <span>{{ actionLabel }}</span>
-          <ng-icon name="lucideArrowRight"></ng-icon>
-        </button>
-      </div>
+      @if (actionLabel) {
+        <div class="empty-state__actions">
+          <app-form-button
+            [label]="actionLabel!"
+            icon="lucideArrowRight"
+            iconPosition="right"
+            type="button"
+            [fullWidth]="false"
+            (click)="action.emit()"
+          />
+        </div>
+      }
     </div>
   `,
   styles: [`
@@ -121,12 +128,8 @@ import { lucideSearch, lucideInbox, lucideArrowRight } from '@ng-icons/lucide';
       }
 
       &__actions {
-        .btn {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          padding: 10px 20px;
-        }
+        display: flex;
+        justify-content: center;
       }
     }
 

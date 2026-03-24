@@ -14,6 +14,7 @@ import {
 import { ModalComponent } from '../../../../shared/components/ui/modal/modal';
 import { FieldInputComponent } from '../../../../shared/components/ui/field-input/field-input';
 import { DrawerComponent } from '../../../../shared/components/ui/drawer/drawer';
+import { FormButtonComponent } from '../../../../shared/components/ui/form-button/form-button';
 import { UnitDrawerComponent } from '../unit-drawer/unit-drawer.component';
 import { Unit } from '../../../../core/models/unit.models';
 import {
@@ -35,7 +36,7 @@ interface IngredientResult {
   selector: 'app-recipe-builder',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, ReactiveFormsModule, NgIconComponent, SearchSelectComponent, ModalComponent, FieldInputComponent, DrawerComponent, UnitDrawerComponent],
+  imports: [CommonModule, ReactiveFormsModule, NgIconComponent, SearchSelectComponent, ModalComponent, FieldInputComponent, DrawerComponent, UnitDrawerComponent, FormButtonComponent],
   providers: [
     provideIcons({ lucidePlus, lucideTrash2, lucideFlaskConical, lucideSearch, lucideX, lucideAlertTriangle, lucidePencil })
   ],

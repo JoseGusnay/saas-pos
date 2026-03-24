@@ -1,136 +1,78 @@
 import { Component, EventEmitter, Output, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { NgIconComponent, provideIcons } from '@ng-icons/core';
-import { lucideRuler, lucideHash, lucideLayers } from '@ng-icons/lucide';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { UnitsService } from '../../../../core/services/units.service';
 import { ToastService } from '../../../../core/services/toast.service';
 import { Unit, UnitType, UNIT_TYPE_LABELS } from '../../../../core/models/unit.models';
+import { FieldInputComponent } from '../../../../shared/components/ui/field-input/field-input';
+import { FieldToggleComponent } from '../../../../shared/components/ui/field-toggle/field-toggle';
+import { CustomSelectComponent, SelectOption } from '../../../../shared/components/ui/custom-select/custom-select.component';
 
 @Component({
   selector: 'app-unit-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, NgIconComponent],
-  providers: [provideIcons({ lucideRuler, lucideHash, lucideLayers })],
+  imports: [ReactiveFormsModule, FieldInputComponent, FieldToggleComponent, CustomSelectComponent],
   template: `
-    <div class="unit-form-container">
-      <form [formGroup]="unitForm" class="premium-form" (ngSubmit)="onSubmit()">
-        <fieldset [disabled]="isSubmitting()" style="border: none; padding: 0; margin: 0; display: contents;">
+    <form [formGroup]="unitForm" class="uf">
 
-          <div class="form-section">
-            <h3 class="section-title">Información General</h3>
+      <app-field-input
+        label="Nombre de la Unidad"
+        formControlName="name"
+        placeholder="Ej: Kilogramo, Litro, Pieza..."
+        [required]="true"
+        [errorMessages]="{ required: 'El nombre es obligatorio', minlength: 'Mínimo 2 caracteres' }"
+      ></app-field-input>
 
-            <!-- Nombre -->
-            <div class="form-group" [class.has-error]="unitForm.get('name')?.invalid && unitForm.get('name')?.touched">
-              <label for="unit-name">Nombre de la Unidad</label>
-              <div class="input-wrapper">
-                <ng-icon name="lucideRuler"></ng-icon>
-                <input
-                  id="unit-name"
-                  type="text"
-                  formControlName="name"
-                  placeholder="Ej: Kilogramo, Litro, Pieza…">
-              </div>
-              @if (unitForm.get('name')?.invalid && unitForm.get('name')?.touched) {
-                <small class="error-msg">El nombre es obligatorio (mín. 2 caracteres).</small>
-              }
-            </div>
+      <app-field-input
+        label="Abreviación"
+        formControlName="abbreviation"
+        placeholder="Ej: kg, L, pza..."
+        [required]="true"
+        [errorMessages]="{ required: 'La abreviación es obligatoria', maxlength: 'Máximo 10 caracteres' }"
+      ></app-field-input>
 
-            <!-- Abreviación -->
-            <div class="form-group" [class.has-error]="unitForm.get('abbreviation')?.invalid && unitForm.get('abbreviation')?.touched">
-              <label for="unit-abbr">Abreviación</label>
-              <div class="input-wrapper">
-                <ng-icon name="lucideHash"></ng-icon>
-                <input
-                  id="unit-abbr"
-                  type="text"
-                  formControlName="abbreviation"
-                  placeholder="Ej: kg, L, pza…"
-                  maxlength="10">
-              </div>
-              @if (unitForm.get('abbreviation')?.invalid && unitForm.get('abbreviation')?.touched) {
-                <small class="error-msg">La abreviación es obligatoria (máx. 10 caracteres).</small>
-              }
-            </div>
+      <div class="uf__field">
+        <label class="uf__label">Tipo de Unidad</label>
+        <app-custom-select
+          [options]="typeOptions"
+          [value]="unitForm.get('type')!.value!"
+          (valueChange)="onTypeChange($event)"
+        ></app-custom-select>
+      </div>
 
-            <!-- Tipo -->
-            <div class="form-group">
-              <label for="unit-type">Tipo de Unidad</label>
-              <div class="select-wrapper">
-                <ng-icon name="lucidelayers"></ng-icon>
-                <select id="unit-type" formControlName="type">
-                  @for (opt of typeOptions; track opt.value) {
-                    <option [value]="opt.value">{{ opt.label }}</option>
-                  }
-                </select>
-              </div>
-            </div>
-          </div>
+      <div class="uf__divider"><span>Estado</span></div>
 
-          <div class="form-section">
-            <h3 class="section-title">Estado</h3>
-            <div class="form-switches">
-              <div class="form-check">
-                <input
-                  id="unit-active"
-                  type="checkbox"
-                  [checked]="unitForm.get('isActive')?.value"
-                  (change)="toggleActive($event)">
-                <label for="unit-active">Unidad activa</label>
-              </div>
-            </div>
-          </div>
+      <app-field-toggle
+        label="Unidad activa"
+        description="Las unidades inactivas no se muestran en el catálogo"
+        formControlName="isActive"
+      ></app-field-toggle>
 
-        </fieldset>
-      </form>
-    </div>
+    </form>
   `,
   styles: [`
-    .unit-form-container { padding: 0; width: 100%; box-sizing: border-box; }
-    .premium-form { display: flex; flex-direction: column; gap: 1.5rem; width: 100%; }
-
-    .form-section {
-      display: flex; flex-direction: column; gap: 1rem; width: 100%;
+    .uf {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
     }
-    .section-title {
-      font-size: var(--font-size-xs); font-weight: 700; color: var(--color-text-muted);
-      text-transform: uppercase; letter-spacing: 0.05em;
-      border-bottom: 1px solid var(--color-border-subtle); padding-bottom: 0.5rem; margin-bottom: 0.5rem;
+    .uf__divider {
+      font-size: var(--font-size-xs);
+      font-weight: 700;
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-bottom: 1px solid var(--color-border-subtle);
+      padding-bottom: 0.5rem;
     }
-
-    .form-group {
-      display: flex; flex-direction: column; gap: 0.5rem;
-      label { font-size: var(--font-size-sm); font-weight: var(--font-weight-medium); color: var(--color-text-main); }
+    .uf__field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.375rem;
     }
-
-    .input-wrapper, .select-wrapper {
-      position: relative; display: block;
-      ng-icon {
-        position: absolute; left: 0.875rem; top: 50%; transform: translateY(-50%);
-        color: var(--color-text-muted); font-size: 1rem; z-index: 5; pointer-events: none;
-      }
-    }
-    .input-wrapper input, .select-wrapper select {
-      width: 100%; box-sizing: border-box;
-      padding: 0.625rem 1rem 0.625rem 2.5rem;
-      background: var(--color-bg-surface); border: 1px solid var(--color-border-light);
-      border-radius: var(--radius-md); font-size: var(--font-size-base); color: var(--color-text-main);
-      transition: var(--transition-fast); outline: none; appearance: none;
-      &::placeholder { color: var(--color-text-muted); }
-      &:focus { border-color: var(--color-accent-primary); box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.1); }
-    }
-
-    .form-switches { display: flex; flex-direction: column; gap: 0.75rem; padding-top: 0.5rem; }
-    .form-check {
-      display: flex; align-items: center; gap: 0.75rem; cursor: pointer;
-      input[type="checkbox"] { width: 1rem; height: 1rem; accent-color: var(--color-accent-primary); cursor: pointer; }
-      label { font-size: var(--font-size-base); color: var(--color-text-main); cursor: pointer; }
-    }
-
-    .error-msg { font-size: var(--font-size-xs); color: var(--color-danger-text); margin-top: 0.25rem; display: block; }
-    .has-error .input-wrapper input {
-      border-color: var(--color-danger-text) !important;
-      background-color: rgba(var(--color-danger-rgb), 0.02) !important;
+    .uf__label {
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-medium);
+      color: var(--color-text-main);
     }
   `]
 })
@@ -140,24 +82,28 @@ export class UnitFormComponent {
   private toastSvc = inject(ToastService);
 
   @Output() saved = new EventEmitter<Unit>();
-  @Output() cancelled = new EventEmitter<void>();
 
   editingId = signal<string | null>(null);
   isSubmitting = signal(false);
 
-  readonly typeOptions: { value: UnitType; label: string }[] = [
+  readonly typeOptions: SelectOption[] = [
     { value: 'UNIT',   label: UNIT_TYPE_LABELS.UNIT   },
     { value: 'WEIGHT', label: UNIT_TYPE_LABELS.WEIGHT },
     { value: 'VOLUME', label: UNIT_TYPE_LABELS.VOLUME },
     { value: 'OTHER',  label: UNIT_TYPE_LABELS.OTHER  },
   ];
 
-  unitForm: FormGroup = this.fb.group({
+  unitForm = this.fb.group({
     name:         ['', [Validators.required, Validators.minLength(2), Validators.maxLength(50)]],
     abbreviation: ['', [Validators.required, Validators.maxLength(10)]],
     type:         ['UNIT'],
     isActive:     [true],
   });
+
+  onTypeChange(value: string) {
+    this.unitForm.get('type')!.setValue(value);
+    this.unitForm.markAsDirty();
+  }
 
   setUnit(unit: Unit) {
     this.editingId.set(unit.id);
@@ -177,13 +123,23 @@ export class UnitFormComponent {
   }
 
   onSubmit() {
-    if (this.unitForm.invalid || this.isSubmitting()) return;
+    if (this.unitForm.invalid || this.isSubmitting()) {
+      this.unitForm.markAllAsTouched();
+      return;
+    }
 
     this.isSubmitting.set(true);
+    const v = this.unitForm.getRawValue();
     const id = this.editingId();
-    const dto = this.unitForm.value;
 
-    const req$ = id ? this.unitsSvc.update(id, dto) : this.unitsSvc.create(dto);
+    const payload = {
+      name: v.name!,
+      abbreviation: v.abbreviation!,
+      type: v.type as UnitType,
+      isActive: v.isActive ?? true,
+    };
+
+    const req$ = id ? this.unitsSvc.update(id, payload) : this.unitsSvc.create(payload);
 
     req$.subscribe({
       next: (unit) => {
@@ -193,19 +149,11 @@ export class UnitFormComponent {
         this.resetForm();
       },
       error: (err) => {
-        console.error('Error saving unit:', err);
-        this.toastSvc.error(`Error al ${id ? 'actualizar' : 'crear'} la unidad`);
+        this.toastSvc.error(err?.error?.error ?? `Error al ${id ? 'actualizar' : 'crear'} la unidad`);
         this.isSubmitting.set(false);
-      }
+      },
     });
   }
 
-  toggleActive(event: Event) {
-    const checked = (event.target as HTMLInputElement).checked;
-    this.unitForm.get('isActive')?.setValue(checked);
-    this.unitForm.markAsDirty();
-  }
-
-  onCancel() { this.cancelled.emit(); }
   hasUnsavedChanges(): boolean { return this.unitForm.dirty; }
 }

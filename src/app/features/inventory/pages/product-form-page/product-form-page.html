@@ -4,15 +4,14 @@
     <!-- ═══ HEADER ═══ -->
     <div class="pfp__header">
       <div class="pfp__header-left">
-        <button type="button" class="pfp__back-btn" [disabled]="isSubmitting()" (click)="goBack()">
-          <ng-icon name="lucideArrowLeft"></ng-icon>
-          <span class="pfp__back-label">{{ step() === 2 ? 'Paso anterior' : 'Cancelar' }}</span>
-        </button>
+        <app-back-button
+          [label]="step() === 2 ? 'Paso anterior' : 'Cancelar'"
+          [disabled]="isSubmitting()"
+          (clicked)="goBack()"
+        ></app-back-button>
 
         <div class="pfp__title-group">
-          <h1 class="pfp__title">
-            {{ isEditing() ? 'Editar Producto' : 'Nuevo Producto' }}
-          </h1>
+          <h1 class="pfp__title">{{ pageTitle }}</h1>
           @if (showVariantStep) {
             <div class="pfp__step-pills" @fadeIn>
               <span class="pfp__pill" [class.pfp__pill--active]="step() === 1" [class.pfp__pill--done]="step() > 1">
@@ -22,7 +21,7 @@
               <span class="pfp__pill-sep"></span>
               <span class="pfp__pill" [class.pfp__pill--active]="step() === 2">
                 <span class="pfp__pill-num">2</span>
-                Variantes
+                {{ variantNounPluralCap }}
               </span>
             </div>
           }
@@ -74,12 +73,15 @@
             <app-product-general-info
               [typePreset]="typePreset()"
               [isEditing]="isEditing()"
+              [productType]="typeCtrl.value"
               [showBrand]="isPhysical || isRawMaterial"
               [showSellable]="typeCtrl.value !== 'RAW_MATERIAL'"
               [showPurchasable]="typeCtrl.value !== 'SERVICE' && typeCtrl.value !== 'COMBO'"
               [initialCategoryOption]="initialCategoryOption()"
               [initialBrandOption]="initialBrandOption()"
               [initialCategoryAttributes]="initialCategoryAttributes()"
+              (categoryOptionChange)="initialCategoryOption.set($event)"
+              (brandOptionChange)="initialBrandOption.set($event)"
               (attributesChange)="onAttributesConfigured($event)"
             ></app-product-general-info>
 
@@ -111,16 +113,20 @@
                         [productName]="form.get('name')?.value"
                         [initialTaxOptions]="initialTaxOptions()"
                         [initialPresentationOption]="initialPresentationOption()"
+                        (taxOptionsChange)="initialTaxOptions.set($event)"
+                        (presentationOptionChange)="initialPresentationOption.set($event)"
                       ></app-physical-variant-form>
                     } @else if (isService) {
                       <app-service-variant-form
                         [initialTaxOptions]="initialTaxOptions()"
+                        (taxOptionsChange)="initialTaxOptions.set($event)"
                       ></app-service-variant-form>
                     } @else if (isRawMaterial) {
                       <app-raw-material-form
                         [categoryAttributes]="categoryAttributes()"
                         [productName]="form.get('name')?.value"
                         [initialUnitOption]="initialUnitOption()"
+                        (unitOptionChange)="initialUnitOption.set($event)"
                       ></app-raw-material-form>
                     }
                   </div>
@@ -238,7 +244,7 @@
             <section class="pfc">
               <div class="pfc__kicker">
                 <ng-icon name="lucideFolder"></ng-icon>
-                Imagen del Producto
+                {{ imageLabel }}
               </div>
               <app-image-upload
                 [previewUrl]="imagePreviewUrl()"
@@ -308,12 +314,12 @@
       <div class="pfp__body" @fadeIn>
         <div class="pfp__variants-header">
           <div>
-            <h2 class="pfp__variants-title">Gestión de Variantes</h2>
-            <p class="pfp__variants-sub">Configura precio, SKU e impuestos por cada presentación.</p>
+            <h2 class="pfp__variants-title">{{ step2Title }}</h2>
+            <p class="pfp__variants-sub">{{ step2Subtitle }}</p>
           </div>
           <button type="button" class="pfp__add-variant-btn" (click)="addVariant()">
             <ng-icon name="lucidePlus"></ng-icon>
-            Añadir Variante
+            Añadir {{ variantNounCap }}
           </button>
         </div>
 
@@ -322,7 +328,7 @@
             <table class="pfp__variants-table" formArrayName="variants">
               <thead>
                 <tr>
-                  <th>Variante</th>
+                  <th>{{ variantNounCap }}</th>
                   <th>SKU</th>
                   <th class="text-right">PVP</th>
                   <th class="text-right">Costo</th>
@@ -384,9 +390,9 @@
         } @else {
           <div class="pfp__variants-empty">
             <ng-icon name="lucideLayers"></ng-icon>
-            <p>No hay variantes configuradas</p>
+            <p>No hay {{ variantNounPlural }} configuradas</p>
             <button type="button" class="pfp__add-variant-btn pfp__add-variant-btn--sm" (click)="addVariant()">
-              Crear primera variante
+              Crear primera {{ variantNoun }}
             </button>
           </div>
         }
@@ -409,33 +415,33 @@
     }
 
     <!-- Modal: Clear variants -->
-    <app-modal [isOpen]="isVariantClearModalOpen()" title="¿Eliminar variantes?" (close)="cancelClearVariants()">
+    <app-modal [isOpen]="isVariantClearModalOpen()" [title]="'¿Eliminar ' + variantNounPlural + '?'" (close)="cancelClearVariants()">
       <div modalBody>
-        Tienes <strong>{{ variants.length }} variante{{ variants.length !== 1 ? 's' : '' }}</strong> configurada{{ variants.length !== 1 ? 's' : '' }}.
+        Tienes <strong>{{ variants.length }} {{ variants.length !== 1 ? variantNounPlural : variantNoun }}</strong> configurada{{ variants.length !== 1 ? 's' : '' }}.
         Al desactivar esta opción se eliminarán todas. Esta acción no se puede deshacer.
       </div>
       <div modalFooter class="pfp__modal-footer">
-        <app-form-button label="Mantener variantes" variant="secondary" type="button" [fullWidth]="false" (click)="cancelClearVariants()"></app-form-button>
+        <app-form-button [label]="'Mantener ' + variantNounPlural" variant="secondary" type="button" [fullWidth]="false" (click)="cancelClearVariants()"></app-form-button>
         <app-form-button label="Sí, eliminar todo" variant="danger" type="button" [fullWidth]="false" (click)="confirmClearVariants()"></app-form-button>
       </div>
     </app-modal>
 
     <!-- Modal: Delete existing variant -->
-    <app-modal [isOpen]="isVariantDeleteModalOpen()" title="¿Eliminar variante?" (close)="cancelDeleteVariant()">
+    <app-modal [isOpen]="isVariantDeleteModalOpen()" [title]="'¿Eliminar ' + variantNoun + '?'" (close)="cancelDeleteVariant()">
       <div modalBody>
-        Esta variante ya existe en el sistema. Al guardar el producto, la variante será <strong>desactivada permanentemente</strong>
-        y su historial de stock quedará conservado pero inaccesible. Esta acción no se puede deshacer.
+        Esta {{ variantNoun }} ya existe en el sistema. Al guardar, será <strong>desactivada permanentemente</strong>
+        y su historial quedará conservado pero inaccesible. Esta acción no se puede deshacer.
       </div>
       <div modalFooter class="pfp__modal-footer">
         <app-form-button label="Cancelar" variant="secondary" type="button" [fullWidth]="false" (click)="cancelDeleteVariant()"></app-form-button>
-        <app-form-button label="Sí, eliminar variante" variant="danger" type="button" [fullWidth]="false" (click)="confirmDeleteVariant()"></app-form-button>
+        <app-form-button [label]="'Sí, eliminar ' + variantNoun" variant="danger" type="button" [fullWidth]="false" (click)="confirmDeleteVariant()"></app-form-button>
       </div>
     </app-modal>
 
     <!-- Modal: Exit variant drawer with unsaved changes -->
     <app-modal [isOpen]="isVariantExitModalOpen()" title="Cambios sin guardar" (close)="cancelExitVariant()">
       <div modalBody>
-        Tienes cambios en la variante que no se han guardado. ¿Deseas salir de todas formas?
+        Tienes cambios en la {{ variantNoun }} que no se han guardado. ¿Deseas salir de todas formas?
       </div>
       <div modalFooter class="pfp__modal-footer">
         <app-form-button label="Continuar editando" variant="secondary" type="button" [fullWidth]="false" (click)="cancelExitVariant()"></app-form-button>

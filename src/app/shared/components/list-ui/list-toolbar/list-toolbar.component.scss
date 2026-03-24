@@ -14,42 +14,10 @@
     }
 
     &__search {
-        @include flex-center;
-        background-color: var(--color-bg-surface);
-        border: 1px solid var(--color-border-light);
-        border-radius: var(--radius-md);
-        padding: 6px 12px;
-        gap: 8px;
         width: 300px;
-        transition: var(--transition-base);
-
-        &:focus-within {
-            border-color: var(--color-text-muted);
-        }
 
         @media (max-width: 768px) {
             width: 100%;
-            padding: 10px 12px;
-        }
-    }
-
-    &__search-icon {
-        width: 16px;
-        height: 16px;
-        color: var(--color-text-muted);
-    }
-
-    &__search-input {
-        flex: 1;
-        background: none;
-        border: none;
-        outline: none;
-        font-family: inherit;
-        font-size: var(--font-size-sm);
-        color: var(--color-text-main);
-
-        &::placeholder {
-            color: var(--color-text-muted);
         }
     }
 
@@ -64,49 +32,15 @@
         }
     }
 
-    &__filter-actions {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    &__view-toggle {
-        display: flex;
-        align-items: center;
-        background-color: var(--color-bg-surface);
-        border: 1px solid var(--color-border-light);
-        border-radius: var(--radius-sm);
-        padding: 2px;
-
+    &__sort {
         @media (max-width: 768px) {
             display: none;
         }
     }
 
-    &__segmented-btn {
-        @include flex-center;
-        width: 28px;
-        height: 28px;
-        background: transparent;
-        border: none;
-        border-radius: 4px;
-        color: var(--color-text-muted);
-        cursor: pointer;
-        transition: var(--transition-fast);
-
-        app-icon {
-            width: 16px;
-            height: 16px;
-        }
-
-        &:hover {
-            color: var(--color-text-main);
-        }
-
-        &--active {
-            background-color: var(--color-bg-hover);
-            color: var(--color-text-main);
-            box-shadow: var(--shadow-sm);
+    app-segmented-toggle {
+        @media (max-width: 768px) {
+            display: none;
         }
     }
 }

@@ -1,145 +1,184 @@
-import { Component, Input } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, ChangeDetectionStrategy, input, computed } from '@angular/core';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import { SpinnerComponent } from '../spinner/spinner';
-import { lucideSave, lucideCheck, lucideX, lucidePencil, lucideHistory, lucideTrash2, lucidePlus } from '@ng-icons/lucide';
+import { lucideSave, lucideCheck, lucideX, lucidePencil, lucideHistory, lucideTrash2, lucidePlus, lucideArrowRight, lucideDownload } from '@ng-icons/lucide';
+
+type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
 
 @Component({
   selector: 'app-form-button',
   standalone: true,
-  imports: [CommonModule, NgIconComponent, SpinnerComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [NgIconComponent, SpinnerComponent],
   providers: [
-    provideIcons({ lucideSave, lucideCheck, lucideX, lucidePencil, lucideHistory, lucideTrash2, lucidePlus })
+    provideIcons({ lucideSave, lucideCheck, lucideX, lucidePencil, lucideHistory, lucideTrash2, lucidePlus, lucideArrowRight, lucideDownload })
   ],
   template: `
-    <button 
-      [type]="type"
-      [class]="'btn btn-' + variant"
-      [class.btn--full-width]="fullWidth"
-      [disabled]="disabled || loading"
+    <button
+      [type]="type()"
+      [class]="btnClass()"
+      [disabled]="disabled() || loading()"
     >
-      <span class="btn-content" [class.is-loading]="loading">
-        <app-spinner *ngIf="loading" [size]="16"></app-spinner>
-        <ng-icon *ngIf="icon && !loading" [name]="icon"></ng-icon>
-        <span>{{ loading ? loadingLabel : label }}</span>
+      <span class="btn__content" [class.btn__content--loading]="loading()">
+        @if (loading()) {
+          <app-spinner [size]="16"></app-spinner>
+        } @else if (icon() && iconPosition() === 'left') {
+          <ng-icon [name]="icon()!"></ng-icon>
+        }
+        <span>{{ loading() ? loadingLabel() : label() }}</span>
+        @if (!loading() && icon() && iconPosition() === 'right') {
+          <ng-icon [name]="icon()!"></ng-icon>
+        }
       </span>
     </button>
   `,
   styles: [`
     .btn {
-       display: inline-flex;
-       align-items: center;
-       justify-content: center;
-       gap: 0.5rem;
-       padding: 0.625rem 1.25rem;
-       border-radius: var(--radius-md);
-       font-size: var(--font-size-sm);
-       font-weight: 500;
-       cursor: pointer;
-       transition: background-color 0.2s, border-color 0.2s, color 0.2s, transform 0.2s, box-shadow 0.2s;
-       border: 1px solid transparent;
-       line-height: 1;
-       white-space: nowrap;
-       user-select: none;
-       min-width: 100px;
-       height: 38px;
-       font-family: inherit;
-
-       &.btn--full-width {
-         width: 100%;
-       }
-    }
-
-    .btn-content {
       display: inline-flex;
       align-items: center;
       justify-content: center;
       gap: 0.5rem;
-      width: 100%;
-      height: 100%;
-      transition: opacity 0.2s ease;
+      padding: 0.5rem 1rem;
+      border-radius: var(--radius-sm);
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-medium);
+      cursor: pointer;
+      transition: background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast), box-shadow var(--transition-fast);
+      border: 1px solid transparent;
+      line-height: 1;
+      white-space: nowrap;
+      user-select: none;
+      height: 36px;
+      font-family: inherit;
 
-      &.is-loading {
-        opacity: 0.7;
+      &--full { width: 100%; }
+
+      &:focus-visible {
+        outline: none;
+        box-shadow: var(--shadow-input-focus);
+      }
+
+      &:disabled {
+        cursor: not-allowed;
       }
     }
 
-    .btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed !important;
+    .btn__content {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      transition: opacity var(--transition-fast);
+
+      &--loading { opacity: 0.8; }
     }
 
+    /* ── Primary ─────────────────────────── */
     .btn-primary {
       background: var(--color-accent-primary);
-      color: var(--color-bg-surface);
+      color: var(--color-accent-primary-text);
       border-color: var(--color-accent-primary);
-      
+
       &:hover:not(:disabled) {
-        background: var(--color-accent-hover, #000);
-        border-color: var(--color-accent-hover, #000);
-        transform: translateY(-1px);
-        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+        background: var(--color-accent-hover);
+        border-color: var(--color-accent-hover);
       }
 
       &:active:not(:disabled) {
-        transform: translateY(0);
+        opacity: 0.9;
+      }
+
+      &:disabled {
+        background: var(--color-text-muted);
+        border-color: var(--color-text-muted);
+        color: var(--color-bg-surface);
       }
     }
 
+    /* ── Secondary ───────────────────────── */
     .btn-secondary {
       background: var(--color-bg-surface);
       color: var(--color-text-main);
       border-color: var(--color-border-light);
-      box-shadow: var(--shadow-sm);
 
       &:hover:not(:disabled) {
         background: var(--color-bg-hover);
-        border-color: var(--color-border-subtle);
+        border-color: var(--color-border-hover);
+      }
+
+      &:active:not(:disabled) {
+        background: var(--color-bg-subtle);
+      }
+
+      &:disabled {
+        background: var(--color-bg-surface);
+        color: var(--color-placeholder);
+        border-color: var(--color-border-light);
       }
     }
 
+    /* ── Ghost ───────────────────────────── */
     .btn-ghost {
       background: transparent;
       color: var(--color-text-muted);
-      min-width: auto;
-      
+
       &:hover:not(:disabled) {
         background: var(--color-bg-hover);
-        color: var(--color-text-main);
+        color: var(--color-text-soft);
+      }
+
+      &:active:not(:disabled) {
+        background: var(--color-bg-subtle);
+      }
+
+      &:disabled {
+        color: var(--color-placeholder);
       }
     }
 
+    /* ── Danger ──────────────────────────── */
     .btn-danger {
       background: var(--color-danger-bg);
       color: var(--color-danger-text);
-      border-color: var(--color-danger-bg);
-      
+      border-color: transparent;
+
       &:hover:not(:disabled) {
         background: var(--color-danger-text);
-        color: #fff;
+        color: var(--color-accent-primary-text);
         border-color: var(--color-danger-text);
+      }
+
+      &:active:not(:disabled) {
+        opacity: 0.9;
+      }
+
+      &:disabled {
+        background: var(--color-bg-subtle);
+        color: var(--color-placeholder);
       }
     }
 
     ng-icon {
-      font-size: 1.1rem;
+      font-size: 1rem;
       display: inline-flex;
       align-items: center;
-      justify-content: center;
-    }
-    
-    app-spinner {
-      margin-right: 2px;
     }
   `]
 })
 export class FormButtonComponent {
-  @Input() label: string = 'Guardar';
-  @Input() loadingLabel: string = 'Guardando...';
-  @Input() icon?: string;
-  @Input() loading: boolean = false;
-  @Input() disabled: boolean = false;
-  @Input() type: 'submit' | 'button' = 'submit';
-  @Input() variant: 'primary' | 'secondary' | 'ghost' | 'danger' = 'primary';
-  @Input() fullWidth: boolean = true;
+  label = input('Guardar');
+  loadingLabel = input('Guardando...');
+  icon = input<string>();
+  iconPosition = input<'left' | 'right'>('left');
+  loading = input(false);
+  disabled = input(false);
+  type = input<'submit' | 'button'>('submit');
+  variant = input<Variant>('primary');
+  fullWidth = input(true);
+
+  btnClass = computed(() => {
+    const classes = ['btn', `btn-${this.variant()}`];
+    if (this.fullWidth()) classes.push('btn--full');
+    return classes.join(' ');
+  });
 }

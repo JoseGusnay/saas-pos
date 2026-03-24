@@ -1,5 +1,8 @@
 <div class="branches-page__query-body">
-    <!-- AQUÍ BRILLA LA RECURSIÓN -->
-    <app-query-node [node]="$any(filterTree())" [availableFields]="availableFields" [isRoot]="true"
-        (nodeChange)="onFilterTreeChange($any($event))"></app-query-node>
+    <app-query-node
+        [node]="$any(localTree())"
+        [availableFields]="availableFields"
+        [isRoot]="true"
+        (nodeChange)="onLocalChange($any($event))"
+    ></app-query-node>
 </div>

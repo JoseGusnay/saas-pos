@@ -185,12 +185,18 @@
     }
   }
 
+  // ── Drawer views wrapper (animation host) ────────────────────────────────────
+  &__drawer-views {
+    position: relative;
+    min-height: 0;
+    flex: 1;
+  }
+
   // ── Drawer body ──────────────────────────────────────────────────────────────
   &__drawer-body {
     display: flex;
     flex-direction: column;
     gap: 20px;
-    // padding: 24px;
   }
 
   &__drawer-footer {

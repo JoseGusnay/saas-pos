@@ -1,6 +1,6 @@
 import { Component, EventEmitter, Output, computed, effect, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule, Validators } from '@angular/forms';
+import { trigger, transition, style, animate } from '@angular/animations';
 import { BranchService } from '../../../../core/services/branch.service';
 import { FiscalStateService } from '../../../../core/services/fiscal-state.service';
 import { ToastService } from '../../../../core/services/toast.service';
@@ -8,14 +8,38 @@ import { Branch, CreatePuntoEmisionInline } from '../../../../core/models/branch
 import { TIPO_COMPROBANTE_LABELS, TipoComprobante } from '../../../../core/models/fiscal.models';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import { lucidePlus, lucideTrash2, lucideChevronDown, lucideChevronRight } from '@ng-icons/lucide';
+import { FieldInputComponent } from '../../../../shared/components/ui/field-input/field-input';
+import { AddRowButtonComponent } from '../../../../shared/components/ui/add-row-button/add-row-button';
+import { FieldToggleComponent } from '../../../../shared/components/ui/field-toggle/field-toggle';
 
 @Component({
   selector: 'app-branch-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, NgIconComponent],
+  imports: [ReactiveFormsModule, NgIconComponent, FieldInputComponent, AddRowButtonComponent, FieldToggleComponent],
   providers: [provideIcons({ lucidePlus, lucideTrash2, lucideChevronDown, lucideChevronRight })],
   templateUrl: './branch-form.html',
-  styleUrls: ['./branch-form.scss']
+  styleUrls: ['./branch-form.scss'],
+  animations: [
+    trigger('slideDown', [
+      transition(':enter', [
+        style({ height: 0, opacity: 0, overflow: 'hidden' }),
+        animate('200ms cubic-bezier(0.4, 0, 0.2, 1)', style({ height: '*', opacity: 1 })),
+      ]),
+      transition(':leave', [
+        style({ overflow: 'hidden' }),
+        animate('150ms cubic-bezier(0.4, 0, 0.2, 1)', style({ height: 0, opacity: 0 })),
+      ]),
+    ]),
+    trigger('fadeSlideIn', [
+      transition(':enter', [
+        style({ opacity: 0, transform: 'translateY(-8px)' }),
+        animate('200ms cubic-bezier(0.4, 0, 0.2, 1)', style({ opacity: 1, transform: 'translateY(0)' })),
+      ]),
+      transition(':leave', [
+        animate('150ms cubic-bezier(0.4, 0, 0.2, 1)', style({ opacity: 0, transform: 'translateY(-8px)' })),
+      ]),
+    ]),
+  ],
 })
 export class BranchFormComponent {
   private fb = inject(FormBuilder);
@@ -36,19 +60,19 @@ export class BranchFormComponent {
     effect(() => {
       const isFiscal = this.facturacionElectronica();
       const codigoCtrl = this.branchForm.get('codigoEstablecimiento');
-      const dirCtrl = this.branchForm.get('dirEstablecimiento');
+      const addressCtrl = this.branchForm.get('address');
 
       if (isFiscal) {
         codigoCtrl?.setValidators([Validators.required, Validators.pattern(/^\d{3}$/)]);
-        dirCtrl?.setValidators([Validators.required]);
+        addressCtrl?.setValidators([Validators.required]);
         this.puntosEmisionArray.enable({ emitEvent: false });
       } else {
         codigoCtrl?.setValidators(null);
-        dirCtrl?.setValidators(null);
+        addressCtrl?.setValidators(null);
         this.puntosEmisionArray.disable({ emitEvent: false });
       }
       codigoCtrl?.updateValueAndValidity({ emitEvent: false });
-      dirCtrl?.updateValueAndValidity({ emitEvent: false });
+      addressCtrl?.updateValueAndValidity({ emitEvent: false });
     });
   }
 
@@ -61,7 +85,6 @@ export class BranchFormComponent {
     isActive: [true],
     isMain: [false],
     codigoEstablecimiento:   ['', [Validators.maxLength(3)]],
-    dirEstablecimiento:      [''],
     nombreComercialSucursal: [''],
     puntosEmision: this.fb.array([]),
   });
@@ -139,14 +162,13 @@ export class BranchFormComponent {
     this.editingBranchId.set(branch.id);
     this.branchForm.patchValue({
       name: branch.name,
-      address: branch.address,
+      address: branch.dirEstablecimiento || branch.address || '',
       phone: branch.phone,
       city: branch.city,
       manager: branch.manager,
       isActive: branch.isActive,
       isMain: branch.isMain,
       codigoEstablecimiento:   branch.codigoEstablecimiento  ?? '',
-      dirEstablecimiento:      branch.dirEstablecimiento     ?? '',
       nombreComercialSucursal: branch.nombreComercialSucursal ?? '',
     });
     this.puntosEmisionArray.clear();
@@ -171,7 +193,6 @@ export class BranchFormComponent {
       isActive: true,
       isMain: false,
       codigoEstablecimiento: '',
-      dirEstablecimiento: '',
       nombreComercialSucursal: '',
     });
   }
@@ -193,7 +214,18 @@ export class BranchFormComponent {
           }))
       : [];
 
-    const payload = { ...formValue, puntosEmision: rawPuntos };
+    const codigos = rawPuntos.map(p => p.codigoPuntoEmision);
+    if (new Set(codigos).size !== codigos.length) {
+      this.toastService.error('No puede haber puntos de emisión con el mismo código');
+      this.isSubmitting = false;
+      return;
+    }
+
+    const payload = {
+      ...formValue,
+      ...(this.facturacionElectronica() ? { dirEstablecimiento: formValue.address } : {}),
+      puntosEmision: rawPuntos,
+    };
 
     const request$ = branchId
       ? this.branchService.update(branchId, payload)

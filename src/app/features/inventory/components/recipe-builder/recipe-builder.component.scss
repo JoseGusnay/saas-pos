@@ -152,37 +152,46 @@
 
   &__search-box {
     display: flex;
-    align-items: center;
-    gap: 8px;
-    background: var(--color-bg-canvas);
+    align-items: stretch;
+    background: var(--color-bg-surface);
     border: 1px solid var(--color-border-light);
     border-radius: var(--radius-sm);
-    padding: 0 10px;
-    transition: border-color var(--transition-fast);
+    overflow: hidden;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background-color var(--transition-fast);
+
+    &:hover:not(:focus-within) {
+      border-color: var(--color-border-hover);
+    }
 
     &:focus-within {
-      border-color: var(--color-accent-primary);
+      border-color: var(--color-border-focus);
+      background: var(--color-bg-input-focus);
+      box-shadow: var(--shadow-input-focus);
     }
   }
 
   &__search-ic {
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
     color: var(--color-text-muted);
-    font-size: 13px;
+    font-size: 14px;
     flex-shrink: 0;
   }
 
   &__search-input {
     flex: 1;
-    height: 32px;
+    min-width: 0;
+    padding: 0.5rem 0.75rem 0.5rem 0;
     border: none;
     background: transparent;
-    font-size: var(--font-size-sm);
+    font-size: var(--font-size-base);
     color: var(--color-text-main);
     font-family: inherit;
     outline: none;
 
     &::placeholder {
-      color: var(--color-text-muted);
+      color: var(--color-placeholder);
     }
   }
 
@@ -393,23 +402,6 @@
     // padding: 24px;
   }
 
-  &__drawer-btn {
-    height: 38px;
-    padding: 0 20px;
-    border-radius: var(--radius-md);
-    border: 1px solid var(--color-border-light);
-    background: var(--color-bg-surface);
-    color: var(--color-text-main);
-    font-size: var(--font-size-sm);
-    font-weight: var(--font-weight-medium);
-    font-family: inherit;
-    cursor: pointer;
-    transition: background var(--transition-fast);
-
-    &:hover {
-      background: var(--color-bg-hover);
-    }
-  }
 }
 
 // ── Confirm disable modal ─────────────────────────────────────────────────────
@@ -441,44 +433,6 @@
 
     strong {
       color: var(--color-text-main);
-    }
-  }
-
-  &__actions {
-    display: flex;
-    gap: 8px;
-    justify-content: flex-end;
-    width: 100%;
-  }
-
-  &__btn {
-    height: 36px;
-    padding: 0 16px;
-    border-radius: var(--radius-md);
-    border: none;
-    font-size: var(--font-size-sm);
-    font-family: inherit;
-    font-weight: var(--font-weight-medium);
-    cursor: pointer;
-    transition: all var(--transition-fast);
-
-    &--cancel {
-      background: var(--color-bg-canvas);
-      border: 1px solid var(--color-border-light);
-      color: var(--color-text-secondary);
-
-      &:hover {
-        background: var(--color-bg-hover);
-      }
-    }
-
-    &--confirm {
-      background: var(--color-danger-text, #ef4444);
-      color: #fff;
-
-      &:hover {
-        opacity: 0.88;
-      }
     }
   }
 }

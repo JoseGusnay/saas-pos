@@ -23,35 +23,50 @@
 .barcode-input-row {
   display: flex;
   gap: 8px;
-  align-items: center;
+  align-items: stretch;
 
   .input-icon-wrap {
     flex: 1;
-    position: relative;
     display: flex;
-    align-items: center;
+    align-items: stretch;
+    background: var(--color-bg-surface);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+
+    &:hover:not(:focus-within) {
+      border-color: var(--color-border-hover);
+    }
+
+    &:focus-within {
+      border-color: var(--color-border-focus);
+      background: var(--color-bg-input-focus);
+      box-shadow: var(--shadow-input-focus);
+    }
 
     .ic {
-      position: absolute;
-      left: 10px;
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
       color: var(--color-text-muted);
       font-size: 14px;
-      pointer-events: none;
+      flex-shrink: 0;
     }
 
     input {
-      width: 100%;
-      padding: 0.625rem 0.875rem 0.625rem 32px;
-      border: 1px solid var(--color-border-light);
-      border-radius: var(--radius-md);
-      background: var(--color-bg-surface);
+      flex: 1;
+      min-width: 0;
+      padding: 0.5rem 0.75rem 0.5rem 0;
+      border: none;
+      background: transparent;
       color: var(--color-text-main);
-      font-size: 14px;
+      font-size: var(--font-size-base);
+      font-family: inherit;
       outline: none;
-      transition: border-color 0.2s;
 
-      &:focus { border-color: var(--color-accent-primary); }
-      &:disabled { opacity: 0.6; cursor: not-allowed; }
+      &::placeholder { color: var(--color-placeholder); }
+      &:disabled { cursor: not-allowed; color: var(--color-text-muted); }
     }
   }
 }

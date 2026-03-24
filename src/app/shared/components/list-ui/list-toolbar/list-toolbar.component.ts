@@ -1,74 +1,52 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { IconComponent } from '../../../../core/layout/atoms/icon/icon.component';
-import { BadgeComponent } from '../../../../core/layout/atoms/badge/badge.component';
 import { CustomSelectComponent, SelectOption } from '../../ui/custom-select/custom-select.component';
+import { FieldInputComponent } from '../../ui/field-input/field-input';
+import { SegmentedToggleComponent } from '../../ui/segmented-toggle/segmented-toggle';
+import { FilterButtonComponent } from '../../ui/filter-button/filter-button';
 
 @Component({
     selector: 'app-list-toolbar',
     standalone: true,
-    imports: [CommonModule, FormsModule, IconComponent, BadgeComponent, CustomSelectComponent],
+    imports: [CommonModule, FormsModule, CustomSelectComponent, FieldInputComponent, SegmentedToggleComponent, FilterButtonComponent],
     template: `
     <div class="list-toolbar">
       
       <div class="list-toolbar__search">
-        <app-icon name="lucideSearch" class="list-toolbar__search-icon"></app-icon>
-        <input 
-          type="text" 
-          [placeholder]="searchPlaceholder" 
-          class="list-toolbar__search-input"
+        <app-field-input
+          prefixIcon="lucideSearch"
+          [placeholder]="searchPlaceholder"
+          size="sm"
           [ngModel]="searchQuery"
           (ngModelChange)="onSearchChange($event)"
-        >
+        ></app-field-input>
       </div>
 
       <div class="list-toolbar__actions">
-        <div class="list-toolbar__filter-actions">
-          <button 
-            class="btn btn-ghost btn-sm list-toolbar__filter-btn" 
-            [class.is-active]="activeFiltersCount > 0"
-            (click)="openFilters.emit()"
-          >
-            <app-icon name="lucideFilter"></app-icon>
-            {{ filtersText }}
-            @if (activeFiltersCount > 0) {
-              <app-badge [text]="activeFiltersCount.toString()" variant="primary"></app-badge>
-            }
-          </button>
-
-          @if (activeFiltersCount > 0) {
-            <button class="btn btn-ghost btn-sm btn-danger-text list-toolbar__clear-btn" (click)="clearFilters.emit()">
-              {{ clearFiltersText }}
-            </button>
-          }
-        </div>
+        <app-filter-button
+          [label]="filtersText"
+          [clearLabel]="clearFiltersText"
+          [activeCount]="activeFiltersCount"
+          (openFilters)="openFilters.emit()"
+          (clearFilters)="clearFilters.emit()"
+        ></app-filter-button>
 
         <div class="list-toolbar__sort">
           <app-custom-select
             [options]="sortOptions"
             [value]="selectedSort"
+            size="sm"
             (valueChange)="onSortChange($event)"
           ></app-custom-select>
         </div>
 
         @if (showViewToggle) {
-          <div class="list-toolbar__view-toggle">
-            <button 
-              class="list-toolbar__segmented-btn" 
-              [class.list-toolbar__segmented-btn--active]="viewMode === 'grid'"
-              (click)="viewModeChange.emit('grid')"
-            >
-              <app-icon name="lucideGrid"></app-icon>
-            </button>
-            <button 
-              class="list-toolbar__segmented-btn"
-              [class.list-toolbar__segmented-btn--active]="viewMode === 'list'"
-              (click)="viewModeChange.emit('list')"
-            >
-              <app-icon name="lucideList"></app-icon>
-            </button>
-          </div>
+          <app-segmented-toggle
+            [options]="viewToggleOptions"
+            [value]="viewMode"
+            (valueChange)="viewModeChange.emit($event === 'grid' ? 'grid' : 'list')"
+          />
         }
       </div>
     </div>
@@ -91,6 +69,11 @@ export class ListToolbarComponent {
         { label: 'Nombre (Z-A)', value: 'name:desc' },
         { label: 'Ingresos (Mayor a Menor)', value: 'revenue:desc' },
         { label: 'Ingresos (Menor a Mayor)', value: 'revenue:asc' }
+    ];
+
+    viewToggleOptions = [
+        { value: 'grid', icon: 'lucideGrid', label: 'Vista cuadrícula' },
+        { value: 'list', icon: 'lucideList', label: 'Vista lista' },
     ];
 
     @Output() searchChange = new EventEmitter<string>();

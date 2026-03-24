@@ -1,10 +1,20 @@
+export type AttributeDataType = 'TEXT' | 'NUMBER' | 'COLOR' | 'BOOLEAN';
+
+export const DATA_TYPE_LABELS: Record<AttributeDataType, string> = {
+  TEXT: 'Texto',
+  NUMBER: 'Numérico',
+  COLOR: 'Color',
+  BOOLEAN: 'Sí/No',
+};
+
 export interface AttributeType {
   id: string;
   name: string;
-  dataType: 'TEXT' | 'NUMBER' | 'COLOR' | 'BOOLEAN';
+  dataType: AttributeDataType;
   unit?: string;
   isSystem: boolean;
   isActive: boolean;
+  createdAt?: string;
 }
 
 export interface CategoryAttributeType {

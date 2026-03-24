@@ -16,32 +16,6 @@
     font-weight: var(--font-weight-medium);
     color: var(--color-text-main);
   }
-
-  input[type="text"],
-  textarea {
-    width: 100%;
-    padding: 0.625rem 0.875rem;
-    border: 1px solid var(--color-border-light);
-    border-radius: var(--radius-md);
-    background: var(--color-bg-surface);
-    font-size: var(--font-size-base);
-    color: var(--color-text-main);
-    transition: var(--transition-fast);
-
-    &::placeholder {
-      color: var(--color-text-muted);
-    }
-
-    &:focus {
-      outline: none;
-      border-color: var(--color-accent-primary);
-      box-shadow: 0 0 0 2px rgba(17, 17, 17, 0.05);
-    }
-  }
-
-  textarea {
-    resize: vertical;
-  }
 }
 
 .form-row {
@@ -110,11 +84,6 @@
   }
 }
 
-.form-group small {
-  font-size: 11px;
-  color: var(--color-text-muted);
-}
-
 .puntos-list {
   display: flex;
   flex-direction: column;
@@ -123,62 +92,47 @@
 
 .punto-card {
   border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   overflow: hidden;
 }
 
-.punto-row {
-  display: grid;
-  grid-template-columns: 100px 1fr auto;
+.punto-header {
+  display: flex;
+  align-items: flex-end;
   gap: 0.75rem;
-  align-items: end;
-  padding: 0.75rem 0.75rem 0.5rem;
+  padding: 0.75rem;
+}
 
-  .punto-codigo input,
-  .punto-desc input {
-    width: 100%;
-    padding: 0.625rem 0.875rem;
-    border: 1px solid var(--color-border-light);
-    border-radius: var(--radius-md);
-    background: var(--color-bg-surface);
-    font-size: var(--font-size-base);
-    color: var(--color-text-main);
-    transition: var(--transition-fast);
-
-    &::placeholder { color: var(--color-text-muted); }
-    &:focus {
-      outline: none;
-      border-color: var(--color-accent-primary);
-      box-shadow: 0 0 0 2px rgba(17, 17, 17, 0.05);
-    }
-  }
-
-  input[readonly] {
-    background: var(--color-bg-hover);
-    color: var(--color-text-soft);
-    border-color: var(--color-border-subtle);
-    cursor: default;
-  }
+.punto-fields {
+  display: grid;
+  grid-template-columns: 100px 1fr;
+  gap: 0.75rem;
+  flex: 1;
+  min-width: 0;
 }
 
 .btn-remove-punto {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 34px;
+  height: 34px;
   border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--color-text-muted);
   cursor: pointer;
   transition: var(--transition-fast);
   flex-shrink: 0;
 
+  &--first {
+    margin-top: 22px;
+  }
+
   &:hover {
     border-color: var(--color-danger-text);
     color: var(--color-danger-text);
-    background: rgba(239, 68, 68, 0.05);
+    background: var(--color-danger-bg);
   }
 }
 
@@ -199,7 +153,9 @@
   cursor: pointer;
   transition: var(--transition-fast);
 
-  ng-icon { font-size: 13px; }
+  ng-icon {
+    font-size: 13px;
+  }
 
   &:hover {
     color: var(--color-text-soft);
@@ -207,95 +163,54 @@
   }
 }
 
-.secuenciales-form {
-  padding: 0.5rem 0.75rem 0.75rem;
+.secuenciales-grid {
   display: flex;
   flex-direction: column;
   gap: 0;
+  padding: 0;
   border-top: 1px solid var(--color-border-subtle);
+  background: var(--color-bg-subtle);
 }
 
-.sec-row-form {
+.sec-item {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 5px 0;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
   border-bottom: 1px solid var(--color-border-subtle);
 
-  &:last-child { border-bottom: none; }
-
-  .sec-label {
-    font-size: 12px;
-    color: var(--color-text-soft);
-    font-weight: 500;
-    flex: 1;
+  &:last-child {
+    border-bottom: none;
   }
 
-  .sec-input-wrap {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 3px;
-  }
-
-  .sec-preview {
-    font-size: 10px;
-    font-family: monospace;
-    letter-spacing: 0.08em;
-    color: var(--color-text-muted);
-  }
-
-  input[type="number"] {
-    width: 90px;
-    padding: 0.35rem 0.625rem;
-    border: 1px solid var(--color-border-light);
-    border-radius: var(--radius-md);
-    background: var(--color-bg-surface);
-    font-size: 13px;
-    color: var(--color-text-main);
-    text-align: right;
-    transition: var(--transition-fast);
-
-    &:focus {
-      outline: none;
-      border-color: var(--color-accent-primary);
-      box-shadow: 0 0 0 2px rgba(17, 17, 17, 0.05);
-    }
-
-    &::-webkit-inner-spin-button,
-    &::-webkit-outer-spin-button { opacity: 0.4; }
+  app-field-input {
+    // width: 90px;
+    flex-shrink: 0;
   }
 }
 
-.btn-add-punto {
+.sec-info {
   display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 0.5rem 0.875rem;
-  border: 1px dashed var(--color-border-light);
-  border-radius: var(--radius-md);
-  background: transparent;
+  align-items: baseline;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.sec-label {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-soft);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sec-preview {
+  font-size: 10px;
+  font-family: monospace;
+  letter-spacing: 0.08em;
   color: var(--color-text-muted);
-  font-size: var(--font-size-sm);
-  font-weight: 600;
-  cursor: pointer;
-  transition: var(--transition-fast);
-  width: 100%;
-  justify-content: center;
-
-  ng-icon { font-size: 14px; }
-
-  &:hover:not(:disabled) {
-    border-color: var(--color-accent-primary);
-    color: var(--color-accent-primary);
-    background: var(--color-bg-hover);
-  }
-
-  &:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
 }
 
 .required {

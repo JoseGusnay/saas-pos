@@ -198,80 +198,184 @@ import { SkeletonComponent } from '../skeleton/skeleton';
       position: relative;
       width: 100%;
 
+      /* ── Trigger (aligned with CustomSelect) ──────────── */
       &__trigger {
         width: 100%;
-        min-height: 34px;
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 0 12px;
+        padding: 0.5rem 0.75rem;
         background: var(--color-bg-surface);
         border: 1px solid var(--color-border-light);
-        border-radius: var(--radius-md);
-        font-size: 14px;
+        border-radius: var(--radius-sm);
+        font-size: var(--font-size-base);
+        font-weight: var(--font-weight-medium);
         color: var(--color-text-muted);
         cursor: pointer;
-        transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s;
+        transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
         text-align: left;
         gap: 8px;
+        font-family: inherit;
+        line-height: var(--line-height-normal);
 
         &.has-value {
           color: var(--color-text-main);
-          font-weight: 500;
         }
 
         &:hover:not(:disabled) {
-          border-color: var(--color-border-subtle);
-          background: var(--color-bg-hover);
+          border-color: var(--color-border-hover);
+        }
+
+        &:focus-visible {
+          outline: none;
+          border-color: var(--color-border-focus);
+          background: var(--color-bg-input-focus);
+          box-shadow: var(--shadow-input-focus);
         }
 
         &:disabled {
-          opacity: 0.6;
+          opacity: 0.5;
           cursor: not-allowed;
-        }
-
-        .selected-chips {
-           background: var(--color-primary);
-           color: white;
-           padding: 2px 8px;
-           border-radius: 12px;
-           font-size: 11px;
-           font-weight: 600;
         }
       }
 
+      &.is-open .search-select__trigger {
+        border-color: var(--color-border-focus);
+        background: var(--color-bg-input-focus);
+        box-shadow: var(--shadow-input-focus);
+      }
+
+      /* ── Desktop dropdown ─────────────────────────────── */
       &__menu {
-        /* position y coordenadas vienen del signal menuStyle() */
         background: var(--color-bg-surface);
-        border: 1px solid var(--color-border-subtle);
+        border: 1px solid var(--color-border-light);
         border-radius: var(--radius-lg);
-        box-shadow: var(--shadow-xl);
+        box-shadow: var(--shadow-lg);
         overflow: hidden;
         display: flex;
         flex-direction: column;
         max-height: 320px;
-        backdrop-filter: blur(10px);
       }
     }
 
+    /* ── Trigger actions (clear + chevron) ────────────── */
+    .trigger-actions {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    .selected-label {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .selected-chips {
+      display: inline-flex;
+      align-items: center;
+      background: var(--color-bg-active);
+      color: var(--color-accent-interactive);
+      padding: 2px 8px;
+      border-radius: 99px;
+      font-size: var(--font-size-xs);
+      font-weight: var(--font-weight-semibold);
+    }
+
+    .chip-count { white-space: nowrap; }
+
+    .chevron-icon {
+      font-size: 14px;
+      color: var(--color-text-muted);
+      transition: transform var(--transition-fast);
+      flex-shrink: 0;
+    }
+
+    .is-open .chevron-icon { transform: rotate(180deg); }
+
+    .clear-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      border: none;
+      border-radius: 50%;
+      padding: 0;
+      background: var(--color-bg-subtle);
+      color: var(--color-text-muted);
+      cursor: pointer;
+      font-size: 10px;
+      transition: background var(--transition-fast);
+      &:hover { background: var(--color-border-light); color: var(--color-text-main); }
+    }
+
+    /* ── Search box ──────────────────────────────────── */
     .search-box {
       display: flex;
       align-items: center;
       padding: 10px 12px;
-      border-bottom: 1px solid var(--color-border-light);
-      position: relative;
-      background: var(--color-bg-light);
-      .search-icon { color: var(--color-text-muted); font-size: 14px; margin-right: 8px; }
-      input { flex: 1; background: transparent; border: none; outline: none; font-size: 13px; color: var(--color-text-main); }
-      .spin-icon { animation: spin 1s linear infinite; color: var(--color-primary); }
+      border-bottom: 1px solid var(--color-border-subtle);
+      gap: 8px;
+      flex-shrink: 0;
+
+      .search-icon { color: var(--color-text-muted); font-size: 14px; flex-shrink: 0; }
+
+      input {
+        flex: 1;
+        background: transparent;
+        border: none;
+        outline: none;
+        font-size: var(--font-size-sm);
+        color: var(--color-text-main);
+        font-family: inherit;
+        &::placeholder { color: var(--color-text-muted); }
+      }
+
+      .spin-icon { animation: spin 1s linear infinite; color: var(--color-accent-interactive); font-size: 14px; }
     }
 
-    .options-container { flex: 1; overflow-y: auto; padding: 4px; display: flex; flex-direction: column; gap: 2px; -webkit-overflow-scrolling: touch; }
+    .clear-search {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 20px;
+      height: 20px;
+      border: none;
+      border-radius: 50%;
+      padding: 0;
+      background: var(--color-bg-subtle);
+      color: var(--color-text-muted);
+      cursor: pointer;
+      font-size: 10px;
+      flex-shrink: 0;
+      transition: background var(--transition-fast);
+      &:hover { background: var(--color-border-light); color: var(--color-text-main); }
+    }
+
+    /* ── Options list ─────────────────────────────────── */
+    .options-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 4px;
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      -webkit-overflow-scrolling: touch;
+
+      &::-webkit-scrollbar { width: 4px; }
+      &::-webkit-scrollbar-track { background: transparent; }
+      &::-webkit-scrollbar-thumb { background: var(--color-border-light); border-radius: 10px; }
+      &::-webkit-scrollbar-thumb:hover { background: var(--color-text-muted); }
+    }
 
     .empty-results {
       display: flex; flex-direction: column; align-items: center; gap: 8px;
       padding: 32px 20px; color: var(--color-text-muted); text-align: center;
-      ng-icon { font-size: 28px; opacity: 0.4; }
+      ng-icon { font-size: 28px; opacity: 0.35; }
       span { font-size: var(--font-size-sm); }
     }
 
@@ -281,23 +385,36 @@ import { SkeletonComponent } from '../skeleton/skeleton';
       .spin { animation: spin 1s linear infinite; }
     }
 
+    /* ── Option item ──────────────────────────────────── */
     .option-item {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 8px 10px;
-      border-radius: var(--radius-md);
+      padding: 7px 10px;
+      border-radius: var(--radius-sm);
       cursor: pointer;
-      transition: background-color 0.15s;
+      transition: background var(--transition-fast), color var(--transition-fast);
 
       &:hover { background: var(--color-bg-hover); }
-      &.is-selected { background: rgba(var(--color-primary-rgb), 0.08); .label { color: var(--color-primary); font-weight: 600; } }
 
-      .option-content { display: flex; align-items: center; gap: 12px; min-width: 0; }
-      .option-text { display: flex; flex-direction: column; min-width: 0; .label { font-size: 13px; } .description { font-size: 11px; color: var(--color-text-muted); } }
-      .check-icon { font-size: 14px; color: var(--color-primary); }
+      &.is-selected {
+        background: var(--color-bg-active);
+        .label { color: var(--color-accent-interactive); font-weight: var(--font-weight-semibold); }
+      }
+
+      .option-content { display: flex; align-items: center; gap: 10px; min-width: 0; }
+      .option-icon { font-size: 16px; color: var(--color-text-muted); flex-shrink: 0; }
+
+      .option-text {
+        display: flex; flex-direction: column; min-width: 0;
+        .label { font-size: var(--font-size-sm); color: var(--color-text-soft); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .description { font-size: var(--font-size-xs); color: var(--color-text-muted); margin-top: 1px; }
+      }
+
+      .check-icon { font-size: 14px; color: var(--color-accent-interactive); flex-shrink: 0; }
     }
 
+    /* ── Create new button ────────────────────────────── */
     .create-new-btn {
       display: flex;
       align-items: center;
@@ -306,40 +423,48 @@ import { SkeletonComponent } from '../skeleton/skeleton';
       width: 100%;
       padding: 10px 12px;
       border: none;
-      border-top: 1px solid var(--color-border-light);
-      background: var(--color-bg-canvas);
-      color: var(--color-accent-primary);
-      font-size: 13px;
-      font-weight: 500;
+      border-top: 1px solid var(--color-border-subtle);
+      background: var(--color-bg-surface);
+      color: var(--color-accent-interactive);
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-medium);
       font-family: inherit;
       cursor: pointer;
-      transition: background 0.15s;
+      transition: background var(--transition-fast);
       flex-shrink: 0;
       border-radius: 0 0 var(--radius-lg) var(--radius-lg);
 
       ng-icon { font-size: 14px; }
-
-      &:hover { background: rgba(79, 70, 229, 0.06); }
+      &:hover { background: var(--color-bg-hover); }
     }
 
-    /* ── Mobile Bottom Sheet ──────────────────────────────── */
+    /* ── Mobile Bottom Sheet ──────────────────────────── */
     .ss-backdrop {
       position: fixed; inset: 0; background: rgba(0, 0, 0, 0.4);
-      z-index: 9998; animation: ssFadeIn 0.2s ease;
+      z-index: var(--z-sheet); animation: ssFadeIn 0.2s ease;
     }
 
     .ss-sheet {
-      position: fixed; bottom: 0; left: 0; right: 0; z-index: 9999;
+      position: fixed; bottom: 0; left: 0; right: 0;
+      z-index: calc(var(--z-sheet) + 1);
       background: var(--color-bg-surface);
-      border-radius: 16px 16px 0 0;
+      border-radius: var(--radius-lg) var(--radius-lg) 0 0;
       max-height: 75vh;
       display: flex; flex-direction: column;
       animation: ssSheetUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      padding-bottom: env(safe-area-inset-bottom, 0);
 
       .search-box { border-radius: 0; }
       .options-container { flex: 1; max-height: none; }
-      .option-item { padding: 14px 20px; border-radius: 0; border-bottom: 1px solid var(--color-border-subtle); }
-      .option-item:last-child { border-bottom: none; }
+
+      .option-item {
+        padding: 14px 20px;
+        border-radius: 0;
+        border-bottom: 1px solid var(--color-border-subtle);
+        &:last-child { border-bottom: none; }
+        &.is-selected { background: var(--color-bg-active); }
+      }
+
       .create-new-btn { border-radius: 0; }
     }
 
@@ -350,30 +475,34 @@ import { SkeletonComponent } from '../skeleton/skeleton';
 
     .ss-sheet__header {
       display: flex; align-items: center; justify-content: space-between;
-      padding: 12px 20px 4px;
+      padding: 16px 20px 8px;
     }
 
     .ss-sheet__title {
-      font-size: var(--font-size-sm); font-weight: var(--font-weight-semibold);
+      font-size: var(--font-size-base); font-weight: var(--font-weight-semibold);
       color: var(--color-text-main);
     }
 
     .ss-sheet__close {
       display: flex; align-items: center; justify-content: center;
-      width: 28px; height: 28px; border: none; border-radius: 50%;
-      background: var(--color-bg-hover); color: var(--color-text-muted);
+      width: 30px; height: 30px; border: none; border-radius: 50%;
+      background: var(--color-bg-subtle); color: var(--color-text-muted);
       cursor: pointer; font-size: 14px;
-      &:hover { background: var(--color-border-light); }
+      transition: background var(--transition-fast);
+      &:hover { background: var(--color-border-light); color: var(--color-text-main); }
     }
+
+    /* ── Skeletons ────────────────────────────────────── */
+    .skeletons { padding: 4px; }
 
     @keyframes spin { from { transform: rotate(0); } to { transform: rotate(360deg); } }
     @keyframes slideInUp {
-      from { opacity: 0; transform: translateY(8px) scale(0.98); }
-      to { opacity: 1; transform: translateY(0) scale(1); }
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
     }
     @keyframes ssFadeIn { from { opacity: 0; } to { opacity: 1; } }
     @keyframes ssSheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-    .animation-slide-up { animation: slideInUp 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
+    .animation-slide-up { animation: slideInUp 0.15s ease-out; }
   `]
 })
 export class SearchSelectComponent implements AfterViewInit, ControlValueAccessor, OnDestroy {
@@ -500,6 +629,7 @@ export class SearchSelectComponent implements AfterViewInit, ControlValueAccesso
     this.isMobile.set(typeof window !== 'undefined' && window.innerWidth <= 768);
 
     if (!this.isMobile()) {
+      this._scrollOpenedAt = Date.now();
       document.addEventListener('scroll', this._scrollHandler, { capture: true, passive: true });
       const rect = this.containerElement?.nativeElement.getBoundingClientRect();
       if (rect) {
@@ -515,7 +645,7 @@ export class SearchSelectComponent implements AfterViewInit, ControlValueAccesso
             ? { bottom: `${window.innerHeight - rect.top + 4}px`, top: 'auto' }
             : { top: `${rect.bottom + 4}px`, bottom: 'auto' }),
           zIndex: '9999',
-          maxHeight,
+          maxHeight: maxHeight,
         });
       }
     } else {
@@ -632,10 +762,13 @@ export class SearchSelectComponent implements AfterViewInit, ControlValueAccesso
     }
   }
 
+  private _scrollOpenedAt = 0;
   private _scrollHandler = (e: Event) => {
     if (!this.isOpen()) return;
     // Ignorar scroll interno del propio dropdown
     if (this.containerElement?.nativeElement.contains(e.target as Node)) return;
+    // Ignorar scrolls que ocurren justo despues de abrir (reflow de modales/animaciones)
+    if (Date.now() - this._scrollOpenedAt < 150) return;
     this.close();
   };
 }

@@ -1,8 +1,7 @@
 import {
   Component,
-  Input,
-  Output,
-  EventEmitter,
+  input,
+  output,
   ChangeDetectionStrategy,
   signal,
   computed
@@ -17,9 +16,9 @@ import { lucideImage, lucideX, lucideUpload } from '@ng-icons/lucide';
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [provideIcons({ lucideImage, lucideX, lucideUpload })],
   template: `
-    <div class="iu" [class.iu--uploading]="isUploading" [class.iu--disabled]="disabled">
+    <div class="iu" [class.iu--uploading]="isUploading()" [class.iu--disabled]="disabled()">
       <label class="iu__drop" [for]="inputId">
-        @if (isUploading) {
+        @if (isUploading()) {
           <div class="iu__state iu__state--loading">
             <div class="iu__spinner"></div>
             <span>Subiendo imagen...</span>
@@ -41,7 +40,7 @@ import { lucideImage, lucideX, lucideUpload } from '@ng-icons/lucide';
         }
       </label>
 
-      @if (preview() && !isUploading) {
+      @if (preview() && !isUploading()) {
         <button
           type="button"
           class="iu__remove"
@@ -57,7 +56,7 @@ import { lucideImage, lucideX, lucideUpload } from '@ng-icons/lucide';
         type="file"
         accept="image/*"
         hidden
-        [disabled]="disabled || isUploading"
+        [disabled]="disabled() || isUploading()"
         (change)="onFileSelected($event)"
       >
     </div>
@@ -221,18 +220,18 @@ import { lucideImage, lucideX, lucideUpload } from '@ng-icons/lucide';
   `]
 })
 export class ImageUploadComponent {
-  @Input() previewUrl: string | null = null;
-  @Input() isUploading = false;
-  @Input() disabled = false;
+  previewUrl = input<string | null>(null);
+  isUploading = input(false);
+  disabled = input(false);
 
-  @Output() fileSelected = new EventEmitter<File>();
-  @Output() removed = new EventEmitter<void>();
+  fileSelected = output<File>();
+  removed = output<void>();
 
   readonly inputId = `img-upload-${Math.random().toString(36).slice(2, 8)}`;
 
   private _localPreview = signal<string | null>(null);
 
-  preview = computed(() => this._localPreview() ?? this.previewUrl);
+  preview = computed(() => this._localPreview() ?? this.previewUrl());
 
   onFileSelected(event: Event) {
     const file = (event.target as HTMLInputElement).files?.[0];

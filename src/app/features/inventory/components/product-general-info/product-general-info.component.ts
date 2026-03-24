@@ -53,6 +53,7 @@ export class ProductGeneralInfoComponent {
   // ── Signal inputs ────────────────────────────────────────────────────────
   typePreset = input(false);
   isEditing = input(false);
+  productType = input<string>('PHYSICAL');
   showBrand = input(false);
   showSellable = input(true);
   showPurchasable = input(true);

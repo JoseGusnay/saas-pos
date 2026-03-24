@@ -177,8 +177,8 @@
       </div>
     </div>
   }
-  <div drawerFooter>
-    <button type="button" class="rb__drawer-btn" (click)="closeIngredientDrawer()">Listo</button>
+  <div drawerFooter class="drawer-footer-actions">
+    <app-form-button label="Listo" variant="secondary" type="button" [fullWidth]="false" (click)="closeIngredientDrawer()"></app-form-button>
   </div>
 </app-drawer>
 
@@ -206,12 +206,8 @@
       Esta acción no se puede deshacer.
     </p>
   </div>
-  <div modalFooter class="rb-confirm__actions">
-    <button type="button" class="rb-confirm__btn rb-confirm__btn--cancel" (click)="cancelDisableRecipe()">
-      Cancelar
-    </button>
-    <button type="button" class="rb-confirm__btn rb-confirm__btn--confirm" (click)="confirmDisableRecipe()">
-      Sí, desactivar
-    </button>
+  <div modalFooter class="modal-footer-actions">
+    <app-form-button label="Cancelar" variant="secondary" type="button" [fullWidth]="false" (click)="cancelDisableRecipe()"></app-form-button>
+    <app-form-button label="Sí, desactivar" variant="danger" type="button" [fullWidth]="false" (click)="confirmDisableRecipe()"></app-form-button>
   </div>
 </app-modal>

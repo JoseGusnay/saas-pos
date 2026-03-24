@@ -1,42 +1,50 @@
-import { Component, Input, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, Input, OnInit, output, signal } from '@angular/core';
 import { QueryNodeComponent } from '../../../../../../core/components/query-node/query-node.component';
 import { FilterNode, FilterGroup, FilterField } from '../../../../../../core/models/query-builder.models';
-import { ModalService } from '../../../../../../core/components/modal/modal.service';
 
 @Component({
   selector: 'app-user-advanced-filters',
   standalone: true,
-  imports: [CommonModule, QueryNodeComponent],
+  imports: [QueryNodeComponent],
   template: `
-    <div class="users-page__query-body">
-        <app-query-node 
-            [node]="$any(filterTree())" 
-            [availableFields]="availableFields" 
-            [isRoot]="true"
-            (nodeChange)="onFilterTreeChange($any($event))">
-        </app-query-node>
+    <div class="filters-body">
+      <app-query-node
+        [node]="$any(localTree())"
+        [availableFields]="availableFields"
+        [isRoot]="true"
+        (nodeChange)="onLocalChange($any($event))"
+      ></app-query-node>
     </div>
   `,
   styles: [`
-    @use "../../../../../../../styles/abstracts/mixins" as *;
-
-    .users-page {
-        &__query-body {
-            min-height: 250px;
-        }
-    }
+    .filters-body { min-height: 250px; }
   `]
 })
-export class UserAdvancedFilters {
-  // Inputs Dinámicos que recibiremos de NgComponentOutlet
+export class UserAdvancedFilters implements OnInit {
   @Input({ required: true }) filterTree!: () => FilterGroup;
   @Input({ required: true }) availableFields!: FilterField[];
-  @Input({ required: true }) onFilterTreeChange!: (newTree: FilterGroup) => void;
 
-  modalService = inject(ModalService);
+  applied = output<FilterGroup>();
 
-  closeModal() {
-    this.modalService.close();
+  localTree = signal<FilterGroup>({
+    type: 'group', id: 'root', logicalOperator: 'AND', children: []
+  });
+
+  ngOnInit() {
+    this.localTree.set(structuredClone(this.filterTree()));
+  }
+
+  refresh() {
+    this.localTree.set(structuredClone(this.filterTree()));
+  }
+
+  onLocalChange(node: FilterNode) {
+    if (node.type === 'group') {
+      this.localTree.set(node as FilterGroup);
+    }
+  }
+
+  applyFilters() {
+    this.applied.emit(this.localTree());
   }
 }

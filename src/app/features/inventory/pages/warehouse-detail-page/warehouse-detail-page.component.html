@@ -1,0 +1,362 @@
+<!-- Loading -->
+@if (isLoading() && !warehouse()) {
+  <div class="wdp__loading">
+    <app-spinner></app-spinner>
+    <span>Cargando bodega...</span>
+  </div>
+}
+
+<!-- Error -->
+@if (error()) {
+  <div class="wdp__error">
+    <ng-icon name="lucideAlertCircle"></ng-icon>
+    <h3>No se pudo cargar la bodega</h3>
+    <p>{{ error() }}</p>
+    <button class="wdp__error-btn" (click)="goBack()">
+      <ng-icon name="lucideArrowLeft"></ng-icon>
+      Volver a Bodegas
+    </button>
+  </div>
+}
+
+<!-- Main Content -->
+@if (warehouse(); as wh) {
+  <div class="wdp">
+
+    <!-- ═══ HEADER ═══ -->
+    <header class="wdp__header">
+      <div class="wdp__header-top">
+        <nav class="wdp__breadcrumb">
+          <app-back-button (clicked)="goBack()"></app-back-button>
+          <span class="wdp__breadcrumb-sep">/</span>
+          <a class="wdp__breadcrumb-link" (click)="goBack()">Bodegas</a>
+          <span class="wdp__breadcrumb-sep">/</span>
+          <span class="wdp__breadcrumb-current">{{ wh.name }}</span>
+        </nav>
+
+        <div class="wdp__header-actions">
+          <app-form-button
+            label="Historial"
+            icon="lucideHistory"
+            variant="ghost"
+            type="button"
+            [fullWidth]="false"
+            (click)="onShowHistory()"
+          ></app-form-button>
+          <app-form-button
+            label="Editar"
+            icon="lucidePencil"
+            variant="secondary"
+            type="button"
+            [fullWidth]="false"
+            (click)="onEditWarehouse()"
+          ></app-form-button>
+        </div>
+      </div>
+
+      <!-- Hero -->
+      <div class="wdp__hero">
+        <div class="wdp__hero-icon">
+          <ng-icon name="lucideWarehouse"></ng-icon>
+        </div>
+        <div class="wdp__hero-content">
+          <div class="wdp__hero-title-row">
+            <h1 class="wdp__hero-name">{{ wh.name }}</h1>
+            <div class="wdp__hero-badges">
+              @if (wh.isDefault) {
+                <span class="wdp__badge wdp__badge--main">Principal</span>
+              }
+              <span class="wdp__badge" [class.wdp__badge--active]="wh.isActive" [class.wdp__badge--inactive]="!wh.isActive">
+                {{ wh.isActive ? 'Activa' : 'Inactiva' }}
+              </span>
+            </div>
+          </div>
+          <p class="wdp__hero-desc">{{ wh.description || 'Sin descripcion' }}</p>
+        </div>
+      </div>
+
+      <!-- Info cards -->
+      <div class="wdp__info-cards">
+        <div class="wdp__info-card">
+          <div class="wdp__info-card-icon">
+            <ng-icon name="lucideGrid3x3"></ng-icon>
+          </div>
+          <div class="wdp__info-card-content">
+            <span class="wdp__info-card-label">Ubicaciones</span>
+            <span class="wdp__info-card-value">{{ wh.hasLocations ? 'Habilitadas' : 'No habilitadas' }}</span>
+          </div>
+        </div>
+        <div class="wdp__info-card">
+          <div class="wdp__info-card-icon">
+            <ng-icon name="lucideInfo"></ng-icon>
+          </div>
+          <div class="wdp__info-card-content">
+            <span class="wdp__info-card-label">Creada</span>
+            <span class="wdp__info-card-value">{{ wh.createdAt | date:'mediumDate' }}</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- ═══ LOCATIONS SECTION ═══ -->
+      <section class="wdp__section">
+        <div class="wdp__section-header">
+          <h2 class="wdp__section-title">
+            <ng-icon name="lucideGrid3x3"></ng-icon>
+            Ubicaciones
+            @if (locations().length > 0) {
+              <span class="wdp__section-count">{{ locations().length }}</span>
+            }
+          </h2>
+          <div class="wdp__section-actions">
+            <app-form-button
+              label="Copiar desde otra bodega"
+              icon="lucideCopy"
+              variant="ghost"
+              type="button"
+              [fullWidth]="false"
+              (click)="openCopyModal()"
+            ></app-form-button>
+            <app-form-button
+              label="Nueva Ubicacion"
+              icon="lucidePlus"
+              variant="primary"
+              type="button"
+              [fullWidth]="false"
+              (click)="onAddLocation()"
+            ></app-form-button>
+          </div>
+        </div>
+
+        <!-- Search -->
+        @if (locations().length > 3) {
+          <div class="wdp__loc-search">
+            <ng-icon name="lucideSearch"></ng-icon>
+            <input
+              type="text"
+              placeholder="Buscar ubicacion..."
+              [value]="locationSearch()"
+              (input)="locationSearch.set($any($event.target).value)"
+            />
+          </div>
+        }
+
+        <!-- Locations list -->
+        @if (locationsLoading()) {
+          <div class="wdp__loc-grid">
+            @for (n of [1,2,3]; track n) {
+              <div class="wdp__loc-card wdp__loc-card--skeleton">
+                <app-skeleton width="120px" height="1rem"></app-skeleton>
+                <app-skeleton width="60px" height="0.75rem"></app-skeleton>
+              </div>
+            }
+          </div>
+        } @else if (filteredLocations().length > 0) {
+          <div class="wdp__loc-grid">
+            @for (loc of filteredLocations(); track loc.id) {
+              <div class="wdp__loc-card" [class.wdp__loc-card--inactive]="!loc.isActive">
+                <div class="wdp__loc-card-main">
+                  <span class="wdp__loc-name">{{ loc.name }}</span>
+                  @if (loc.code) {
+                    <span class="wdp__loc-code">{{ loc.code }}</span>
+                  }
+                </div>
+                <div class="wdp__loc-card-meta">
+                  <span class="wdp__loc-status" [class.active]="loc.isActive" [class.inactive]="!loc.isActive">
+                    {{ loc.isActive ? 'Activa' : 'Inactiva' }}
+                  </span>
+                  <app-actions-menu
+                    [actions]="locationActions"
+                    (actionClick)="handleLocationAction($event, loc)"
+                  ></app-actions-menu>
+                </div>
+              </div>
+            }
+          </div>
+        } @else if (locationSearch()) {
+          <app-empty-state
+            icon="lucideSearch"
+            title="Sin resultados"
+            description="No se encontraron ubicaciones con ese criterio."
+            actionLabel="Limpiar busqueda"
+            (action)="locationSearch.set('')"
+          ></app-empty-state>
+        } @else {
+          <app-empty-state
+            icon="lucideGrid3x3"
+            title="Sin ubicaciones"
+            description="Esta bodega aun no tiene ubicaciones configuradas."
+            actionLabel="Crear primera ubicacion"
+            (action)="onAddLocation()"
+          ></app-empty-state>
+        }
+      </section>
+  </div>
+
+  <!-- ═══ DRAWERS & MODALS ═══ -->
+
+  <!-- Edit Warehouse -->
+  <app-drawer
+    [isOpen]="isEditDrawerOpen()"
+    title="Editar Bodega"
+    [allowClose]="!(warehouseForm?.isSubmitting)"
+    (close)="onEditDrawerClose()"
+    size="md"
+  >
+    <div drawerBody>
+      <app-warehouse-form
+        #warehouseForm
+        (saved)="onWarehouseSaved()"
+        (cancelled)="onEditDrawerClose()"
+      ></app-warehouse-form>
+    </div>
+    <div drawerFooter class="drawer-footer-actions">
+      <app-form-button label="Cancelar" variant="secondary" type="button"
+        [disabled]="!!(warehouseForm?.isSubmitting)" (click)="onEditDrawerClose()"></app-form-button>
+      <app-form-button label="Actualizar Bodega" loadingLabel="Guardando..." icon="lucideSave"
+        [loading]="!!(warehouseForm?.isSubmitting)" [disabled]="warehouseForm?.form?.invalid ?? false"
+        (click)="warehouseForm?.onSubmit()"></app-form-button>
+    </div>
+  </app-drawer>
+
+  <!-- Add/Edit Location -->
+  <app-drawer
+    [isOpen]="isLocationDrawerOpen()"
+    [title]="isEditingLocation() ? 'Editar Ubicacion' : 'Nueva Ubicacion'"
+    [allowClose]="!(locationForm?.isSubmitting)"
+    (close)="onLocationDrawerClose()"
+    size="sm"
+  >
+    <div drawerBody>
+      <app-location-form
+        #locationForm
+        [warehouseId]="wh.id"
+        (saved)="onLocationSaved()"
+        (cancelled)="onLocationDrawerClose()"
+      ></app-location-form>
+    </div>
+    <div drawerFooter class="drawer-footer-actions">
+      <app-form-button label="Cancelar" variant="secondary" type="button"
+        [disabled]="!!(locationForm?.isSubmitting)" (click)="onLocationDrawerClose()"></app-form-button>
+      <app-form-button
+        [label]="isEditingLocation() ? 'Actualizar' : 'Crear Ubicacion'"
+        loadingLabel="Guardando..." icon="lucideSave"
+        [loading]="!!(locationForm?.isSubmitting)" [disabled]="locationForm?.form?.invalid ?? false"
+        (click)="locationForm?.onSubmit()"></app-form-button>
+    </div>
+  </app-drawer>
+
+  <!-- History -->
+  <app-drawer
+    [isOpen]="isHistoryOpen()"
+    title="Historial de Cambios"
+    (close)="isHistoryOpen.set(false)"
+  >
+    <div drawerBody class="history-container">
+      @if (isHistoryLoading()) {
+        <div class="history-loading">
+          <app-spinner></app-spinner>
+          <span>Cargando historial...</span>
+        </div>
+      } @else {
+        <app-dateline [items]="mappedLogs()"></app-dateline>
+      }
+    </div>
+  </app-drawer>
+
+  <!-- Confirm close unsaved -->
+  <app-modal
+    [isOpen]="isConfirmCloseOpen()"
+    title="Cambios sin guardar"
+    size="sm"
+    (close)="isConfirmCloseOpen.set(false)"
+  >
+    <div modalBody>Tienes cambios sin guardar. ¿Deseas salir? Se perderan los datos ingresados.</div>
+    <div modalFooter class="modal-footer-actions">
+      <app-form-button label="Continuar editando" variant="ghost" type="button" [fullWidth]="false"
+        (click)="isConfirmCloseOpen.set(false)"></app-form-button>
+      <app-form-button label="Salir sin guardar" variant="danger" type="button" [fullWidth]="false"
+        (click)="forceCloseEditDrawer(); forceCloseLocationDrawer()"></app-form-button>
+    </div>
+  </app-modal>
+
+  <!-- Delete location confirm -->
+  <app-modal
+    [isOpen]="isDeleteLocationModalOpen()"
+    title="Confirmar eliminacion"
+    size="sm"
+    [allowClose]="!isDeletingLocation()"
+    (close)="cancelDeleteLocation()"
+  >
+    <div modalBody>
+      ¿Eliminar la ubicacion <strong>"{{ locationToDelete()?.name }}"</strong>?
+      Esta accion no se puede deshacer.
+    </div>
+    <div modalFooter class="modal-footer-actions">
+      <app-form-button label="Cancelar" variant="ghost" type="button" [fullWidth]="false"
+        [disabled]="isDeletingLocation()" (click)="cancelDeleteLocation()"></app-form-button>
+      <app-form-button label="Eliminar" loadingLabel="Eliminando..." variant="danger" type="button"
+        [fullWidth]="false" [loading]="isDeletingLocation()" (click)="confirmDeleteLocation()"></app-form-button>
+    </div>
+  </app-modal>
+
+  <!-- Copy locations modal -->
+  <app-modal
+    [isOpen]="isCopyModalOpen()"
+    title="Copiar ubicaciones"
+    size="sm"
+    [allowClose]="!isCopying()"
+    (close)="isCopyModalOpen.set(false)"
+  >
+    <div modalBody>
+      <p class="copy-modal__desc">Selecciona la bodega de donde copiar las ubicaciones activas.</p>
+
+      @if (isLoadingWarehouses()) {
+        <div class="copy-modal__loading">
+          <app-spinner></app-spinner>
+        </div>
+      } @else if (availableWarehouses().length === 0) {
+        <p class="copy-modal__empty">No hay otras bodegas disponibles.</p>
+      } @else {
+        @if (availableWarehouses().length > 3) {
+          <div class="wdp__loc-search" style="margin-bottom: 8px">
+            <ng-icon name="lucideSearch"></ng-icon>
+            <input
+              type="text"
+              placeholder="Buscar bodega..."
+              [value]="warehouseSearchQuery()"
+              (input)="warehouseSearchQuery.set($any($event.target).value)"
+            />
+          </div>
+        }
+        <div class="copy-modal__list">
+          @for (w of filteredWarehouses(); track w.id) {
+            <button
+              type="button"
+              class="copy-modal__item"
+              [class.copy-modal__item--selected]="selectedSourceWarehouseId() === w.id"
+              (click)="selectedSourceWarehouseId.set(w.id)"
+            >
+              <div class="copy-modal__item-info">
+                <span class="copy-modal__item-name">{{ w.name }}</span>
+                @if (w.isDefault) {
+                  <span class="copy-modal__item-badge">Principal</span>
+                }
+              </div>
+              @if (selectedSourceWarehouseId() === w.id) {
+                <ng-icon name="lucideCheck" class="copy-modal__item-check"></ng-icon>
+              }
+            </button>
+          }
+        </div>
+      }
+    </div>
+    <div modalFooter class="modal-footer-actions">
+      <app-form-button label="Cancelar" variant="ghost" type="button" [fullWidth]="false"
+        [disabled]="isCopying()" (click)="isCopyModalOpen.set(false)"></app-form-button>
+      <app-form-button label="Copiar ubicaciones" loadingLabel="Copiando..." icon="lucideCopy"
+        [fullWidth]="false" [loading]="isCopying()" [disabled]="!selectedSourceWarehouseId()"
+        (click)="confirmCopy()"></app-form-button>
+    </div>
+  </app-modal>
+}

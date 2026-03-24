@@ -60,7 +60,7 @@ export interface DataCardAvatar {
       </header>
 
       <div class="data-card__body">
-        @for (detail of details; track detail.text) {
+        @for (detail of details; track $index) {
           <div class="data-card__detail">
             <app-icon [name]="detail.icon"></app-icon>
             <span>{{ detail.text }}</span>

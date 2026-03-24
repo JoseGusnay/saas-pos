@@ -87,7 +87,7 @@ export class UserImportModalComponent {
         this.step.set(2);
       },
       error: (error) => {
-        this.toastService.show(`Error al leer el archivo: ${error.message}`, 'error');
+        this.toastService.error(`Error al leer el archivo: ${error.message}`);
         this.isProcessing.set(false);
       }
     });
@@ -154,9 +154,9 @@ export class UserImportModalComponent {
     this.usersService.bulkImport(users).subscribe({
       next: (res: { imported: number; errors: string[] }) => {
         if (res.errors.length > 0) {
-          this.toastService.show(`Se importaron ${res.imported} usuarios, pero hubo algunos errores.`, 'error');
+          this.toastService.error(`Se importaron ${res.imported} usuarios, pero hubo algunos errores.`);
         } else {
-          this.toastService.show(`¡Éxito! Se importaron ${res.imported} usuarios correctamente.`, 'success');
+          this.toastService.success(`Se importaron ${res.imported} usuarios correctamente.`);
         }
         this.isProcessing.set(false);
         this.isOpen.set(false);
@@ -164,7 +164,7 @@ export class UserImportModalComponent {
       },
       error: (err: any) => {
         const msg = err.error?.message || 'Error en la importación masiva';
-        this.toastService.show(msg, 'error');
+        this.toastService.error(msg);
         this.isProcessing.set(false);
       }
     });

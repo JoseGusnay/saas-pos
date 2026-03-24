@@ -23,14 +23,14 @@ import { CommonModule } from '@angular/common';
   template: `
     <aside 
       class="sidebar" 
-      [class.sidebar--collapsed]="layout.isSidebarCollapsed()"
+      [class.sidebar--collapsed]="layout.isVisuallyCollapsed()"
       [class.sidebar--mobile-open]="layout.isMobileMenuOpen()"
     >
       
       <!-- Toggle Button Flotante -->
       <button 
         class="sidebar__toggle" 
-        [class.sidebar__toggle--rotated]="layout.isSidebarCollapsed()"
+        [class.sidebar__toggle--rotated]="layout.isVisuallyCollapsed()"
         (click)="layout.toggleSidebar()"
       >
         <app-icon name="lucideChevronLeft"></app-icon>

@@ -4,317 +4,92 @@ import {
   signal,
   computed,
   Output,
-  EventEmitter
+  EventEmitter,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import {
-  ReactiveFormsModule,
-  FormBuilder,
-  Validators
-} from '@angular/forms';
-import { NgIconComponent, provideIcons } from '@ng-icons/core';
-import {
-  lucideTag,
-  lucideInfo,
-  lucideFolder,
-  lucideCheck,
-  lucideX,
-  lucideChevronDown
-} from '@ng-icons/lucide';
+import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { map, Observable } from 'rxjs';
 import { CategoryService } from '../../../../core/services/category.service';
 import { ToastService } from '../../../../core/services/toast.service';
 import { Category } from '../../../../core/models/category.models';
+import { FieldInputComponent } from '../../../../shared/components/ui/field-input/field-input';
+import { FieldToggleComponent } from '../../../../shared/components/ui/field-toggle/field-toggle';
 import { SearchSelectComponent } from '../../../../shared/components/ui/search-select/search-select';
 import { SearchSelectOption } from '../../../../shared/models/search-select.models';
-import { map, Observable } from 'rxjs';
 
 @Component({
   selector: 'app-category-form',
   standalone: true,
-  imports: [
-    CommonModule,
-    ReactiveFormsModule,
-    NgIconComponent,
-    SearchSelectComponent
-  ],
-  providers: [
-    provideIcons({
-      lucideTag,
-      lucideInfo,
-      lucideFolder,
-      lucideCheck,
-      lucideX,
-      lucideChevronDown
-    })
-  ],
+  imports: [ReactiveFormsModule, FieldInputComponent, FieldToggleComponent, SearchSelectComponent],
   template: `
-    <div class="category-form-container">
-      <form [formGroup]="categoryForm" (ngSubmit)="onSubmit()" class="premium-form">
-        <div class="form-sections">
-          <!-- Información Básica -->
-          <section class="form-section">
-            <h3 class="section-title">Información Básica</h3>
-            
-            <div class="form-grid">
-              <div class="form-group full-width">
-                <label for="name">Nombre de la Categoría</label>
-                <div class="input-wrapper" [class.invalid]="categoryForm.get('name')?.invalid && categoryForm.get('name')?.touched">
-                  <ng-icon name="lucideTag" class="input-icon"></ng-icon>
-                  <input 
-                    id="name" 
-                    type="text" 
-                    formControlName="name" 
-                    placeholder="Ej. Bebidas, Electrónicos..."
-                  >
-                  @if (categoryForm.get('name')?.valid && categoryForm.get('name')?.value) {
-                    <ng-icon name="lucideCheck" class="status-icon success"></ng-icon>
-                  }
-                </div>
-                @if (categoryForm.get('name')?.invalid && categoryForm.get('name')?.touched) {
-                  <small class="error-msg">El nombre es requerido</small>
-                }
-              </div>
+    <form [formGroup]="categoryForm" class="cf">
 
-              <div class="form-group full-width">
-                <label for="description">Descripción</label>
-                <div class="input-wrapper textarea" [class.invalid]="categoryForm.get('description')?.invalid && categoryForm.get('description')?.touched">
-                  <ng-icon name="lucideInfo" class="input-icon"></ng-icon>
-                  <textarea 
-                    id="description" 
-                    formControlName="description" 
-                    placeholder="Describe brevemente esta categoría..."
-                    rows="3"
-                  ></textarea>
-                </div>
-              </div>
-            </div>
-          </section>
+      <app-field-input
+        label="Nombre de la Categoría"
+        formControlName="name"
+        placeholder="Ej. Bebidas, Electrónicos..."
+        [required]="true"
+        [errorMessages]="{ required: 'El nombre es requerido' }"
+      ></app-field-input>
 
-          <!-- Jerarquía -->
-          <section class="form-section">
-            <h3 class="section-title">Jerarquía</h3>
+      <app-field-input
+        label="Descripción"
+        formControlName="description"
+        placeholder="Describe brevemente esta categoría..."
+        [optional]="true"
+        [multiline]="true"
+        [rows]="3"
+      ></app-field-input>
 
-            <div class="form-grid">
-              <div class="form-group full-width">
-                <label for="parentId">Categoría Padre</label>
-                <app-search-select
-                  formControlName="parentId"
-                  placeholder="Ninguna (Categoría Raíz)"
-                  searchPlaceholder="Buscar categoría padre..."
-                  [searchFn]="searchCategoriesFn.bind(this)"
-                  [initialOption]="parentCategoryOption()"
-                ></app-search-select>
-                <p class="input-hint">Opcional. Permite organizar categorías en sub-niveles.</p>
-              </div>
-            </div>
-          </section>
+      <div class="cf__field">
+        <label class="cf__label">Categoría Padre</label>
+        <app-search-select
+          formControlName="parentId"
+          placeholder="Ninguna (Categoría Raíz)"
+          searchPlaceholder="Buscar categoría padre..."
+          [searchFn]="searchCategoriesFn.bind(this)"
+          [initialOption]="parentCategoryOption()"
+        ></app-search-select>
+        <span class="cf__hint">Opcional. Permite organizar categorías en sub-niveles.</span>
+      </div>
 
-          <!-- Estado -->
-          <section class="form-section">
-            <h3 class="section-title">Ajustes y Estado</h3>
-            <div class="form-switches">
-              <div class="form-check">
-                <input id="isActive" type="checkbox" formControlName="isActive">
-                <label for="isActive">Categoría activa</label>
-              </div>
-            </div>
-          </section>
-        </div>
-      </form>
-    </div>
+      <div class="cf__divider"><span>Estado</span></div>
+
+      <app-field-toggle
+        label="Categoría activa"
+        description="Las categorías inactivas no se muestran en el catálogo"
+        formControlName="isActive"
+      ></app-field-toggle>
+
+    </form>
   `,
   styles: [`
-    .category-form-container {
-      background: var(--color-bg-surface);
-      width: 100%;
-      box-sizing: border-box;
-    }
-
-    .premium-form {
+    .cf {
       display: flex;
       flex-direction: column;
-      gap: 1.5rem;
-      width: 100%;
-
-      .form-sections {
-        display: flex;
-        flex-direction: column;
-        gap: 1.5rem;
-      }
-
-      .form-section {
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-        width: 100%;
-
-        .section-title {
-          font-size: var(--font-size-xs);
-          font-weight: 700;
-          color: var(--color-text-muted);
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-          border-bottom: 1px solid var(--color-border-subtle);
-          padding-bottom: 0.5rem;
-          margin-bottom: 0.5rem;
-        }
-      }
-
-      .form-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 1rem;
-
-        @media (max-width: 480px) {
-          grid-template-columns: 1fr;
-        }
-
-        .full-width {
-          grid-column: span 2;
-        }
-      }
-
-      .form-group {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-
-        label {
-          font-size: var(--font-size-sm);
-          font-weight: var(--font-weight-medium);
-          color: var(--color-text-main);
-        }
-
-        .input-wrapper {
-          position: relative;
-          display: block;
-          width: 100%;
-
-          .input-icon {
-            position: absolute;
-            left: 0.875rem;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--color-text-muted);
-            font-size: 1rem;
-            z-index: 5;
-            pointer-events: none;
-          }
-
-          input, textarea, select {
-            width: 100%;
-            box-sizing: border-box;
-            padding: 0.625rem 0.875rem 0.625rem 2.5rem;
-            background: var(--color-bg-surface);
-            border: 1px solid var(--color-border-light);
-            border-radius: var(--radius-md);
-            font-size: var(--font-size-base);
-            color: var(--color-text-main);
-            transition: var(--transition-fast);
-            outline: none;
-            display: block;
-
-            &:focus {
-              border-color: var(--color-accent-primary);
-              box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.1);
-            }
-
-            &::placeholder {
-              color: var(--color-text-muted);
-            }
-          }
-
-          &.invalid {
-            input, textarea, select {
-              border-color: var(--color-danger);
-              background: rgba(var(--color-danger-rgb), 0.02);
-            }
-          }
-
-          textarea {
-            resize: vertical;
-            min-height: 80px;
-          }
-
-          .status-icon {
-            position: absolute;
-            right: 0.875rem;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 1rem;
-            z-index: 5;
-
-            &.success { color: var(--color-success); }
-            &.error { color: var(--color-danger); }
-          }
-
-          &.select-wrapper {
-            select {
-              appearance: none;
-              cursor: pointer;
-              padding-right: 2.5rem;
-            }
-
-            .select-chevron {
-              position: absolute;
-              right: 0.875rem;
-              top: 50%;
-              transform: translateY(-50%);
-              pointer-events: none;
-              color: var(--color-text-muted);
-              font-size: 1rem;
-              z-index: 5;
-            }
-          }
-        }
-
-        .input-hint {
-          font-size: 0.75rem;
-          color: var(--color-text-muted);
-          margin-top: 0.25rem;
-        }
-      }
-
-      .form-switches {
-        display: flex;
-        flex-direction: column;
-        gap: 0.75rem;
-        padding-top: 0.5rem;
-      }
-
-      .form-check {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        cursor: pointer;
-
-        input[type="checkbox"] {
-          width: 1rem;
-          height: 1rem;
-          accent-color: var(--color-accent-primary);
-          cursor: pointer;
-        }
-
-        label {
-          font-size: var(--font-size-base);
-          color: var(--color-text-main);
-          cursor: pointer;
-        }
-      }
-
-      .error-msg {
-        font-size: var(--font-size-xs);
-        color: var(--color-danger-text);
-        margin-top: 0.25rem;
-        display: block;
-      }
+      gap: 1.25rem;
     }
-
-    @media (max-width: 640px) {
-      .premium-form .form-grid {
-        grid-template-columns: 1fr;
-        .full-width { grid-column: span 1; }
-      }
+    .cf__field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .cf__label {
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-medium);
+      color: var(--color-text-main);
+    }
+    .cf__hint {
+      font-size: 0.75rem;
+      color: var(--color-text-muted);
+    }
+    .cf__divider {
+      font-size: var(--font-size-xs);
+      font-weight: 700;
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-bottom: 1px solid var(--color-border-subtle);
+      padding-bottom: 0.5rem;
     }
   `]
 })
@@ -334,17 +109,17 @@ export class CategoryFormComponent {
     name: ['', [Validators.required]],
     description: [''],
     parentId: [null as string | null],
-    isActive: [true]
+    isActive: [true],
   });
 
-  searchCategoriesFn(query: string, page: number): Observable<{ data: SearchSelectOption[], hasMore: boolean }> {
+  searchCategoriesFn(query: string, page: number): Observable<{ data: SearchSelectOption[]; hasMore: boolean }> {
     return this.categoryService.findAll({
       search: query,
       page,
       limit: 15,
       filterModel: {
-        status: { filterType: 'text', type: 'equals', filter: 'ACTIVE' }
-      }
+        status: { filterType: 'text', type: 'equals', filter: 'ACTIVE' },
+      },
     }).pipe(
       map(res => {
         const currentId = this.editingCategoryId();
@@ -355,9 +130,9 @@ export class CategoryFormComponent {
               label: c.name,
               value: c.id,
               description: c.description ?? undefined,
-              icon: 'lucideFolder'
+              icon: 'lucideFolder',
             })),
-          hasMore: res.data.length === 15
+          hasMore: res.data.length === 15,
         };
       })
     );
@@ -365,13 +140,12 @@ export class CategoryFormComponent {
 
   setCategory(category: Category) {
     this.category.set(category);
-    
-    // Si tiene padre, preparamos la opción para el select (evita mostrar el ID)
+
     if (category.parent) {
       this.parentCategoryOption.set({
         label: category.parent.name,
         value: category.parent.id,
-        icon: 'lucideFolder'
+        icon: 'lucideFolder',
       });
     } else {
       this.parentCategoryOption.set(undefined);
@@ -381,16 +155,16 @@ export class CategoryFormComponent {
       name: category.name,
       description: category.description,
       parentId: category.parentId,
-      isActive: category.status === 'ACTIVE'
+      isActive: category.status === 'ACTIVE',
     });
+    this.categoryForm.markAsPristine();
   }
 
   resetForm() {
     this.category.set(null);
     this.parentCategoryOption.set(undefined);
-    this.categoryForm.reset({
-      isActive: true
-    });
+    this.categoryForm.reset({ isActive: true });
+    this.categoryForm.markAsPristine();
   }
 
   onSubmit() {
@@ -403,12 +177,11 @@ export class CategoryFormComponent {
     const data = this.categoryForm.value;
     const id = this.editingCategoryId();
 
-    // Ensure types match Category interface (no nulls for required fields)
     const cleanData: any = {
       name: data.name || '',
       description: data.description ?? undefined,
       parentId: (data.parentId === 'null' || !data.parentId) ? undefined : data.parentId,
-      status: data.isActive ? 'ACTIVE' : 'INACTIVE'
+      status: data.isActive ? 'ACTIVE' : 'INACTIVE',
     };
 
     const request$ = id
@@ -422,10 +195,10 @@ export class CategoryFormComponent {
         this.isSubmitting.set(false);
         this.resetForm();
       },
-      error: () => {
-        this.toastService.error('Error al guardar la categoría');
+      error: (err) => {
+        this.toastService.error(err?.error?.error ?? `Error al ${id ? 'actualizar' : 'crear'} la categoría`);
         this.isSubmitting.set(false);
-      }
+      },
     });
   }
 

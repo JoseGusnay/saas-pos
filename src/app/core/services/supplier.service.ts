@@ -19,11 +19,12 @@ export class SupplierService {
     if (filters?.filterModel && Object.keys(filters.filterModel).length > 0) {
       params = params.set('filterModel', JSON.stringify(filters.filterModel));
     }
-    return this.http.get<any>(this.apiUrl, { params }).pipe(map(res => res?.data ?? res));
+    return this.http.get<any>(this.apiUrl, { params, withCredentials: true })
+      .pipe(map(res => res.data));
   }
 
   findAllSimple(): Observable<Supplier[]> {
-    return this.http.get<any>(`${this.apiUrl}/simple`).pipe(
+    return this.http.get<any>(`${this.apiUrl}/simple`, { withCredentials: true }).pipe(
       map(res => {
         const payload = res?.data ?? res;
         return Array.isArray(payload) ? payload : (payload?.data ?? []);
@@ -32,22 +33,32 @@ export class SupplierService {
   }
 
   findOne(id: string): Observable<Supplier> {
-    return this.http.get<any>(`${this.apiUrl}/${id}`).pipe(map(res => res?.data ?? res));
+    return this.http.get<any>(`${this.apiUrl}/${id}`, { withCredentials: true })
+      .pipe(map(res => res.data));
   }
 
   create(payload: CreateSupplierPayload): Observable<Supplier> {
-    return this.http.post<any>(this.apiUrl, payload).pipe(map(res => res?.data ?? res));
+    return this.http.post<any>(this.apiUrl, payload, { withCredentials: true })
+      .pipe(map(res => res.data));
   }
 
   update(id: string, payload: Partial<CreateSupplierPayload>): Observable<Supplier> {
-    return this.http.patch<any>(`${this.apiUrl}/${id}`, payload).pipe(map(res => res?.data ?? res));
+    return this.http.patch<any>(`${this.apiUrl}/${id}`, payload, { withCredentials: true })
+      .pipe(map(res => res.data));
   }
 
-  remove(id: string): Observable<any> {
-    return this.http.delete<any>(`${this.apiUrl}/${id}`).pipe(map(res => res?.data ?? res));
+  remove(id: string): Observable<{ success: boolean; message: string }> {
+    return this.http.delete<any>(`${this.apiUrl}/${id}`, { withCredentials: true })
+      .pipe(map(res => res.data));
   }
 
   getLogs(id: string): Observable<any[]> {
-    return this.http.get<any>(`${this.apiUrl}/${id}/logs`).pipe(map(res => res?.data ?? res));
+    return this.http.get<any>(`${this.apiUrl}/${id}/logs`, { withCredentials: true })
+      .pipe(map(res => res.data));
+  }
+
+  bulkImport(suppliers: Partial<Supplier>[]): Observable<{ count: number }> {
+    return this.http.post<any>(`${this.apiUrl}/bulk`, suppliers, { withCredentials: true })
+      .pipe(map(res => res.data));
   }
 }

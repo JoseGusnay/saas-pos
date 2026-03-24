@@ -85,6 +85,6 @@ Strict mode enabled with Angular strict templates. Target ES2022.
 
 - UI language is **Spanish** (routes, labels, breadcrumbs)
 - Component files use either `.component.ts` suffix or flat naming (e.g., `sidebar.ts`) — both patterns coexist
-- Backend controllers return data directly (no `{ data }` wrapper)
+- Backend has a global `TransformInterceptor` that wraps all responses in `{ statusCode, timestamp, path, data }`. Frontend services must use `.pipe(map(r => r.data))` to unwrap.
 - Singleton endpoints (per-tenant) use routes without `:id` (e.g., PATCH `/fiscal` not `/fiscal/:id`)
 - Use CSS variables from the theme system, not hardcoded colors

@@ -1,0 +1,8 @@
+<div class="wh-filters__query-body">
+    <app-query-node
+        [node]="$any(localTree())"
+        [availableFields]="availableFields"
+        [isRoot]="true"
+        (nodeChange)="onLocalChange($any($event))"
+    ></app-query-node>
+</div>

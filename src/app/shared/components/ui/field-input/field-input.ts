@@ -4,7 +4,7 @@ import {
 } from '@angular/core';
 import { ControlValueAccessor, NgControl, TouchedChangeEvent } from '@angular/forms';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
-import { lucideAlertCircle, lucideHash, lucideSearch, lucideUser, lucideMail, lucidePhone, lucideLock } from '@ng-icons/lucide';
+import { lucideAlertCircle, lucideHash, lucideSearch, lucideUser, lucideMail, lucidePhone, lucideLock, lucideGlobe } from '@ng-icons/lucide';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { filter, startWith } from 'rxjs';
 
@@ -27,9 +27,9 @@ let uid = 0;
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [NgIconComponent],
-  providers: [provideIcons({ lucideAlertCircle, lucideHash, lucideSearch, lucideUser, lucideMail, lucidePhone, lucideLock })],
+  providers: [provideIcons({ lucideAlertCircle, lucideHash, lucideSearch, lucideUser, lucideMail, lucidePhone, lucideLock, lucideGlobe })],
   template: `
-    <div class="fi" [class.fi--error]="showError()" [class.fi--disabled]="disabled">
+    <div class="fi" [class.fi--error]="showError()" [class.fi--disabled]="disabled" [class.fi--readonly]="readonly()" [class.fi--sm]="size() === 'sm'">
 
       @if (label()) {
         <label class="fi__label" [for]="inputId">
@@ -56,6 +56,7 @@ let uid = 0;
             [disabled]="disabled"
             [rows]="rows()"
             [value]="_value()"
+            [attr.maxlength]="maxlength() ?? null"
             class="fi__input fi__input--textarea"
             (input)="onInput($event)"
             (blur)="onBlur()"
@@ -66,7 +67,9 @@ let uid = 0;
             [type]="type()"
             [placeholder]="placeholder()"
             [disabled]="disabled"
+            [readOnly]="readonly()"
             [value]="_value()"
+            [attr.maxlength]="maxlength() ?? null"
             [attr.step]="step() ?? null"
             [attr.min]="min() ?? null"
             [attr.max]="max() ?? null"
@@ -95,6 +98,23 @@ let uid = 0;
       gap: 6px;
     }
 
+    .fi--sm .fi__wrap {
+      height: 32px;
+    }
+
+    .fi--sm .fi__icon-wrap {
+      padding: 0 0 0 10px;
+    }
+
+    .fi--sm .fi__input {
+      padding: 0 10px;
+      font-size: var(--font-size-sm);
+    }
+
+    .fi--sm .fi__wrap--prefix .fi__input {
+      padding-left: 8px;
+    }
+
     .fi__label {
       font-size: var(--font-size-sm);
       font-weight: var(--font-weight-medium);
@@ -103,6 +123,8 @@ let uid = 0;
       align-items: center;
       flex-wrap: wrap;
       gap: 4px;
+
+      .fi--disabled & { color: var(--color-text-soft); }
     }
 
     .fi__req      { color: var(--color-danger-text); font-size: inherit; }
@@ -117,23 +139,35 @@ let uid = 0;
       align-items: stretch;
       background: var(--color-bg-surface);
       border: 1px solid var(--color-border-light);
-      border-radius: var(--radius-md);
+      border-radius: var(--radius-sm);
       overflow: hidden;
-      transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+      transition: border-color var(--transition-fast), background-color var(--transition-fast), box-shadow var(--transition-fast);
+
+      &:hover:not(:focus-within) {
+        border-color: var(--color-border-hover);
+      }
 
       &:focus-within {
-        border-color: var(--color-accent-primary);
-        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.08);
+        border-color: var(--color-border-focus);
+        background: var(--color-bg-input-focus);
+        box-shadow: var(--shadow-input-focus);
       }
 
       .fi--error & {
         border-color: var(--color-danger-text);
-        &:focus-within { box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.08); }
+        &:hover:not(:focus-within) { border-color: var(--color-danger-text); }
+      }
+
+      .fi--readonly & {
+        background: var(--color-bg-hover);
+        &:hover:not(:focus-within) { border-color: var(--color-border-light); }
+        &:focus-within { box-shadow: none; background: var(--color-bg-hover); border-color: var(--color-border-light); }
       }
 
       .fi--disabled & {
-        background: var(--color-bg-canvas);
-        opacity: 0.6;
+        background: var(--color-bg-subtle);
+        border-color: var(--color-border-subtle);
+        pointer-events: none;
       }
     }
 
@@ -141,7 +175,7 @@ let uid = 0;
     .fi__icon-wrap {
       display: flex;
       align-items: center;
-      padding: 0 10px;
+      padding: 0 12px;
       color: var(--color-text-muted);
       flex-shrink: 0;
     }
@@ -152,7 +186,7 @@ let uid = 0;
     .fi__prefix {
       display: flex;
       align-items: center;
-      padding: 0 10px;
+      padding: 0 12px;
       font-size: var(--font-size-sm);
       font-weight: var(--font-weight-semibold);
       color: var(--color-text-muted);
@@ -167,7 +201,7 @@ let uid = 0;
     .fi__input {
       flex: 1;
       min-width: 0;
-      padding: 0.625rem 0.875rem;
+      padding: 0.5rem 0.75rem;
       border: none;
       background: transparent;
       font-size: var(--font-size-base);
@@ -177,9 +211,12 @@ let uid = 0;
 
       .fi__wrap--prefix & { padding-left: 8px; }
 
-      &::placeholder { color: var(--color-text-muted); }
+      &::placeholder { color: var(--color-placeholder); }
 
-      &:disabled { cursor: not-allowed; }
+      &:disabled {
+        cursor: not-allowed;
+        color: var(--color-text-muted);
+      }
 
       /* Ocultar spinners en number */
       &[type="number"] {
@@ -190,7 +227,7 @@ let uid = 0;
 
       /* Textarea */
       &--textarea {
-        padding: 0.625rem 0.875rem;
+        padding: 0.5rem 0.75rem;
         resize: vertical;
         line-height: 1.5;
       }
@@ -203,6 +240,7 @@ let uid = 0;
       gap: 4px;
       font-size: var(--font-size-xs);
       color: var(--color-danger-text);
+      animation: fi-slide-in var(--transition-fast);
 
       ng-icon { font-size: 12px; flex-shrink: 0; }
     }
@@ -210,6 +248,17 @@ let uid = 0;
     .fi__hint {
       font-size: var(--font-size-xs);
       color: var(--color-text-muted);
+    }
+
+    @keyframes fi-slide-in {
+      from {
+        opacity: 0;
+        transform: translateY(-4px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
   `]
 })
@@ -230,6 +279,9 @@ export class FieldInputComponent implements ControlValueAccessor, OnInit {
   optional      = input(false);
   multiline     = input(false);
   rows          = input(3);
+  readonly      = input(false);
+  size          = input<'default' | 'sm'>('default');
+  maxlength     = input<number | null>(null);
   step          = input<number | null>(null);
   min           = input<number | null>(null);
   max           = input<number | null>(null);
@@ -246,7 +298,6 @@ export class FieldInputComponent implements ControlValueAccessor, OnInit {
   // ── Error state (OnPush friendly) ─────────────────────────────────────────
   private _status  = signal<string>('VALID');
   private _touched = signal(false);
-
   showError = computed(() => {
     return this._status() !== 'VALID' && this._touched();
   });
@@ -258,7 +309,9 @@ export class FieldInputComponent implements ControlValueAccessor, OnInit {
     const overrides  = this.errorMessages();
     const firstKey   = Object.keys(errors)[0];
     if (overrides[firstKey]) return overrides[firstKey];
-    return ERROR_MAP[firstKey]?.(errors[firstKey]) ?? 'Valor inválido';
+    if (ERROR_MAP[firstKey]) return ERROR_MAP[firstKey](errors[firstKey]);
+    if (typeof errors[firstKey] === 'string') return errors[firstKey];
+    return 'Valor inválido';
   });
 
   constructor() {

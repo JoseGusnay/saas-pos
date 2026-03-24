@@ -28,7 +28,7 @@ export interface NavChild {
       <!-- Usamos CSS Grid transition para cierre y apertura fluidos -->
       <div 
         class="nav-group__grid-transition"
-        [class.nav-group__grid-transition--expanded]="isExpanded() && !layout.isSidebarCollapsed()"
+        [class.nav-group__grid-transition--expanded]="isExpanded() && !layout.isVisuallyCollapsed()"
       >
         <div class="nav-group__children">
           @for (child of children(); track child.route) {
@@ -63,7 +63,7 @@ export class NavGroupComponent {
 
   toggleGroup() {
     // Regla Vercel: Al estar colapsado el sidebar, si tocan un grupo, lo expandimos todo
-    if (this.layout.isSidebarCollapsed()) {
+    if (this.layout.isVisuallyCollapsed()) {
       this.layout.toggleSidebar();
       this.isExpanded.set(true);
       return;

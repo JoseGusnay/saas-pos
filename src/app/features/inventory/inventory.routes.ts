@@ -52,6 +52,16 @@ export const INVENTORY_ROUTES: Routes = [
     data: { breadcrumb: 'Editar Producto' }
   },
   {
+    path: 'bodegas',
+    loadComponent: () => import('./pages/warehouses-list/warehouses-list.component').then(m => m.WarehousesListComponent),
+    data: { breadcrumb: 'Bodegas' }
+  },
+  {
+    path: 'bodegas/:id',
+    loadComponent: () => import('./pages/warehouse-detail-page/warehouse-detail-page.component').then(m => m.WarehouseDetailPageComponent),
+    data: { breadcrumb: 'Detalle de Bodega' }
+  },
+  {
     path: 'stock',
     loadComponent: () => import('./pages/stock-list/stock-list.component').then(m => m.StockListComponent),
     data: { breadcrumb: 'Stock' }

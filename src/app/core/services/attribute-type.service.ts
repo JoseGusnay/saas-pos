@@ -43,14 +43,21 @@ export class AttributeTypeService {
       .pipe(map(res => res.data));
   }
 
-  remove(id: string): Observable<void> {
+  remove(id: string): Observable<{ success: boolean; message: string }> {
     return this.http
-      .delete<void>(`${this.baseUrl}/${id}`, { withCredentials: true });
+      .delete<any>(`${this.baseUrl}/${id}`, { withCredentials: true })
+      .pipe(map(res => res.data));
   }
 
   findLogs(id: string): Observable<any[]> {
     return this.http
       .get<any>(`${this.baseUrl}/${id}/logs`, { withCredentials: true })
-      .pipe(map(res => res.data ?? res));
+      .pipe(map(res => res.data));
+  }
+
+  bulkImport(attrs: Partial<AttributeType>[]): Observable<{ count: number }> {
+    return this.http
+      .post<any>(`${this.baseUrl}/bulk`, attrs, { withCredentials: true })
+      .pipe(map(res => res.data));
   }
 }

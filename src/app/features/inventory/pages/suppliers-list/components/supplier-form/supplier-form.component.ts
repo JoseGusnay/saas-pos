@@ -1,173 +1,238 @@
-import { Component, inject, output, signal, ChangeDetectorRef } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { Component, inject, output, signal } from '@angular/core';
+import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { SupplierService } from '../../../../../../core/services/supplier.service';
 import { Supplier, TipoIdentificacion, TipoContribuyente } from '../../../../../../core/models/supplier.models';
 import { ToastService } from '../../../../../../core/services/toast.service';
+import { FieldInputComponent } from '../../../../../../shared/components/ui/field-input/field-input';
+import { FieldToggleComponent } from '../../../../../../shared/components/ui/field-toggle/field-toggle';
+import { CustomSelectComponent, SelectOption } from '../../../../../../shared/components/ui/custom-select/custom-select.component';
 
 @Component({
   selector: 'app-supplier-form',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [ReactiveFormsModule, FieldInputComponent, FieldToggleComponent, CustomSelectComponent],
   template: `
-    <form class="supplier-form" (ngSubmit)="onSubmit()">
+    <form [formGroup]="supplierForm" class="sf">
 
-      <div class="form-section">
-        <h3 class="section-title">Identificación</h3>
-        <div class="form-group">
-          <label for="name">Razón Social / Nombre *</label>
-          <input id="name" type="text" class="form-control" [(ngModel)]="formData.name" name="name" placeholder="Nombre o razón social del proveedor" required />
+      <div class="sf__divider"><span>Identificación</span></div>
+
+      <app-field-input
+        label="Razón Social / Nombre"
+        formControlName="name"
+        placeholder="Nombre o razón social del proveedor"
+        [required]="true"
+        [errorMessages]="{ required: 'El nombre es requerido' }"
+      ></app-field-input>
+
+      <div class="sf__row">
+        <div class="sf__field">
+          <label class="sf__label">Tipo de Identificación</label>
+          <app-custom-select
+            [options]="tipoIdOptions"
+            [value]="supplierForm.get('tipoIdentificacion')!.value!"
+            (valueChange)="onSelectChange('tipoIdentificacion', $event)"
+          ></app-custom-select>
         </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label for="tipoIdentificacion">Tipo de Identificación</label>
-            <select id="tipoIdentificacion" class="form-control" [(ngModel)]="formData.tipoIdentificacion" name="tipoIdentificacion">
-              <option value="RUC">RUC</option>
-              <option value="CEDULA">Cédula</option>
-              <option value="PASAPORTE">Pasaporte</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="ruc">{{ formData.tipoIdentificacion === 'RUC' ? 'RUC' : formData.tipoIdentificacion === 'CEDULA' ? 'Cédula' : 'Pasaporte' }}</label>
-            <input id="ruc" type="text" class="form-control" [(ngModel)]="formData.ruc" name="ruc"
-              [placeholder]="formData.tipoIdentificacion === 'RUC' ? '0000000000001' : formData.tipoIdentificacion === 'CEDULA' ? '0000000000' : 'Número'"
-              [maxlength]="formData.tipoIdentificacion === 'RUC' ? 13 : formData.tipoIdentificacion === 'CEDULA' ? 10 : 20" />
-          </div>
+
+        <app-field-input
+          [label]="idDocLabel()"
+          formControlName="ruc"
+          [placeholder]="idDocPlaceholder()"
+          [optional]="true"
+        ></app-field-input>
+      </div>
+
+      <div class="sf__row">
+        <app-field-input
+          label="Correo electrónico"
+          formControlName="email"
+          type="email"
+          placeholder="proveedor&#64;ejemplo.com"
+          [optional]="true"
+        ></app-field-input>
+
+        <app-field-input
+          label="Teléfono"
+          formControlName="phone"
+          type="tel"
+          placeholder="+593 99 000 0000"
+          [optional]="true"
+        ></app-field-input>
+      </div>
+
+      <div class="sf__divider"><span>Datos Fiscales</span></div>
+
+      <div class="sf__row">
+        <div class="sf__field">
+          <label class="sf__label">Tipo de Contribuyente</label>
+          <app-custom-select
+            [options]="contribuyenteOptions"
+            [value]="supplierForm.get('tipoContribuyente')!.value!"
+            (valueChange)="onSelectChange('tipoContribuyente', $event)"
+          ></app-custom-select>
         </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label for="email">Correo electrónico</label>
-            <input id="email" type="email" class="form-control" [(ngModel)]="formData.email" name="email" placeholder="proveedor@ejemplo.com" />
-          </div>
-          <div class="form-group">
-            <label for="phone">Teléfono</label>
-            <input id="phone" type="text" class="form-control" [(ngModel)]="formData.phone" name="phone" placeholder="+593 99 000 0000" />
-          </div>
+
+        <div class="sf__field">
+          <label class="sf__label">Régimen RIMPE</label>
+          <app-custom-select
+            [options]="rimpeOptions"
+            [value]="supplierForm.get('regimenRimpe')!.value!"
+            (valueChange)="onSelectChange('regimenRimpe', $event)"
+          ></app-custom-select>
         </div>
       </div>
 
-      <div class="form-section">
-        <h3 class="section-title">Datos Fiscales</h3>
-        <div class="form-row">
-          <div class="form-group">
-            <label for="tipoContribuyente">Tipo de Contribuyente</label>
-            <select id="tipoContribuyente" class="form-control" [(ngModel)]="formData.tipoContribuyente" name="tipoContribuyente">
-              <option value="PERSONA_NATURAL">Persona Natural</option>
-              <option value="SOCIEDAD">Sociedad</option>
-              <option value="CONTRIBUYENTE_ESPECIAL">Contribuyente Especial</option>
-              <option value="ENTIDAD_PUBLICA">Entidad Pública</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="regimenRimpe">Régimen RIMPE</label>
-            <select id="regimenRimpe" class="form-control" [(ngModel)]="formData.regimenRimpe" name="regimenRimpe">
-              <option [ngValue]="''">No aplica</option>
-              <option value="POPULAR">Negocio Popular</option>
-              <option value="EMPRENDEDOR">Emprendedor</option>
-            </select>
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label for="tipoSujetoRetenido">Tipo Sujeto Retenido</label>
-            <select id="tipoSujetoRetenido" class="form-control" [(ngModel)]="formData.tipoSujetoRetenido" name="tipoSujetoRetenido">
-              <option value="01">Persona Natural</option>
-              <option value="02">Sociedad</option>
-            </select>
-          </div>
-          <div class="form-group" style="display:flex;align-items:flex-end;">
-          </div>
-        </div>
-        <div class="form-switches">
-          <div class="form-check">
-            <input id="obligadoContabilidad" type="checkbox" [(ngModel)]="formData.obligadoContabilidad" name="obligadoContabilidad" />
-            <label for="obligadoContabilidad">Obligado a llevar contabilidad</label>
-          </div>
-          <div class="form-check">
-            <input id="parteRelacionada" type="checkbox" [(ngModel)]="formData.parteRelacionada" name="parteRelacionada" />
-            <label for="parteRelacionada">Parte relacionada</label>
-          </div>
-        </div>
+      <div class="sf__field">
+        <label class="sf__label">Tipo Sujeto Retenido</label>
+        <app-custom-select
+          [options]="sujetoOptions"
+          [value]="supplierForm.get('tipoSujetoRetenido')!.value!"
+          (valueChange)="onSelectChange('tipoSujetoRetenido', $event)"
+        ></app-custom-select>
       </div>
 
-      <div class="form-section">
-        <h3 class="section-title">Contacto</h3>
-        <div class="form-group">
-          <label for="contactName">Persona de contacto</label>
-          <input id="contactName" type="text" class="form-control" [(ngModel)]="formData.contactName" name="contactName" placeholder="Nombre del contacto" />
-        </div>
-        <div class="form-group">
-          <label for="address">Dirección</label>
-          <textarea id="address" class="form-control" [(ngModel)]="formData.address" name="address" rows="2" placeholder="Dirección del proveedor"></textarea>
-        </div>
-      </div>
+      <app-field-toggle
+        label="Obligado a llevar contabilidad"
+        formControlName="obligadoContabilidad"
+      ></app-field-toggle>
 
-      <div class="form-section">
-        <h3 class="section-title">Estado</h3>
-        <div class="form-switches">
-          <div class="form-check">
-            <input id="isActive" type="checkbox" [(ngModel)]="formData.isActive" name="isActive" />
-            <label for="isActive">Proveedor activo</label>
-          </div>
-        </div>
-      </div>
+      <app-field-toggle
+        label="Parte relacionada"
+        formControlName="parteRelacionada"
+      ></app-field-toggle>
+
+      <div class="sf__divider"><span>Contacto</span></div>
+
+      <app-field-input
+        label="Persona de contacto"
+        formControlName="contactName"
+        placeholder="Nombre del contacto"
+        [optional]="true"
+      ></app-field-input>
+
+      <app-field-input
+        label="Dirección"
+        formControlName="address"
+        placeholder="Dirección del proveedor"
+        [optional]="true"
+        [multiline]="true"
+        [rows]="2"
+      ></app-field-input>
+
+      <div class="sf__divider"><span>Estado</span></div>
+
+      <app-field-toggle
+        label="Proveedor activo"
+        description="Los proveedores inactivos no aparecen en órdenes de compra"
+        formControlName="isActive"
+      ></app-field-toggle>
 
     </form>
   `,
   styles: [`
-    .supplier-form { display: flex; flex-direction: column; gap: 1.5rem; }
-    .form-section { display: flex; flex-direction: column; gap: 1rem; }
-    .section-title {
-      font-size: var(--font-size-xs); font-weight: 700; color: var(--color-text-muted);
-      text-transform: uppercase; letter-spacing: 0.05em;
-      border-bottom: 1px solid var(--color-border-subtle); padding-bottom: 0.5rem; margin: 0;
+    .sf {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
     }
-    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-    .form-group { display: flex; flex-direction: column; gap: 0.5rem; }
-    .form-group label { font-size: var(--font-size-sm); font-weight: var(--font-weight-medium); color: var(--color-text-main); }
-    .form-control {
-      width: 100%; box-sizing: border-box; padding: 0.625rem 1rem;
-      background: var(--color-bg-surface); border: 1px solid var(--color-border-light);
-      border-radius: var(--radius-md); font-size: var(--font-size-base);
-      color: var(--color-text-main); transition: var(--transition-fast); outline: none;
-      &::placeholder { color: var(--color-text-muted); }
-      &:focus { border-color: var(--color-accent-primary); box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.1); }
+    .sf__row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      @media (max-width: 480px) { grid-template-columns: 1fr; }
     }
-    .form-switches { padding-top: 0.25rem; }
-    .form-check {
-      display: flex; align-items: center; gap: 0.75rem; cursor: pointer;
-      input[type="checkbox"] { width: 1rem; height: 1rem; accent-color: var(--color-accent-primary); cursor: pointer; }
-      label { font-size: var(--font-size-base); color: var(--color-text-main); cursor: pointer; }
+    .sf__divider {
+      font-size: var(--font-size-xs);
+      font-weight: 700;
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-bottom: 1px solid var(--color-border-subtle);
+      padding-bottom: 0.5rem;
     }
-    @media (max-width: 480px) { .form-row { grid-template-columns: 1fr; } }
+    .sf__field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.375rem;
+    }
+    .sf__label {
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-medium);
+      color: var(--color-text-main);
+    }
   `]
 })
 export class SupplierFormComponent {
+  private fb = inject(FormBuilder);
   private supplierService = inject(SupplierService);
   private toastService = inject(ToastService);
-  private cdr = inject(ChangeDetectorRef);
 
   saved = output<void>();
   cancelled = output<void>();
 
   isSubmitting = signal(false);
   private editingId: string | null = null;
-  private pristineData = this.emptyForm();
 
-  formData = this.emptyForm();
+  readonly tipoIdOptions: SelectOption[] = [
+    { value: 'RUC', label: 'RUC' },
+    { value: 'CEDULA', label: 'Cédula' },
+    { value: 'PASAPORTE', label: 'Pasaporte' },
+  ];
 
-  private emptyForm() {
-    return {
-      name: '', tipoIdentificacion: 'RUC' as TipoIdentificacion, ruc: '',
-      tipoContribuyente: 'PERSONA_NATURAL' as TipoContribuyente, obligadoContabilidad: false, regimenRimpe: '' as string,
-      parteRelacionada: false, tipoSujetoRetenido: '01',
-      email: '', phone: '', contactName: '', address: '', isActive: true,
-    };
+  readonly contribuyenteOptions: SelectOption[] = [
+    { value: 'PERSONA_NATURAL', label: 'Persona Natural' },
+    { value: 'SOCIEDAD', label: 'Sociedad' },
+    { value: 'CONTRIBUYENTE_ESPECIAL', label: 'Contribuyente Especial' },
+    { value: 'ENTIDAD_PUBLICA', label: 'Entidad Pública' },
+  ];
+
+  readonly rimpeOptions: SelectOption[] = [
+    { value: '', label: 'No aplica' },
+    { value: 'POPULAR', label: 'Negocio Popular' },
+    { value: 'EMPRENDEDOR', label: 'Emprendedor' },
+  ];
+
+  readonly sujetoOptions: SelectOption[] = [
+    { value: '01', label: 'Persona Natural' },
+    { value: '02', label: 'Sociedad' },
+  ];
+
+  supplierForm = this.fb.group({
+    name:                 ['', Validators.required],
+    tipoIdentificacion:   ['RUC'],
+    ruc:                  [''],
+    tipoContribuyente:    ['PERSONA_NATURAL'],
+    obligadoContabilidad: [false],
+    regimenRimpe:         [''],
+    parteRelacionada:     [false],
+    tipoSujetoRetenido:   ['01'],
+    email:                [''],
+    phone:                [''],
+    contactName:          [''],
+    address:              [''],
+    isActive:             [true],
+  });
+
+  idDocLabel = signal('RUC');
+  idDocPlaceholder = signal('0000000000001');
+
+  constructor() {
+    this.supplierForm.get('tipoIdentificacion')!.valueChanges.subscribe(val => {
+      const labels: Record<string, string> = { RUC: 'RUC', CEDULA: 'Cédula', PASAPORTE: 'Pasaporte' };
+      const placeholders: Record<string, string> = { RUC: '0000000000001', CEDULA: '0000000000', PASAPORTE: 'Número' };
+      this.idDocLabel.set(labels[val!] ?? 'Documento');
+      this.idDocPlaceholder.set(placeholders[val!] ?? 'Número');
+    });
+  }
+
+  onSelectChange(field: string, value: string) {
+    this.supplierForm.get(field)!.setValue(value);
+    this.supplierForm.markAsDirty();
   }
 
   setSupplier(supplier: Supplier) {
     this.editingId = supplier.id;
-    const data = {
+    this.supplierForm.patchValue({
       name:                 supplier.name,
       tipoIdentificacion:   supplier.tipoIdentificacion ?? 'RUC',
       ruc:                  supplier.ruc ?? '',
@@ -181,56 +246,61 @@ export class SupplierFormComponent {
       contactName:          supplier.contactName ?? '',
       address:              supplier.address ?? '',
       isActive:             supplier.isActive,
-    };
-    this.formData = { ...data };
-    this.pristineData = { ...data };
-    this.cdr.detectChanges();
+    });
+    this.supplierForm.markAsPristine();
   }
 
   resetForm() {
     this.editingId = null;
-    this.formData = this.emptyForm();
-    this.pristineData = this.emptyForm();
+    this.supplierForm.reset({
+      tipoIdentificacion: 'RUC', tipoContribuyente: 'PERSONA_NATURAL',
+      tipoSujetoRetenido: '01', regimenRimpe: '', isActive: true,
+    });
+    this.supplierForm.markAsPristine();
   }
 
-  hasUnsavedChanges(): boolean {
-    return JSON.stringify(this.formData) !== JSON.stringify(this.pristineData);
-  }
+  hasUnsavedChanges(): boolean { return this.supplierForm.dirty; }
 
   onSubmit() {
-    if (!this.formData.name.trim()) { this.toastService.error('El nombre es requerido'); return; }
+    if (this.supplierForm.invalid || this.isSubmitting()) {
+      this.supplierForm.markAllAsTouched();
+      return;
+    }
+
     this.isSubmitting.set(true);
+    const v = this.supplierForm.getRawValue();
 
     const payload = {
-      name:                 this.formData.name.trim(),
-      tipoIdentificacion:   this.formData.tipoIdentificacion,
-      ruc:                  this.formData.ruc.trim() || undefined,
-      tipoContribuyente:    this.formData.tipoContribuyente,
-      obligadoContabilidad: this.formData.obligadoContabilidad,
-      regimenRimpe:         (this.formData.regimenRimpe || null) as any,
-      parteRelacionada:     this.formData.parteRelacionada,
-      tipoSujetoRetenido:   this.formData.tipoSujetoRetenido,
-      email:                this.formData.email.trim() || undefined,
-      phone:                this.formData.phone.trim() || undefined,
-      contactName:          this.formData.contactName.trim() || undefined,
-      address:              this.formData.address.trim() || undefined,
-      isActive:             this.formData.isActive,
+      name:                 v.name!.trim(),
+      tipoIdentificacion:   v.tipoIdentificacion as TipoIdentificacion,
+      ruc:                  v.ruc?.trim() || undefined,
+      tipoContribuyente:    v.tipoContribuyente as TipoContribuyente,
+      obligadoContabilidad: v.obligadoContabilidad ?? false,
+      regimenRimpe:         (v.regimenRimpe || null) as any,
+      parteRelacionada:     v.parteRelacionada ?? false,
+      tipoSujetoRetenido:   v.tipoSujetoRetenido!,
+      email:                v.email?.trim() || undefined,
+      phone:                v.phone?.trim() || undefined,
+      contactName:          v.contactName?.trim() || undefined,
+      address:              v.address?.trim() || undefined,
+      isActive:             v.isActive ?? true,
     };
 
-    const request = this.editingId
+    const req$ = this.editingId
       ? this.supplierService.update(this.editingId, payload)
       : this.supplierService.create(payload);
 
-    request.subscribe({
+    req$.subscribe({
       next: () => {
         this.toastService.success(this.editingId ? 'Proveedor actualizado' : 'Proveedor creado');
         this.isSubmitting.set(false);
         this.saved.emit();
+        this.resetForm();
       },
-      error: (err: any) => {
+      error: (err) => {
         this.toastService.error(err?.error?.message || 'Error al guardar');
         this.isSubmitting.set(false);
-      }
+      },
     });
   }
 }

@@ -8,6 +8,7 @@ import {
   lucideSliders, lucidePlus, lucideX, lucideCheck,
   lucideChevronDown, lucideSave, lucideSkipForward
 } from '@ng-icons/lucide';
+import { FormButtonComponent } from '../../../../shared/components/ui/form-button/form-button';
 import { AttributeTypeService } from '../../../../core/services/attribute-type.service';
 import { CategoryService } from '../../../../core/services/category.service';
 import { AttributeType, CategoryAttributeType } from '../../models/product.model';
@@ -17,7 +18,7 @@ type ConfigState = 'idle' | 'loading' | 'configured' | 'configuring';
 @Component({
   selector: 'app-attribute-configurator',
   standalone: true,
-  imports: [CommonModule, NgIconComponent],
+  imports: [CommonModule, NgIconComponent, FormButtonComponent],
   providers: [provideIcons({ lucideSliders, lucidePlus, lucideX, lucideCheck, lucideChevronDown, lucideSave, lucideSkipForward })],
   template: `
     @if (state() !== 'idle') {
@@ -110,23 +111,24 @@ type ConfigState = 'idle' | 'loading' | 'configured' | 'configuring';
 
               <!-- Acciones -->
               <div class="panel-actions">
-                <button type="button" class="btn-skip" (click)="skip()">
-                  <ng-icon name="lucideSkipForward"></ng-icon>
-                  Sin atributos
-                </button>
-                <button
+                <app-form-button
+                  label="Sin atributos"
+                  icon="lucideSkipForward"
+                  variant="ghost"
                   type="button"
-                  class="btn-confirm"
-                  [disabled]="selectedIds().size === 0 || isSaving()"
+                  [fullWidth]="false"
+                  (click)="skip()"
+                ></app-form-button>
+                <app-form-button
+                  label="Confirmar"
+                  icon="lucideCheck"
+                  type="button"
+                  [fullWidth]="false"
+                  [loading]="isSaving()"
+                  loadingLabel="Guardando..."
+                  [disabled]="selectedIds().size === 0"
                   (click)="confirm()"
-                >
-                  @if (isSaving()) {
-                    Guardando...
-                  } @else {
-                    <ng-icon name="lucideCheck"></ng-icon>
-                    Confirmar
-                  }
-                </button>
+                ></app-form-button>
               </div>
             }
           </div>
@@ -333,37 +335,6 @@ type ConfigState = 'idle' | 'loading' | 'configured' | 'configuring';
       justify-content: flex-end;
     }
 
-    .btn-skip {
-      display: flex;
-      align-items: center;
-      gap: 0.375rem;
-      background: transparent;
-      border: 1px solid var(--color-border-light);
-      border-radius: var(--radius-md);
-      padding: 0.5rem 1rem;
-      font-size: var(--font-size-sm);
-      color: var(--color-text-muted);
-      cursor: pointer;
-      transition: all 0.15s;
-      &:hover { background: var(--color-bg-hover); }
-    }
-
-    .btn-confirm {
-      display: flex;
-      align-items: center;
-      gap: 0.375rem;
-      background: var(--color-accent-primary);
-      border: none;
-      border-radius: var(--radius-md);
-      padding: 0.5rem 1.25rem;
-      font-size: var(--font-size-sm);
-      font-weight: 600;
-      color: var(--color-bg-canvas);
-      cursor: pointer;
-      transition: opacity 0.15s;
-      &:disabled { opacity: 0.5; cursor: not-allowed; }
-      &:not(:disabled):hover { opacity: 0.85; }
-    }
 
     .loading-row {
       display: flex;

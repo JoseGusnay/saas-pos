@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx ng:*)",
+      "Bash(ls:*)",
+      "Bash(xargs grep:*)",
+      "Bash(grep -rn \"WAREHOUSE\\\\|STOCK_\" 'C:\\\\Users\\\\usuario\\\\Documents\\\\proyects personal\\\\netsjs\\\\multitenant-backend\\\\src\\\\modules\\\\b2b\\\\rbac' --include=*.ts)",
+      "Bash(grep -v \"^--$\")"
+    ]
+  }
+}

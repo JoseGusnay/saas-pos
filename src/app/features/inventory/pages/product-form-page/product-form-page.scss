@@ -49,43 +49,6 @@
     }
   }
 
-  &__back-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 10px;
-    background: transparent;
-    border: none;
-    border-radius: var(--radius-md);
-    color: var(--color-text-muted);
-    font-size: var(--font-size-sm);
-    font-weight: var(--font-weight-medium);
-    cursor: pointer;
-    transition: var(--transition-fast);
-    white-space: nowrap;
-    font-family: inherit;
-    flex-shrink: 0;
-
-    ng-icon {
-      font-size: 15px;
-    }
-
-    &:hover:not(:disabled) {
-      background: var(--color-bg-hover);
-      color: var(--color-text-main);
-    }
-
-    &:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
-    }
-  }
-
-  &__back-label {
-    @media (max-width: 480px) {
-      display: none;
-    }
-  }
 
   &__title-group {
     display: flex;

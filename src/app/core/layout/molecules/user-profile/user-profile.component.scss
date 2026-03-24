@@ -11,6 +11,16 @@
     border-top: 1px solid var(--color-border-light);
     padding-top: 16px; // Espacio extra visual por el borde
 
+    // ESTADO COLAPSADO — solo avatar centrado
+    &--collapsed {
+        justify-content: center;
+        padding: 8px 0;
+
+        .user-profile__content {
+            justify-content: center;
+        }
+    }
+
     &__content {
         display: flex;
         align-items: center;

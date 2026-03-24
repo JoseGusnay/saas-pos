@@ -1,4 +1,4 @@
-import { Injectable, signal, effect } from '@angular/core';
+import { Injectable, signal, computed, effect } from '@angular/core';
 
 export type ThemeMode = 'light' | 'dark' | 'system';
 
@@ -8,10 +8,16 @@ export type ThemeMode = 'light' | 'dark' | 'system';
 export class LayoutService {
 
     // Signal central de la verdad para Vercel/Linear mode
-    isSidebarCollapsed = signal<boolean>(false);
+    isSidebarCollapsed = signal<boolean>(true);
 
     // Estado del Drawer Móvil (< 768px)
     isMobileMenuOpen = signal<boolean>(false);
+
+    // Detecta si estamos en viewport móvil
+    isMobile = signal<boolean>(false);
+
+    // En móvil el sidebar siempre se muestra expandido (drawer completo)
+    isVisuallyCollapsed = computed(() => this.isSidebarCollapsed() && !this.isMobile());
 
     // State para el Premium Dark Mode
     theme = signal<ThemeMode>('system');
@@ -39,17 +45,13 @@ export class LayoutService {
                 localStorage.setItem('saas-theme', currentTheme);
             });
 
-            // Reconciliación Responsiva Activa (Evita usar !important en SCSS)
-            const tabletQuery = window.matchMedia('(min-width: 769px) and (max-width: 1024px)');
-            if (tabletQuery.matches) {
-                this.isSidebarCollapsed.set(true); // Auto-Colapso inicial en Tablet
-            }
-
-            tabletQuery.addEventListener('change', (e) => {
+            // Detectar viewport móvil
+            const mobileQuery = window.matchMedia('(max-width: 768px)');
+            this.isMobile.set(mobileQuery.matches);
+            mobileQuery.addEventListener('change', (e) => {
+                this.isMobile.set(e.matches);
                 if (e.matches) {
-                    this.isSidebarCollapsed.set(true); // Entra a Tablet -> Colapsar
-                } else if (window.innerWidth > 1024) {
-                    this.isSidebarCollapsed.set(false); // Sube a Desktop -> Expandir
+                    this.closeMobileMenu();
                 }
             });
         }

@@ -1,0 +1,135 @@
+<app-modal
+  [isOpen]="isOpen()"
+  [title]="'Importación Masiva de Unidades'"
+  [allowClose]="!isProcessing()"
+  (close)="close()">
+
+  <div modalBody class="import-wizard">
+
+    @if (step() === 1) {
+      <div class="import-step">
+        <div class="import-instructions">
+          <p>Sigue estos pasos para cargar tus unidades correctamente:</p>
+          <ol>
+            <li>Descarga la plantilla oficial en formato CSV.</li>
+            <li>Completa los datos respetando las columnas obligatorias.</li>
+            <li>Sube el archivo aquí para previsualizar los datos.</li>
+          </ol>
+        </div>
+
+        <div class="import-actions-base">
+          <button type="button" class="btn btn-ghost" (click)="downloadTemplate()">
+            <ng-icon name="lucideDownload"></ng-icon>
+            Descargar Plantilla CSV
+          </button>
+        </div>
+
+        <div class="import-dropzone" (click)="fileInput.click()">
+          <input
+            #fileInput
+            type="file"
+            accept=".csv"
+            style="display: none"
+            (change)="onFileSelected($event)">
+
+          <div class="dropzone-content">
+            <div class="dropzone-icon">
+              <ng-icon name="lucideUploadCloud"></ng-icon>
+            </div>
+            <div class="dropzone-text">
+              <strong>Haz clic para subir</strong> o arrastra un archivo CSV
+            </div>
+            <div class="dropzone-subtext">Solo archivos .csv (Máx. 5MB)</div>
+          </div>
+        </div>
+      </div>
+    }
+
+    @if (step() === 2) {
+      <div class="import-step import-preview">
+        <div class="preview-header">
+          <div class="preview-stats">
+            <span class="badge badge-primary">{{ rows().length }} filas encontradas</span>
+            @if (hasErrors()) {
+              <span class="badge badge-danger">Existen errores de validación</span>
+            } @else {
+              <span class="badge badge-success">Todo listo para importar</span>
+            }
+          </div>
+          <p class="preview-info">
+            Revisa los datos antes de confirmar. Si hay filas marcadas en rojo, corrígelas en tu archivo y vuelve a subirlo.
+          </p>
+        </div>
+
+        <div class="table-container">
+          <table class="import-table">
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Abreviación</th>
+                <th>Tipo</th>
+                <th>Estado</th>
+                <th>Errores</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of rows(); track row.name) {
+                <tr [class.row-error]="row.errors && row.errors.length > 0">
+                  <td>{{ row.name }}</td>
+                  <td>{{ row.abbreviation }}</td>
+                  <td>{{ typeLabel(row.type) }}</td>
+                  <td>
+                    <span [class]="row.isActive ? 'text-success' : 'text-muted'">
+                      {{ row.isActive ? 'Activa' : 'Inactiva' }}
+                    </span>
+                  </td>
+                  <td>
+                    @if (row.errors && row.errors.length > 0) {
+                      <ul class="error-list">
+                        @for (err of row.errors; track err) {
+                          <li>{{ err }}</li>
+                        }
+                      </ul>
+                    } @else {
+                      <span class="text-success">
+                        <ng-icon name="lucideCheck"></ng-icon>
+                      </span>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+
+  </div>
+
+  <div modalFooter class="modal-footer-actions">
+    @if (step() === 1) {
+      <div>
+        <button type="button" class="btn btn-ghost" [disabled]="isProcessing()" (click)="close()">
+          Cerrar
+        </button>
+      </div>
+    }
+
+    @if (step() === 2) {
+      <div class="footer-step-2">
+        <button type="button" class="btn btn-ghost" [disabled]="isProcessing()" (click)="step.set(1)">
+          Volver a Subir
+        </button>
+        <button type="button"
+                class="btn btn-primary"
+                [disabled]="isProcessing() || hasErrors()"
+                (click)="confirmImport()">
+
+          <app-spinner *ngIf="isProcessing()"></app-spinner>
+          <span>{{ isProcessing() ? 'Procesando...' : 'Confirmar e Importar Todo' }}</span>
+        </button>
+      </div>
+    }
+  </div>
+
+</app-modal>

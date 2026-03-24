@@ -1,6 +1,7 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { IconComponent } from '../../../../core/layout/atoms/icon/icon.component';
+import { TabBarComponent, TabItem } from '../../ui/tab-bar/tab-bar';
+import { FormButtonComponent } from '../../ui/form-button/form-button';
 
 export interface PageHeaderTab {
     label: string;
@@ -10,48 +11,46 @@ export interface PageHeaderTab {
 @Component({
     selector: 'app-page-header',
     standalone: true,
-    imports: [CommonModule, IconComponent],
+    imports: [CommonModule, TabBarComponent, FormButtonComponent],
     template: `
     <header class="page-header">
-      <div class="page-header__title-group">
+      <div class="page-header__top-row">
         <h1 class="page-header__title">{{ title }}</h1>
-        
-        @if (tabs.length > 0) {
-          <nav class="page-header__tabs">
-            @for (tab of tabs; track tab.value) {
-              <button 
-                class="page-header__tab" 
-                [class.page-header__tab--active]="activeTab === tab.value"
-                (click)="tabChange.emit(tab.value)"
-              >
-                {{ tab.label }}
-              </button>
-            }
-          </nav>
-        }
-      </div>
-      
-      <div class="page-header__actions">
-        <ng-content select="[headerActions]"></ng-content>
 
-        @if (secondaryCtaText) {
-          <button class="btn btn-ghost btn-sm page-header__cta" (click)="secondaryCtaClick.emit()">
-            @if (secondaryCtaIcon) {
-              <app-icon [name]="secondaryCtaIcon"></app-icon>
-            }
-            <span>{{ secondaryCtaText }}</span>
-          </button>
-        }
+        <div class="page-header__actions">
+          <ng-content select="[headerActions]"></ng-content>
 
-        @if (ctaText) {
-          <button class="btn btn-primary btn-sm page-header__cta" (click)="ctaClick.emit()">
-            @if (ctaIcon) {
-              <app-icon [name]="ctaIcon"></app-icon>
-            }
-            <span>{{ ctaText }}</span>
-          </button>
-        }
+          @if (secondaryCtaText) {
+            <app-form-button
+              [label]="secondaryCtaText"
+              [icon]="secondaryCtaIcon || undefined"
+              variant="ghost"
+              type="button"
+              [fullWidth]="false"
+              (click)="secondaryCtaClick.emit()"
+            />
+          }
+
+          @if (ctaText) {
+            <app-form-button
+              [label]="ctaText"
+              [icon]="ctaIcon"
+              variant="primary"
+              type="button"
+              [fullWidth]="false"
+              (click)="ctaClick.emit()"
+            />
+          }
+        </div>
       </div>
+
+      @if (tabs.length > 0) {
+        <app-tab-bar
+          [tabs]="tabs"
+          [activeTab]="activeTab"
+          (tabChange)="tabChange.emit($event)"
+        ></app-tab-bar>
+      }
     </header>
   `,
     styleUrls: ['./page-header.component.scss']

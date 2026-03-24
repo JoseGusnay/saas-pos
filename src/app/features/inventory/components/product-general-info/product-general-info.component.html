@@ -28,8 +28,14 @@
     <!-- Nombre -->
     <app-field-input
       formControlName="name"
-      label="Nombre del Producto"
-      placeholder="Ej: Coca-Cola 350ml, Corte de cabello…"
+      [label]="productType() === 'SERVICE' ? 'Nombre del Servicio'
+             : productType() === 'COMBO' ? 'Nombre del Combo'
+             : productType() === 'RAW_MATERIAL' ? 'Nombre del Insumo'
+             : 'Nombre del Producto'"
+      [placeholder]="productType() === 'SERVICE' ? 'Ej: Corte de cabello, Manicure, Consulta…'
+                    : productType() === 'COMBO' ? 'Ej: Combo Familiar, Pack Ahorro…'
+                    : productType() === 'RAW_MATERIAL' ? 'Ej: Harina de trigo, Aceite vegetal…'
+                    : 'Ej: Coca-Cola 350ml, Camiseta Nike…'"
       [required]="true"
       [errorMessages]="{ required: 'Nombre requerido', minlength: 'Mínimo 2 caracteres' }"
     ></app-field-input>
@@ -38,7 +44,9 @@
     <app-field-input
       formControlName="description"
       label="Descripción"
-      placeholder="Descripción visible en el catálogo y punto de venta…"
+      [placeholder]="productType() === 'RAW_MATERIAL' ? 'Descripción interna del insumo…'
+                    : productType() === 'SERVICE' ? 'Descripción visible para el cliente en el POS…'
+                    : 'Descripción visible en el catálogo y punto de venta…'"
       [optional]="true"
       [multiline]="true"
       [rows]="3"

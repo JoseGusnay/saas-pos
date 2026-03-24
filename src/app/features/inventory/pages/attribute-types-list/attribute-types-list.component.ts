@@ -1,113 +1,127 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { switchMap, debounceTime, tap } from 'rxjs';
 import { provideIcons } from '@ng-icons/core';
 import {
-  lucidePlus, lucidePencil, lucideTrash2, lucideSearch, lucideSave,
-  lucideSliders, lucideHash, lucideType, lucideHistory,
-  lucidePlusCircle, lucideRefreshCw, lucideTrash
+  lucidePlus, lucideSave, lucidePencil, lucideTrash2, lucideDownload,
+  lucideHistory, lucidePlusCircle, lucideRefreshCw, lucideTrash,
+  lucideType, lucideHash, lucideCloudDownload,
 } from '@ng-icons/lucide';
 
+import { FilterNode, FilterGroup, FilterField, FilterRule } from '../../../../core/models/query-builder.models';
 import { PageHeaderComponent } from '../../../../shared/components/list-ui/page-header/page-header.component';
 import { ListToolbarComponent } from '../../../../shared/components/list-ui/list-toolbar/list-toolbar.component';
 import { PaginationComponent } from '../../../../shared/components/list-ui/pagination/pagination.component';
 import { DataCardComponent } from '../../../../shared/components/list-ui/data-card/data-card.component';
+import { DrawerComponent } from '../../../../shared/components/ui/drawer/drawer';
+import { ModalComponent } from '../../../../shared/components/ui/modal/modal';
 import { SkeletonComponent } from '../../../../shared/components/ui/skeleton/skeleton';
 import { EmptyStateComponent } from '../../../../shared/components/ui/empty-state/empty-state';
-import { ModalComponent } from '../../../../shared/components/ui/modal/modal';
-import { FormButtonComponent } from '../../../../shared/components/ui/form-button/form-button';
-import { ActionsMenuComponent, ActionItem } from '../../../../shared/components/ui/actions-menu/actions-menu';
-import { DrawerComponent } from '../../../../shared/components/ui/drawer/drawer';
-import { FieldInputComponent } from '../../../../shared/components/ui/field-input/field-input';
-import { ToggleSwitchComponent } from '../../../../shared/components/ui/toggle-switch/toggle-switch';
-import { CustomSelectComponent, SelectOption } from '../../../../shared/components/ui/custom-select/custom-select.component';
 import { SpinnerComponent } from '../../../../shared/components/ui/spinner/spinner';
+import { FormButtonComponent } from '../../../../shared/components/ui/form-button/form-button';
+import { ActionItem, ActionsMenuComponent } from '../../../../shared/components/ui/actions-menu/actions-menu';
 import { DatelineComponent, DatelineItem } from '../../../../shared/components/ui/dateline/dateline.component';
 
-import { AttributeTypeDetailComponent } from '../../components/attribute-type-detail/attribute-type-detail.component';
-import { AttributeTypesAdvancedFilters } from '../../components/attribute-types-advanced-filters/attribute-types-advanced-filters';
-
 import { AttributeTypeService } from '../../../../core/services/attribute-type.service';
-import { ModalService } from '../../../../core/components/modal/modal.service';
+import { AttributeType, DATA_TYPE_LABELS } from '../../models/product.model';
 import { ToastService } from '../../../../core/services/toast.service';
 import { QueryMapper } from '../../../../core/utils/query-mapper.util';
-import { FilterNode, FilterGroup, FilterField, FilterRule } from '../../../../core/models/query-builder.models';
-import { AttributeType } from '../../models/product.model';
 
-const DATA_TYPE_LABELS: Record<string, string> = {
-  TEXT: 'Texto', NUMBER: 'Numérico', COLOR: 'Color', BOOLEAN: 'Sí/No',
-};
+import { AttributeTypeFormComponent } from '../../components/attribute-type-form/attribute-type-form';
+import { AttributeTypeDetailComponent } from '../../components/attribute-type-detail/attribute-type-detail.component';
+import { AttributeTypesAdvancedFilters } from './components/attribute-types-advanced-filters/attribute-types-advanced-filters';
+import { AttributeTypeImportModalComponent } from '../../components/attribute-type-import-modal/attribute-type-import-modal';
 
 @Component({
   selector: 'app-attribute-types-list',
   standalone: true,
   imports: [
-    CommonModule, FormsModule, ReactiveFormsModule,
+    CommonModule,
     PageHeaderComponent, ListToolbarComponent, PaginationComponent,
     DataCardComponent, SkeletonComponent, EmptyStateComponent,
-    ModalComponent, FormButtonComponent, ActionsMenuComponent,
-    DrawerComponent, FieldInputComponent, ToggleSwitchComponent,
-    SpinnerComponent, DatelineComponent,
-    AttributeTypeDetailComponent, CustomSelectComponent,
+    DrawerComponent, ModalComponent, SpinnerComponent,
+    FormButtonComponent, ActionsMenuComponent, DatelineComponent,
+    AttributeTypeFormComponent, AttributeTypeDetailComponent,
+    AttributeTypesAdvancedFilters, AttributeTypeImportModalComponent,
   ],
   providers: [
     provideIcons({
-      lucidePlus, lucidePencil, lucideTrash2, lucideSearch, lucideSave,
-      lucideSliders, lucideHash, lucideType, lucideHistory,
-      lucidePlusCircle, lucideRefreshCw, lucideTrash
+      lucidePlus, lucideSave, lucidePencil, lucideTrash2, lucideDownload,
+      lucideHistory, lucidePlusCircle, lucideRefreshCw, lucideTrash,
+      lucideType, lucideHash, lucideCloudDownload,
     })
   ],
   template: `
     <div class="attr-page">
       <app-page-header
         title="Tipos de Atributo"
-        [tabs]="tabs"
+        [tabs]="attrTabs"
         [activeTab]="activeTab()"
         ctaText="Nuevo Atributo"
         ctaIcon="lucidePlus"
+        secondaryCtaText="Importar"
+        secondaryCtaIcon="lucideDownload"
         (tabChange)="onTabChange($event)"
-        (ctaClick)="onAdd()"
+        (ctaClick)="onAddAttr()"
+        (secondaryCtaClick)="importModal.open()"
       ></app-page-header>
 
       <app-list-toolbar
         searchPlaceholder="Buscar atributos..."
         [searchQuery]="searchQuery()"
         [activeFiltersCount]="activeFiltersCount()"
-        [viewMode]="viewMode()"
-        (searchChange)="onSearch($event)"
-        (viewModeChange)="viewMode.set($event)"
-        (sortChange)="onSortChange($event)"
+        [viewMode]="viewModePreference()"
+        [sortOptions]="sortOptions"
         (openFilters)="openAdvancedFilters()"
+        (clearFilters)="clearAllFilters()"
+        (searchChange)="onSearch($event)"
+        (viewModeChange)="viewModePreference.set($event)"
+        (sortChange)="onSortChange($event)"
       ></app-list-toolbar>
 
       <div [ngClass]="viewMode() === 'grid' ? 'attr-page__grid' : 'attr-page__list'">
-
         @if (isLoading()) {
           @for (n of [1,2,3,4,5,6]; track n) {
             @if (viewMode() === 'grid') {
               <div class="data-card skeleton-card">
-                <header class="sk-header">
-                  <div class="sk-title-container">
-                    <app-skeleton width="140px" height="1rem"></app-skeleton>
-                    <app-skeleton width="56px" height="18px" radius="999px"></app-skeleton>
+                <header class="data-card__header">
+                  <div class="data-card__title-container">
+                    <app-skeleton width="150px" height="1.25rem"></app-skeleton>
+                    <div style="margin-top: 4px">
+                      <app-skeleton width="60px" height="18px" radius="999px"></app-skeleton>
+                    </div>
                   </div>
-                  <app-skeleton width="28px" height="28px" shape="circle"></app-skeleton>
+                  <div class="data-card__kebab">
+                    <app-skeleton width="32px" height="32px" shape="circle"></app-skeleton>
+                  </div>
                 </header>
-                <div class="sk-body">
-                  <div class="sk-detail"><app-skeleton width="14px" height="14px" radius="3px"></app-skeleton><app-skeleton width="70px" height="0.8125rem"></app-skeleton></div>
-                  <div class="sk-detail"><app-skeleton width="14px" height="14px" radius="3px"></app-skeleton><app-skeleton width="50px" height="0.8125rem"></app-skeleton></div>
+                <div class="data-card__body">
+                  <div class="data-card__detail">
+                    <app-skeleton width="14px" height="14px" shape="circle"></app-skeleton>
+                    <app-skeleton width="70px" height="0.875rem"></app-skeleton>
+                  </div>
+                  <div class="data-card__detail">
+                    <app-skeleton width="14px" height="14px" shape="circle"></app-skeleton>
+                    <app-skeleton width="50px" height="0.875rem"></app-skeleton>
+                  </div>
                 </div>
               </div>
             } @else {
               <div class="attr-row-item skeleton-row">
                 <div class="row-main">
-                  <app-skeleton width="44px" height="44px" radius="10px"></app-skeleton>
-                  <div class="sk-attr-info"><app-skeleton width="140px" height="0.875rem"></app-skeleton><app-skeleton width="80px" height="0.75rem"></app-skeleton></div>
+                  <app-skeleton width="44px" height="44px" radius="8px"></app-skeleton>
+                  <div class="attr-info">
+                    <app-skeleton width="140px" height="1rem"></app-skeleton>
+                    <app-skeleton width="100px" height="0.875rem" style="margin-top: 6px"></app-skeleton>
+                  </div>
                 </div>
-                <app-skeleton width="64px" height="22px" radius="999px"></app-skeleton>
-                <app-skeleton width="28px" height="28px" shape="circle"></app-skeleton>
+                <div class="row-badges">
+                  <app-skeleton width="70px" height="24px" radius="99px"></app-skeleton>
+                </div>
+                <div class="row-actions">
+                  <app-skeleton width="32px" height="32px" shape="circle"></app-skeleton>
+                </div>
               </div>
             }
           }
@@ -123,13 +137,16 @@ const DATA_TYPE_LABELS: Record<string, string> = {
                   { icon: 'lucideHash', text: attr.unit || 'Sin unidad' }
                 ]"
                 [actions]="attr.isSystem ? systemActions : itemActions"
-                (actionClick)="handleAction($event, attr)"
+                (actionClick)="handleActionClick($event, attr)"
                 (click)="onShowDetail(attr)"
+                class="clickable-card"
               ></app-data-card>
             } @else {
               <div class="attr-row-item" (click)="onShowDetail(attr)">
                 <div class="row-main">
-                  <div class="attr-avatar"><span>{{ attr.name[0]?.toUpperCase() }}</span></div>
+                  <div class="attr-avatar">
+                    <span>{{ attr.name[0]?.toUpperCase() }}</span>
+                  </div>
                   <div class="attr-info">
                     <span class="attr-name">{{ attr.name }}</span>
                     <span class="attr-sub">{{ dataTypeLabel(attr.dataType) }}{{ attr.unit ? ' · ' + attr.unit : '' }}</span>
@@ -137,10 +154,15 @@ const DATA_TYPE_LABELS: Record<string, string> = {
                 </div>
                 <div class="row-badges">
                   @if (attr.isSystem) { <span class="badge-status system">Sistema</span> }
-                  <span [class]="'badge-status ' + (attr.isActive ? 'active' : 'inactive')">{{ attr.isActive ? 'Activo' : 'Inactivo' }}</span>
+                  <span [class]="'badge-status ' + (attr.isActive ? 'active' : 'inactive')">
+                    {{ attr.isActive ? 'Activo' : 'Inactivo' }}
+                  </span>
                 </div>
-                <div (click)="$event.stopPropagation()">
-                  <app-actions-menu [actions]="attr.isSystem ? systemActions : itemActions" (actionClick)="handleAction($event, attr)"></app-actions-menu>
+                <div class="row-actions" (click)="$event.stopPropagation()">
+                  <app-actions-menu
+                    [actions]="attr.isSystem ? systemActions : itemActions"
+                    (actionClick)="handleActionClick($event, attr)"
+                  ></app-actions-menu>
                 </div>
               </div>
             }
@@ -148,40 +170,49 @@ const DATA_TYPE_LABELS: Record<string, string> = {
         } @else {
           <div class="attr-page__empty">
             <app-empty-state
-              [icon]="searchQuery() ? 'lucideSearch' : 'lucideSliders'"
-              [title]="searchQuery() ? 'No encontramos lo que buscas' : 'No hay tipos de atributo'"
-              [description]="searchQuery() ? 'Intenta con otros términos.' : 'Crea el primer tipo de atributo para diferenciar variantes.'"
-              [actionLabel]="searchQuery() ? 'Limpiar búsqueda' : 'Nuevo Atributo'"
-              (action)="searchQuery() ? clearSearch() : onAdd()"
+              [icon]="activeFiltersCount() > 0 || searchQuery() ? 'lucideSearch' : 'lucideSliders'"
+              [title]="activeFiltersCount() > 0 || searchQuery() ? 'No encontramos lo que buscas' : 'No hay tipos de atributo'"
+              [description]="activeFiltersCount() > 0 || searchQuery() ? 'Intenta con otros términos o ajusta tus filtros.' : 'Crea el primer tipo de atributo para diferenciar variantes.'"
+              [actionLabel]="activeFiltersCount() > 0 || searchQuery() ? 'Limpiar Filtros' : 'Nuevo Atributo'"
+              (action)="activeFiltersCount() > 0 || searchQuery() ? clearAllFilters() : onAddAttr()"
             ></app-empty-state>
           </div>
         }
       </div>
 
-      <app-pagination [totalItems]="totalItems()" [pageSize]="pageSize()" [currentPage]="currentPage()" (pageChange)="currentPage.set($event)"></app-pagination>
-
       <!-- Drawer: Detalle -->
-      <app-drawer [isOpen]="isDetailOpen()" title="Detalle del Atributo" (close)="isDetailOpen.set(false)" size="md">
+      <app-drawer
+        [isOpen]="isDetailOpen()"
+        title="Detalle del Atributo"
+        (close)="isDetailOpen.set(false)"
+        size="md"
+      >
         <div drawerBody>
           @if (selectedAttr()) {
             <app-attribute-type-detail [attr]="selectedAttr()!"></app-attribute-type-detail>
           }
         </div>
         <div drawerFooter class="drawer-footer-actions">
-          <app-form-button label="Ver Historial" icon="lucideHistory" variant="secondary" (click)="onShowHistory(selectedAttr()!.id)"></app-form-button>
+          <app-form-button label="Historial" icon="lucideHistory" variant="ghost" type="button"
+            [fullWidth]="false" (click)="onShowHistory(selectedAttr()!.id)"></app-form-button>
           @if (selectedAttr() && !selectedAttr()!.isSystem) {
-            <app-form-button label="Editar" icon="lucidePencil" (click)="onEditFromDetail(selectedAttr()!)"></app-form-button>
+            <app-form-button label="Editar Atributo" icon="lucidePencil" variant="secondary" type="button"
+              [fullWidth]="false" (click)="onEditAttr(selectedAttr()!)"></app-form-button>
           }
         </div>
       </app-drawer>
 
       <!-- Drawer: Historial -->
-      <app-drawer [isOpen]="isHistoryOpen()" title="Historial de Actividad" (close)="isHistoryOpen.set(false)" size="md">
+      <app-drawer
+        [isOpen]="isHistoryOpen()"
+        title="Historial de Auditoría"
+        (close)="isHistoryOpen.set(false)"
+      >
         <div drawerBody class="history-container">
           @if (isHistoryLoading()) {
             <div class="history-loading">
               <app-spinner></app-spinner>
-              <span>Cargando actividad...</span>
+              <span>Cargando historial...</span>
             </div>
           } @else {
             <app-dateline [items]="mappedLogs()"></app-dateline>
@@ -189,180 +220,165 @@ const DATA_TYPE_LABELS: Record<string, string> = {
         </div>
       </app-drawer>
 
-      <!-- Drawer: Crear / Editar -->
+      <app-pagination
+        [totalItems]="totalItems()"
+        [pageSize]="pageSize()"
+        [currentPage]="currentPage()"
+        (pageChange)="currentPage.set($event)"
+      ></app-pagination>
+
+      <!-- Drawer: Filtros Avanzados -->
       <app-drawer
-        [isOpen]="formDrawerOpen()"
-        [title]="editingAttr() ? 'Editar Atributo' : 'Nuevo Atributo'"
+        [isOpen]="isFiltersOpen()"
+        title="Filtros Avanzados"
+        (close)="isFiltersOpen.set(false)"
         size="md"
-        (close)="formDrawerOpen.set(false)"
       >
-        <div drawerBody class="drawer-form" [formGroup]="drawerForm">
-          <app-field-input
-            formControlName="name"
-            label="Nombre"
-            placeholder="Ej: Talla, Color, Memoria..."
-            [required]="true"
-            [errorMessages]="{ required: 'Nombre requerido', maxlength: 'Máximo 100 caracteres' }"
-          ></app-field-input>
-
-          <div class="pff">
-            <label class="pff__label">Tipo de Dato <span class="pff__req">*</span></label>
-            <app-custom-select
-              [options]="dataTypeOptions"
-              [value]="drawerForm.get('dataType')?.value"
-              (valueChange)="drawerForm.get('dataType')?.setValue($event)"
-            ></app-custom-select>
-          </div>
-
-          <app-field-input
-            formControlName="unit"
-            label="Unidad"
-            placeholder="Ej: ml, cm, kg..."
-            [optional]="true"
-            hint="Unidad de referencia que se muestra junto al campo"
-          ></app-field-input>
-
-          <div class="pff__toggle-row" (click)="isActiveToggle.toggle()">
-            <div class="pff__toggle-info">
-              <span class="pff__toggle-label">Activo</span>
-              <small class="pff__toggle-hint">Los atributos inactivos no aparecen al configurar variantes</small>
-            </div>
-            <app-toggle-switch #isActiveToggle formControlName="isActive" (click)="$event.stopPropagation()"></app-toggle-switch>
-          </div>
+        <div drawerBody>
+          <app-attribute-types-advanced-filters
+            #advancedFilters
+            [filterTree]="filterTree"
+            [availableFields]="availableFields"
+            (applied)="onFilterTreeChange($event); isFiltersOpen.set(false)"
+          ></app-attribute-types-advanced-filters>
         </div>
-
         <div drawerFooter class="drawer-footer-actions">
-          <app-form-button label="Cancelar" variant="secondary" [disabled]="isSaving()" (click)="formDrawerOpen.set(false)"></app-form-button>
+          <app-form-button label="Cancelar" variant="secondary"
+            (click)="isFiltersOpen.set(false)"></app-form-button>
+          <app-form-button label="Aplicar filtros" variant="primary"
+            (click)="advancedFilters.applyFilters()"></app-form-button>
+        </div>
+      </app-drawer>
+
+      <!-- Drawer: Crear/Editar Atributo -->
+      <app-drawer
+        [isOpen]="isDrawerOpen()"
+        [title]="isEditing() ? 'Editar Atributo' : 'Nuevo Atributo'"
+        [allowClose]="!(attrForm?.isSubmitting())"
+        (close)="onDrawerClose()"
+        size="md"
+      >
+        <div drawerBody>
+          <app-attribute-type-form
+            #attrForm
+            (saved)="onAttrSaved($event)"
+          ></app-attribute-type-form>
+        </div>
+        <div drawerFooter class="drawer-footer-actions">
+          <app-form-button label="Cancelar" variant="secondary" type="button"
+            [disabled]="!!(attrForm?.isSubmitting())" (click)="onDrawerClose()"></app-form-button>
           <app-form-button
-            [label]="editingAttr() ? 'Actualizar' : 'Guardar'"
-            icon="lucideSave"
-            [loading]="isSaving()"
-            [disabled]="drawerForm.invalid || isSaving()"
-            (click)="onSave()"
+            [label]="isEditing() ? 'Actualizar Atributo' : 'Guardar Atributo'"
+            loadingLabel="Guardando..." icon="lucideSave"
+            [loading]="!!(attrForm?.isSubmitting())"
+            [disabled]="attrForm?.attrForm?.invalid ?? true"
+            (click)="attrForm?.onSubmit()"
           ></app-form-button>
         </div>
       </app-drawer>
 
+      <!-- Modal: Cambios sin guardar -->
+      <app-modal
+        [isOpen]="isConfirmCloseOpen()"
+        title="Cambios sin guardar"
+        size="sm"
+        (close)="isConfirmCloseOpen.set(false)"
+      >
+        <div modalBody>Tienes cambios sin guardar. ¿Deseas salir? Se perderán los datos ingresados.</div>
+        <div modalFooter class="modal-footer-actions">
+          <app-form-button label="Continuar editando" variant="ghost" type="button" [fullWidth]="false"
+            (click)="isConfirmCloseOpen.set(false)"></app-form-button>
+          <app-form-button label="Salir sin guardar" variant="danger" type="button" [fullWidth]="false"
+            (click)="forceCloseDrawer()"></app-form-button>
+        </div>
+      </app-modal>
+
       <!-- Modal: Confirmar eliminación -->
-      <app-modal [isOpen]="deleteModalOpen()" title="Confirmar Eliminación" (close)="deleteModalOpen.set(false)">
+      <app-modal
+        [isOpen]="isDeleteModalOpen()"
+        title="Confirmar Eliminación"
+        size="sm"
+        [allowClose]="!isDeleting()"
+        (close)="cancelDelete()"
+      >
         <div modalBody>
-          ¿Estás seguro de eliminar el atributo "<strong>{{ attrToDelete()?.name }}</strong>"?
+          ¿Eliminar el atributo <strong>"{{ attrToDelete()?.name }}"</strong>?
           Si está asignado a categorías, se desvinculará automáticamente.
         </div>
         <div modalFooter class="modal-footer-actions">
-          <app-form-button label="Cancelar" variant="secondary" (click)="deleteModalOpen.set(false)"></app-form-button>
-          <app-form-button label="Eliminar" variant="danger" icon="lucideTrash2" [loading]="isDeleting()" [disabled]="isDeleting()" (click)="confirmDelete()"></app-form-button>
+          <app-form-button label="Cancelar" variant="ghost" type="button" [fullWidth]="false"
+            [disabled]="isDeleting()" (click)="cancelDelete()"></app-form-button>
+          <app-form-button label="Eliminar" loadingLabel="Eliminando..." variant="danger" type="button"
+            [fullWidth]="false" [loading]="isDeleting()" (click)="confirmDelete()"></app-form-button>
         </div>
       </app-modal>
+
+      <app-attribute-type-import-modal
+        #importModal
+        (imported)="refreshTrigger.update(v => v + 1)"
+      ></app-attribute-type-import-modal>
     </div>
   `,
-  styles: [`
-    .attr-page { display: flex; flex-direction: column; min-height: 100%; width: 100%; }
-    .attr-page__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; }
-    .attr-page__list { display: flex; flex-direction: column; gap: 0.75rem; }
-    .attr-page__empty { grid-column: 1 / -1; display: flex; justify-content: center; width: 100%; padding: 4rem 1rem; }
-
-    .skeleton-card { pointer-events: none; background: var(--color-bg-surface); border-radius: var(--radius-lg); border: 1px solid var(--color-border-light); padding: 20px; }
-    .skeleton-row { pointer-events: none; }
-    .sk-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
-    .sk-title-container { display: flex; flex-direction: column; gap: 6px; }
-    .sk-body { display: flex; flex-direction: column; gap: 10px; }
-    .sk-detail { display: flex; align-items: center; gap: 8px; }
-    .sk-attr-info { display: flex; flex-direction: column; gap: 5px; }
-
-    .attr-row-item {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 1rem 1.5rem; background: var(--color-bg-surface);
-      border: 1px solid var(--color-border-light); border-radius: var(--radius-lg);
-      cursor: pointer; transition: all var(--transition-base);
-      &:hover { border-color: var(--color-accent-primary); background: var(--color-bg-hover); }
-    }
-
-    .row-main { display: flex; align-items: center; gap: 1rem; }
-    .row-badges { display: flex; align-items: center; gap: 6px; }
-    .attr-avatar {
-      width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
-      font-weight: var(--font-weight-bold); font-size: var(--font-size-sm);
-      background: var(--color-primary-subtle); color: var(--color-accent-primary);
-    }
-    .attr-info { display: flex; flex-direction: column; gap: 5px; }
-    .attr-name { font-weight: var(--font-weight-semibold); color: var(--color-text-main); }
-    .attr-sub { font-size: var(--font-size-sm); color: var(--color-text-muted); }
-
-    .badge-status { padding: 0.25rem 0.75rem; border-radius: 99px; font-size: var(--font-size-xs); font-weight: var(--font-weight-semibold); }
-    .badge-status.active { background: var(--color-success-bg); color: var(--color-success-text); }
-    .badge-status.inactive { background: var(--color-border-subtle); color: var(--color-text-muted); }
-    .badge-status.system { background: rgba(79, 70, 229, 0.08); color: var(--color-accent-primary); }
-
-    .drawer-form { display: flex; flex-direction: column; gap: 20px; }
-    .drawer-footer-actions { display: flex; gap: 1rem; justify-content: flex-end; }
-    .modal-footer-actions { display: flex; gap: 1rem; justify-content: flex-end; }
-
-    .history-container { min-height: 200px; }
-    .history-loading { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 3rem 1rem; color: var(--color-text-muted); font-size: var(--font-size-sm); }
-  `]
+  styleUrl: './attribute-types-list.component.scss'
 })
 export class AttributeTypesListComponent {
-  private attrSvc     = inject(AttributeTypeService);
-  private toastSvc    = inject(ToastService);
-  private modalSvc    = inject(ModalService);
-  private fb          = inject(FormBuilder);
+  private attrSvc = inject(AttributeTypeService);
+  private toastService = inject(ToastService);
 
-  readonly itemActions: ActionItem[] = [
-    { id: 'edit',    label: 'Editar',      icon: 'lucidePencil' },
-    { id: 'history', label: 'Historial',   icon: 'lucideHistory' },
-    { id: 'delete',  label: 'Eliminar',    icon: 'lucideTrash2', variant: 'danger' },
-  ];
-  readonly systemActions: ActionItem[] = [
-    { id: 'history', label: 'Historial',   icon: 'lucideHistory' },
-  ];
+  @ViewChild('attrForm') attrFormRef?: AttributeTypeFormComponent;
+  @ViewChild('advancedFilters') advancedFiltersRef!: AttributeTypesAdvancedFilters;
+  @ViewChild('importModal') importModal!: AttributeTypeImportModalComponent;
 
-  readonly dataTypeOptions: SelectOption[] = [
-    { label: 'Texto', value: 'TEXT' },
-    { label: 'Numérico', value: 'NUMBER' },
-    { label: 'Color', value: 'COLOR' },
-    { label: 'Sí / No', value: 'BOOLEAN' },
+  itemActions: ActionItem[] = [
+    { id: 'edit', label: 'Editar', icon: 'lucidePencil' },
+    { id: 'history', label: 'Historial', icon: 'lucideHistory' },
+    { id: 'delete', label: 'Eliminar', icon: 'lucideTrash2', variant: 'danger' },
+  ];
+  systemActions: ActionItem[] = [
+    { id: 'history', label: 'Historial', icon: 'lucideHistory' },
   ];
 
-  readonly tabs = [
+  // ── State ────────────────────────────────────────────────────────────────────
+  searchQuery        = signal('');
+  viewModePreference = signal<'grid' | 'list'>('grid');
+  isMobile           = signal(false);
+  viewMode           = computed(() => this.isMobile() ? 'grid' : this.viewModePreference());
+  sortField          = signal('createdAt');
+  sortOrder          = signal<'ASC' | 'DESC'>('DESC');
+  refreshTrigger     = signal(0);
+  isLoading          = signal(true);
+  currentPage        = signal(1);
+  pageSize           = signal(10);
+
+  isDrawerOpen       = signal(false);
+  isEditing          = signal(false);
+  isFiltersOpen      = signal(false);
+  isConfirmCloseOpen = signal(false);
+  isDetailOpen       = signal(false);
+  selectedAttr       = signal<AttributeType | null>(null);
+  isHistoryOpen      = signal(false);
+  isHistoryLoading   = signal(false);
+  isDeleteModalOpen  = signal(false);
+  isDeleting         = signal(false);
+  attrToDelete       = signal<AttributeType | null>(null);
+  attrLogs           = signal<any[]>([]);
+
+  // ── Config ───────────────────────────────────────────────────────────────────
+  attrTabs = [
     { label: 'Todos', value: 'Todos' },
     { label: 'Activos', value: 'Activos' },
     { label: 'Inactivos', value: 'Inactivos' },
   ];
+  activeTab = signal('Todos');
 
-  // List state
-  activeTab      = signal('Todos');
-  searchQuery    = signal('');
-  viewMode       = signal<'grid' | 'list'>('grid');
-  currentPage    = signal(1);
-  pageSize       = signal(12);
-  sortField      = signal('name');
-  sortOrder      = signal<'ASC' | 'DESC'>('ASC');
-  refreshTrigger = signal(0);
-  isLoading      = signal(true);
+  sortOptions = [
+    { label: 'Más Recientes', value: 'createdAt:desc' },
+    { label: 'Más Antiguos', value: 'createdAt:asc' },
+    { label: 'Nombre (A-Z)', value: 'name:asc' },
+    { label: 'Nombre (Z-A)', value: 'name:desc' },
+  ];
 
-  // Detail drawer
-  isDetailOpen   = signal(false);
-  selectedAttr   = signal<AttributeType | null>(null);
-
-  // History drawer
-  isHistoryOpen   = signal(false);
-  isHistoryLoading = signal(false);
-  attrLogs        = signal<any[]>([]);
-
-  // Form drawer
-  formDrawerOpen = signal(false);
-  editingAttr    = signal<AttributeType | null>(null);
-  isSaving       = signal(false);
-
-  // Delete modal
-  deleteModalOpen = signal(false);
-  attrToDelete    = signal<AttributeType | null>(null);
-  isDeleting      = signal(false);
-
-  // Advanced filters
-  filterTree = signal<FilterGroup>({ type: 'group', id: 'root', logicalOperator: 'AND', children: [] });
-  readonly filterConfig: FilterField[] = [
+  availableFields: FilterField[] = [
     { id: 'name', label: 'Nombre', type: 'text' },
     { id: 'dataType', label: 'Tipo de Dato', type: 'select', options: [
       { label: 'Texto', value: 'TEXT' }, { label: 'Numérico', value: 'NUMBER' },
@@ -371,173 +387,231 @@ export class AttributeTypesListComponent {
     { id: 'unit', label: 'Unidad', type: 'text' },
   ];
 
+  filterTree = signal<FilterGroup>({
+    type: 'group', id: 'root', logicalOperator: 'AND', children: []
+  });
+
   activeFiltersCount = computed(() => {
     const count = (node: FilterNode): number => {
-      if (node.type === 'group') return (node as FilterGroup).children.reduce((a, c) => a + count(c), 0);
-      const rule = node as FilterRule;
-      if (['blank', 'notBlank'].includes(rule.operator)) return 1;
-      return rule.value && String(rule.value).trim() !== '' ? 1 : 0;
+      if (node.type === 'group') return node.children.reduce((a, c) => a + count(c), 0);
+      return (node as FilterRule).value ? 1 : 0;
     };
     return count(this.filterTree());
   });
 
-  drawerForm!: FormGroup;
+  mappedLogs = computed<DatelineItem[]>(() =>
+    this.attrLogs().map(log => ({
+      id: log.id,
+      date: log.createdAt,
+      action: log.action,
+      actionLabel: this.getLogActionLabel(log.action),
+      user: log.userName || 'Sistema',
+      icon: this.getLogIcon(log.action),
+      message: log.action === 'IMPORT' ? `Importación masiva de ${log.details?.count} atributos.` : undefined,
+      changes: log.action === 'UPDATE' && log.details?.oldData
+        ? this.getChanges(log.details.oldData, log.details.newData) : undefined,
+    }))
+  );
 
-  constructor() {
-    this.drawerForm = this.fb.group({
-      name:     ['', [Validators.required, Validators.maxLength(100)]],
-      dataType: ['TEXT', Validators.required],
-      unit:     [''],
-      isActive: [true],
-    });
-  }
-
-  // ── Data pipeline ──────────────────────────────────────────────────────
+  // ── Reactive data ────────────────────────────────────────────────────────────
   private readonly response = toSignal(
     toObservable(computed(() => ({
-      page: this.currentPage(), limit: this.pageSize(),
-      search: this.searchQuery(), sortField: this.sortField(), sortOrder: this.sortOrder(),
-      tab: this.activeTab(), filterModel: QueryMapper.toAgGridFilterModel(this.filterTree(), this.filterConfig),
+      page: this.currentPage(),
+      limit: this.pageSize(),
+      search: this.searchQuery(),
+      filterModel: QueryMapper.toAgGridFilterModel(this.filterTree()),
+      sortField: this.sortField(),
+      sortOrder: this.sortOrder(),
+      tab: this.activeTab(),
       refresh: this.refreshTrigger(),
     }))).pipe(
       debounceTime(300),
       tap(() => this.isLoading.set(true)),
       switchMap(params => {
-        const filters: any = {
-          page: params.page, limit: params.limit, search: params.search,
-          sortField: params.sortField, sortOrder: params.sortOrder, filterModel: params.filterModel,
-        };
-        if (params.tab === 'Activos')   filters.onlyActive = true;
-        if (params.tab === 'Inactivos') filters.onlyActive = false;
+        const { tab, ...filters } = params;
+        if (tab === 'Activos') (filters as any).onlyActive = true;
+        else if (tab === 'Inactivos') (filters as any).onlyActive = false;
         return this.attrSvc.findAll(filters).pipe(tap(() => this.isLoading.set(false)));
       })
     )
   );
 
-  items      = computed(() => this.response()?.data  ?? []);
-  totalItems = computed(() => this.response()?.total ?? 0);
+  items = computed(() => this.response()?.data || []);
+  totalItems = computed(() => this.response()?.total || 0);
 
-  mappedLogs = computed<DatelineItem[]>(() =>
-    this.attrLogs().map((l: any) => ({
-      id: l.id,
-      date: l.createdAt,
-      action: l.action,
-      actionLabel: this.getLogActionLabel(l.action),
-      user: l.userName || 'Sistema',
-      icon: this.getLogIcon(l.action),
-    }))
-  );
-
-  dataTypeLabel(dt: string): string { return DATA_TYPE_LABELS[dt] ?? dt; }
-
-  private getLogActionLabel(action: string): string {
-    const m: Record<string, string> = { CREATE: 'Creado', UPDATE: 'Actualizado', DELETE: 'Eliminado' };
-    return m[action] ?? action;
+  constructor() {
+    if (typeof window !== 'undefined') {
+      const mq = window.matchMedia('(max-width: 768px)');
+      this.isMobile.set(mq.matches);
+      mq.addEventListener('change', e => this.isMobile.set(e.matches));
+    }
   }
 
-  private getLogIcon(action: string): string {
-    const m: Record<string, string> = { CREATE: 'lucidePlusCircle', UPDATE: 'lucideRefreshCw', DELETE: 'lucideTrash' };
-    return m[action] ?? 'lucideHistory';
+  dataTypeLabel(dt: string): string { return DATA_TYPE_LABELS[dt as keyof typeof DATA_TYPE_LABELS] ?? dt; }
+
+  // ── Handlers ─────────────────────────────────────────────────────────────────
+  onTabChange(tab: string) { this.activeTab.set(tab); this.resetPagination(); }
+  onSearch(q: string) { this.searchQuery.set(q); this.resetPagination(); }
+  onSortChange(e: { field: string; order: string }) {
+    this.sortField.set(e.field);
+    this.sortOrder.set(e.order.toUpperCase() as 'ASC' | 'DESC');
+    this.resetPagination();
   }
 
-  // ── List actions ───────────────────────────────────────────────────────
-  onTabChange(tab: string) { this.activeTab.set(tab); this.currentPage.set(1); }
-  onSearch(q: string)      { this.searchQuery.set(q); this.currentPage.set(1); }
-  onSortChange(ev: any)    { this.sortField.set(ev.field); this.sortOrder.set(ev.order.toUpperCase()); this.currentPage.set(1); }
-  clearSearch()            { this.searchQuery.set(''); }
-
-  handleAction(action: ActionItem, attr: AttributeType) {
-    if (action.id === 'edit')    this.onEditFromDetail(attr);
-    if (action.id === 'history') this.onShowHistory(attr.id);
-    if (action.id === 'delete')  { this.attrToDelete.set(attr); this.deleteModalOpen.set(true); }
+  // ── Filters ──────────────────────────────────────────────────────────────────
+  openAdvancedFilters() {
+    this.isFiltersOpen.set(true);
+    setTimeout(() => this.advancedFiltersRef?.refresh(), 0);
   }
 
-  // ── Detail ─────────────────────────────────────────────────────────────
+  onFilterTreeChange(newTree: FilterNode) {
+    if (newTree.type === 'group') {
+      this.filterTree.set(newTree as FilterGroup);
+      this.resetPagination();
+    }
+  }
+
+  clearAllFilters() {
+    this.searchQuery.set('');
+    this.filterTree.set({ type: 'group', id: 'root', logicalOperator: 'AND', children: [] });
+    this.resetPagination();
+  }
+
+  // ── CRUD ──────────────────────────────────────────────────────────────────────
+  onAddAttr() {
+    this.isEditing.set(false);
+    this.isDrawerOpen.set(true);
+    setTimeout(() => this.attrFormRef?.resetForm(), 0);
+  }
+
+  onEditAttr(attr: AttributeType) {
+    this.isDetailOpen.set(false);
+    this.isEditing.set(true);
+    this.isDrawerOpen.set(true);
+    setTimeout(() => this.attrFormRef?.setAttributeType(attr), 0);
+  }
+
+  onAttrSaved(_attr: AttributeType) {
+    this.isDrawerOpen.set(false);
+    this.refreshTrigger.update(v => v + 1);
+    this.resetPagination();
+  }
+
+  onDrawerClose() {
+    if (this.attrFormRef?.hasUnsavedChanges()) {
+      this.isConfirmCloseOpen.set(true);
+    } else {
+      this.isDrawerOpen.set(false);
+      this.attrFormRef?.resetForm();
+    }
+  }
+
+  forceCloseDrawer() {
+    this.isConfirmCloseOpen.set(false);
+    this.isDrawerOpen.set(false);
+    this.attrFormRef?.resetForm();
+  }
+
+  // ── Detail & History ──────────────────────────────────────────────────────────
   onShowDetail(attr: AttributeType) {
     this.selectedAttr.set(attr);
     this.isDetailOpen.set(true);
   }
 
-  // ── History ────────────────────────────────────────────────────────────
+  handleActionClick(action: ActionItem, attr: AttributeType) {
+    if (action.id === 'edit') this.onEditAttr(attr);
+    else if (action.id === 'history') this.onShowHistory(attr.id);
+    else if (action.id === 'delete') {
+      this.attrToDelete.set(attr);
+      this.isDeleteModalOpen.set(true);
+    }
+  }
+
   onShowHistory(id: string) {
     this.isDetailOpen.set(false);
     this.isHistoryOpen.set(true);
     this.isHistoryLoading.set(true);
     this.attrSvc.findLogs(id).subscribe({
-      next: logs => { this.attrLogs.set(logs); this.isHistoryLoading.set(false); },
-      error: () => { this.attrLogs.set([]); this.isHistoryLoading.set(false); }
-    });
-  }
-
-  // ── Form drawer ────────────────────────────────────────────────────────
-  onAdd() {
-    this.editingAttr.set(null);
-    this.drawerForm.reset({ name: '', dataType: 'TEXT', unit: '', isActive: true });
-    this.drawerForm.get('name')?.enable();
-    this.drawerForm.get('dataType')?.enable();
-    this.formDrawerOpen.set(true);
-  }
-
-  onEditFromDetail(attr: AttributeType) {
-    this.isDetailOpen.set(false);
-    this.editingAttr.set(attr);
-    this.drawerForm.patchValue({ name: attr.name, dataType: attr.dataType, unit: attr.unit ?? '', isActive: attr.isActive });
-    if (attr.isSystem) {
-      this.drawerForm.get('name')?.disable();
-      this.drawerForm.get('dataType')?.disable();
-    } else {
-      this.drawerForm.get('name')?.enable();
-      this.drawerForm.get('dataType')?.enable();
-    }
-    this.formDrawerOpen.set(true);
-  }
-
-  onSave() {
-    this.drawerForm.markAllAsTouched();
-    if (this.drawerForm.invalid) return;
-    this.isSaving.set(true);
-    const val = this.drawerForm.getRawValue();
-    const dto = { name: val.name, dataType: val.dataType, unit: val.unit || undefined, isActive: val.isActive };
-    const editing = this.editingAttr();
-    const obs$ = editing ? this.attrSvc.update(editing.id, dto) : this.attrSvc.create(dto);
-    obs$.subscribe({
-      next: () => {
-        this.toastSvc.success(editing ? 'Atributo actualizado' : 'Atributo creado');
-        this.formDrawerOpen.set(false);
-        this.isSaving.set(false);
-        this.refreshTrigger.update(v => v + 1);
+      next: logs => {
+        this.attrLogs.set(logs);
+        this.isHistoryLoading.set(false);
       },
-      error: () => { this.toastSvc.error('Error al guardar el atributo'); this.isSaving.set(false); }
+      error: () => {
+        this.toastService.error('No se pudo cargar el historial');
+        this.isHistoryLoading.set(false);
+        this.isHistoryOpen.set(false);
+      },
     });
   }
 
-  // ── Delete ─────────────────────────────────────────────────────────────
+  // ── Delete ────────────────────────────────────────────────────────────────────
+  cancelDelete() {
+    if (this.isDeleting()) return;
+    this.isDeleteModalOpen.set(false);
+    this.attrToDelete.set(null);
+  }
+
   confirmDelete() {
-    const a = this.attrToDelete(); if (!a) return;
+    const a = this.attrToDelete();
+    if (!a || this.isDeleting()) return;
     this.isDeleting.set(true);
     this.attrSvc.remove(a.id).subscribe({
       next: () => {
-        this.toastSvc.success('Atributo eliminado');
+        this.toastService.success('Atributo eliminado correctamente');
         this.refreshTrigger.update(v => v + 1);
         this.isDeleting.set(false);
-        this.deleteModalOpen.set(false);
+        this.cancelDelete();
       },
-      error: () => { this.toastSvc.error('Error al eliminar el atributo'); this.isDeleting.set(false); }
+      error: (err) => {
+        this.toastService.error(err?.error?.error ?? 'No se pudo eliminar el atributo');
+        this.isDeleting.set(false);
+      },
     });
   }
 
-  // ── Advanced Filters ───────────────────────────────────────────────────
-  openAdvancedFilters() {
-    this.modalSvc.open(
-      AttributeTypesAdvancedFilters,
-      'Filtros Avanzados',
-      {
-        filterTree: this.filterTree,
-        availableFields: this.filterConfig,
-        onFilterTreeChange: (tree: FilterNode) => this.filterTree.set(tree as FilterGroup),
-      },
-      'Los filtros se aplican en tiempo real',
-      [{ label: 'Hecho', variant: 'primary' as const, action: () => this.modalSvc.close() }]
-    );
+  // ── Helpers ───────────────────────────────────────────────────────────────────
+  private resetPagination() { this.currentPage.set(1); }
+
+  private getLogIcon(action: string): string {
+    switch (action) {
+      case 'CREATE': return 'lucidePlusCircle';
+      case 'UPDATE': return 'lucideRefreshCw';
+      case 'DELETE': return 'lucideTrash';
+      case 'IMPORT': return 'lucideCloudDownload';
+      default: return 'lucideHistory';
+    }
+  }
+
+  private getLogActionLabel(action: string): string {
+    switch (action) {
+      case 'CREATE': return 'Creación';
+      case 'UPDATE': return 'Actualización';
+      case 'DELETE': return 'Eliminación';
+      case 'IMPORT': return 'Importación';
+      default: return action;
+    }
+  }
+
+  private getChanges(oldData: any, newData: any) {
+    if (!oldData || !newData) return [];
+    const fields = [
+      { field: 'name', label: 'Nombre' },
+      { field: 'dataType', label: 'Tipo de Dato' },
+      { field: 'unit', label: 'Unidad' },
+      { field: 'isActive', label: 'Estado' },
+    ];
+    return fields
+      .filter(f => JSON.stringify(oldData[f.field]) !== JSON.stringify(newData[f.field]))
+      .map(f => ({
+        ...f,
+        oldValue: this.formatValue(f.field, oldData[f.field]),
+        newValue: this.formatValue(f.field, newData[f.field]),
+      }));
+  }
+
+  private formatValue(field: string, val: any): string {
+    if (field === 'isActive') return val ? 'Activo' : 'Inactivo';
+    if (field === 'dataType') return DATA_TYPE_LABELS[val as keyof typeof DATA_TYPE_LABELS] ?? String(val || '');
+    return String(val || '');
   }
 }

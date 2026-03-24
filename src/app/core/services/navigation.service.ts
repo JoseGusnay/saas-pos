@@ -66,7 +66,8 @@ export class NavigationService {
         { label: 'Presentaciones', route: '/inventario/presentaciones', icon: 'lucideArchive' },
         { label: 'Unidades',       route: '/inventario/unidades',       icon: 'lucideRuler' },
         { label: 'Atributos',     route: '/inventario/atributos',      icon: 'lucideTags' },
-        { label: 'Stock',          route: '/inventario/stock',          icon: 'lucideWarehouse' },
+        { label: 'Bodegas',        route: '/inventario/bodegas',        icon: 'lucideWarehouse' },
+        { label: 'Stock',          route: '/inventario/stock',          icon: 'lucideBarChart2' },
       ]
     },
     {

@@ -42,7 +42,39 @@
   &__trigger {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    font-family: inherit;
+    line-height: 1;
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+    height: 36px;
+    border: 1px solid transparent;
+    background: var(--color-accent-primary);
+    color: var(--color-accent-primary-text);
+    border-color: var(--color-accent-primary);
+    transition: background-color var(--transition-fast), border-color var(--transition-fast);
+
+    &:hover {
+      background: var(--color-accent-hover);
+      border-color: var(--color-accent-hover);
+    }
+
+    &:focus-visible {
+      outline: none;
+      box-shadow: var(--shadow-input-focus);
+    }
+
+    ng-icon {
+      font-size: 1rem;
+      display: inline-flex;
+      align-items: center;
+    }
   }
 
   &__chevron {
@@ -152,11 +184,11 @@
   &--active {
     background: var(--color-accent-primary);
     border-color: var(--color-accent-primary);
-    color: #fff;
+    color: var(--color-accent-primary-text);
 
     &:hover {
       opacity: 0.9;
-      color: #fff;
+      color: var(--color-accent-primary-text);
     }
   }
 

@@ -16,19 +16,26 @@ export interface SelectOption {
     provideIcons({ lucideChevronDown, lucideCheck, lucideX })
   ],
   template: `
-    <div class="cs" [class.is-open]="isOpen">
+    <div class="cs" [class.is-open]="isOpen" [class.cs--sm]="size === 'sm'">
       <button
+        #trigger
         type="button"
         class="cs__trigger"
-        (click)="toggle()"
+        (click)="toggle(trigger)"
       >
-        <span class="cs__label">{{ selectedLabel }}</span>
+        <span class="cs__label" [class.cs__label--placeholder]="!value">{{ selectedLabel }}</span>
         <ng-icon name="lucideChevronDown" class="cs__chevron"></ng-icon>
       </button>
 
-      <!-- Desktop: dropdown -->
+      <!-- Desktop: fixed dropdown -->
       @if (isOpen && !isMobile()) {
-        <div class="cs__menu">
+        <div class="cs__backdrop" (click)="close()"></div>
+        <div class="cs__menu"
+             [class.cs__menu--flipped]="dropdownPos()?.flipped"
+             [style.top.px]="dropdownPos()?.top"
+             [style.bottom.px]="dropdownPos()?.bottom"
+             [style.left.px]="dropdownPos()?.left"
+             [style.min-width.px]="dropdownPos()?.width">
           @for (option of options; track option.value) {
             <div
               class="cs__option"
@@ -46,15 +53,15 @@ export interface SelectOption {
 
       <!-- Mobile: bottom sheet -->
       @if (isOpen && isMobile()) {
-        <div class="cs__backdrop" (click)="close()" [@backdropAnim]></div>
-        <div class="cs__sheet" [@sheetAnim]>
+        <div class="cs__sheet-backdrop" (click)="close()"></div>
+        <div class="cs__sheet">
+          <div class="cs__sheet-handle"></div>
           <div class="cs__sheet-header">
             <span class="cs__sheet-title">Seleccionar</span>
             <button type="button" class="cs__sheet-close" (click)="close()">
               <ng-icon name="lucideX"></ng-icon>
             </button>
           </div>
-          <div class="cs__sheet-handle"></div>
           <div class="cs__sheet-options">
             @for (option of options; track option.value) {
               <div
@@ -78,6 +85,13 @@ export interface SelectOption {
       position: relative;
       width: 100%;
 
+      &--sm .cs__trigger {
+        height: 32px;
+        padding: 0 10px;
+        font-size: var(--font-size-sm);
+        line-height: 1;
+      }
+
       &__trigger {
         width: 100%;
         display: flex;
@@ -85,50 +99,77 @@ export interface SelectOption {
         justify-content: space-between;
         padding: 0.5rem 0.75rem;
         background: var(--color-bg-surface);
-        border: 1.5px solid var(--color-border-light);
-        border-radius: var(--radius-md);
-        font-size: var(--font-size-sm);
-        font-weight: 500;
+        border: 1px solid var(--color-border-light);
+        border-radius: var(--radius-sm);
+        font-size: var(--font-size-base);
         color: var(--color-text-main);
         cursor: pointer;
-        transition: border-color var(--transition-fast);
+        transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background-color var(--transition-fast);
         gap: 8px;
         font-family: inherit;
+        line-height: var(--line-height-normal);
 
-        &:hover { border-color: var(--color-border-medium, var(--color-text-muted)); }
+        &:hover { border-color: var(--color-border-hover); }
+        &:focus-visible {
+          outline: none;
+          border-color: var(--color-border-focus);
+          background: var(--color-bg-input-focus);
+          box-shadow: var(--shadow-input-focus);
+        }
       }
 
       &__chevron {
         font-size: 14px;
         color: var(--color-text-muted);
-        transition: transform 0.2s ease;
+        transition: transform var(--transition-fast);
+        flex-shrink: 0;
       }
 
       &.is-open .cs__trigger {
-        border-color: var(--color-accent-primary);
-        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.08);
+        border-color: var(--color-border-focus);
+        background: var(--color-bg-input-focus);
+        box-shadow: var(--shadow-input-focus);
         .cs__chevron { transform: rotate(180deg); }
       }
 
-      &__label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-      /* ── Desktop dropdown ────────────────────────────────── */
-      &__menu {
-        position: absolute;
-        top: calc(100% + 6px);
-        left: 0;
-        right: 0;
-        z-index: 50;
-        background: var(--color-bg-surface);
-        border: 1px solid var(--color-border-subtle);
-        border-radius: 10px;
-        padding: 6px;
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+      &__label {
         overflow: hidden;
-        animation: csSlideDown 0.15s ease-out;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+
+        &--placeholder { color: var(--color-placeholder); }
+      }
+
+      /* ── Desktop backdrop (invisible, for click-outside) ──── */
+      &__backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: var(--z-sheet);
+      }
+
+      /* ── Desktop dropdown (fixed) ─────────────────────────── */
+      &__menu {
+        position: fixed;
+        z-index: calc(var(--z-sheet) + 1);
+        background: var(--color-bg-surface);
+        border: 1px solid var(--color-border-light);
+        border-radius: var(--radius-sm);
+        padding: 4px;
+        box-shadow: var(--shadow-dropdown);
+        animation: csSlideDown 0.12s ease-out;
         display: flex;
         flex-direction: column;
-        gap: 2px;
+        gap: 1px;
+        max-height: 280px;
+        overflow-y: auto;
+
+        &--flipped { animation: csSlideUp 0.12s ease-out; }
+
+        // Scrollbar
+        &::-webkit-scrollbar { width: 4px; }
+        &::-webkit-scrollbar-track { background: transparent; }
+        &::-webkit-scrollbar-thumb { background: var(--color-border-light); border-radius: 10px; }
+        &::-webkit-scrollbar-thumb:hover { background: var(--color-text-muted); }
       }
 
       /* ── Option (shared desktop + sheet) ─────────────────── */
@@ -136,15 +177,20 @@ export interface SelectOption {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 8px 10px;
-        border-radius: 6px;
+        padding: 7px 10px;
+        border-radius: var(--radius-sm);
         cursor: pointer;
-        font-size: 13px;
-        color: var(--color-text-soft, var(--color-text-muted));
-        transition: all 0.12s ease;
+        font-size: var(--font-size-sm);
+        color: var(--color-text-soft);
+        transition: background var(--transition-fast), color var(--transition-fast);
 
         &:hover { background: var(--color-bg-hover); color: var(--color-text-main); }
-        &.is-active { background: var(--color-bg-hover); color: var(--color-text-main); font-weight: 600; }
+
+        &.is-active {
+          background: var(--color-bg-active);
+          color: var(--color-accent-interactive);
+          font-weight: var(--font-weight-semibold);
+        }
 
         &--sheet {
           padding: 14px 20px;
@@ -152,17 +198,21 @@ export interface SelectOption {
           font-size: var(--font-size-base);
           border-bottom: 1px solid var(--color-border-subtle);
           &:last-child { border-bottom: none; }
+
+          &.is-active {
+            background: var(--color-bg-active);
+          }
         }
       }
 
-      &__check { font-size: 14px; color: var(--color-accent-primary); }
+      &__check { font-size: 14px; color: var(--color-accent-interactive); flex-shrink: 0; }
 
       /* ── Mobile backdrop ─────────────────────────────────── */
-      &__backdrop {
+      &__sheet-backdrop {
         position: fixed;
         inset: 0;
         background: rgba(0, 0, 0, 0.4);
-        z-index: 9998;
+        z-index: var(--z-sheet);
         animation: csFadeIn 0.2s ease;
       }
 
@@ -172,13 +222,14 @@ export interface SelectOption {
         bottom: 0;
         left: 0;
         right: 0;
-        z-index: 9999;
+        z-index: calc(var(--z-sheet) + 1);
         background: var(--color-bg-surface);
-        border-radius: 16px 16px 0 0;
+        border-radius: var(--radius-lg) var(--radius-lg) 0 0;
         max-height: 70vh;
         display: flex;
         flex-direction: column;
         animation: csSheetUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        padding-bottom: env(safe-area-inset-bottom, 0);
       }
 
       &__sheet-handle {
@@ -197,7 +248,7 @@ export interface SelectOption {
       }
 
       &__sheet-title {
-        font-size: var(--font-size-sm);
+        font-size: var(--font-size-base);
         font-weight: var(--font-weight-semibold);
         color: var(--color-text-main);
       }
@@ -206,26 +257,32 @@ export interface SelectOption {
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 28px;
-        height: 28px;
+        width: 30px;
+        height: 30px;
         border: none;
         border-radius: 50%;
-        background: var(--color-bg-hover);
+        background: var(--color-bg-subtle);
         color: var(--color-text-muted);
         cursor: pointer;
         font-size: 14px;
-        &:hover { background: var(--color-border-light); }
+        transition: background var(--transition-fast);
+        &:hover { background: var(--color-border-light); color: var(--color-text-main); }
       }
 
       &__sheet-options {
         overflow-y: auto;
-        padding: 8px 0;
+        padding: 4px 0 8px;
         -webkit-overflow-scrolling: touch;
       }
     }
 
     @keyframes csSlideDown {
       from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes csSlideUp {
+      from { opacity: 0; transform: translateY(4px); }
       to { opacity: 1; transform: translateY(0); }
     }
 
@@ -243,10 +300,12 @@ export interface SelectOption {
 export class CustomSelectComponent {
   @Input() options: SelectOption[] = [];
   @Input() value: string = '';
+  @Input() size: 'default' | 'sm' = 'default';
   @Output() valueChange = new EventEmitter<string>();
 
   isOpen = false;
-  isMobile = signal(typeof window !== 'undefined' && window.innerWidth <= 768);
+  isMobile = signal(false);
+  dropdownPos = signal<{ top: number | null; bottom: number | null; left: number; width: number; flipped: boolean } | null>(null);
 
   constructor(private elementRef: ElementRef) {}
 
@@ -254,12 +313,27 @@ export class CustomSelectComponent {
     return this.options.find(o => o.value === this.value)?.label || 'Seleccionar...';
   }
 
-  toggle() {
-    this.isMobile.set(window.innerWidth <= 768);
-    this.isOpen = !this.isOpen;
-    if (this.isOpen && this.isMobile()) {
-      document.body.style.overflow = 'hidden';
+  toggle(trigger: HTMLElement) {
+    if (this.isOpen) {
+      this.close();
+      return;
     }
+    this.isMobile.set(window.innerWidth <= 768);
+    if (this.isMobile()) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      const rect = trigger.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const flipped = spaceBelow < 300;
+      this.dropdownPos.set({
+        top: flipped ? null : rect.bottom + 4,
+        bottom: flipped ? (window.innerHeight - rect.top) + 4 : null,
+        left: rect.left,
+        width: rect.width,
+        flipped,
+      });
+    }
+    this.isOpen = true;
   }
 
   select(option: SelectOption) {
@@ -270,18 +344,14 @@ export class CustomSelectComponent {
 
   close() {
     this.isOpen = false;
+    this.dropdownPos.set(null);
     document.body.style.overflow = '';
   }
 
   @HostListener('document:click', ['$event'])
   onClickOutside(event: Event) {
     if (!this.isMobile() && !this.elementRef.nativeElement.contains(event.target)) {
-      this.isOpen = false;
+      this.close();
     }
-  }
-
-  @HostListener('window:resize')
-  onResize() {
-    this.isMobile.set(window.innerWidth <= 768);
   }
 }
