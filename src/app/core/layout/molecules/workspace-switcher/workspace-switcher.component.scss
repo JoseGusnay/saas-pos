@@ -3,10 +3,10 @@
 .workspace-switcher {
     @include flex-center;
     justify-content: flex-start;
-    gap: 12px;
+    gap: 10px;
     width: 100%;
     padding: 8px;
-    margin-bottom: 24px;
+    margin-bottom: 16px;
     border: none;
     background: transparent;
     border-radius: var(--radius-md);
@@ -72,10 +72,10 @@
         @include flex-center;
         width: 32px;
         height: 32px;
-        background-color: #4F46E5;
+        background-color: var(--color-accent-primary);
         border-radius: var(--radius-sm);
         flex-shrink: 0;
-        color: #ffffff;
+        color: var(--color-accent-primary-text);
 
         app-icon {
             width: 18px;

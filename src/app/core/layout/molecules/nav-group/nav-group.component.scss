@@ -19,17 +19,15 @@
     }
 
     &__children {
-        min-height: 0; // CRUCIAL: Permite que el grid en 0fr aplaste el interior
-        overflow: hidden; // Esconde el contenido excedente visualmente
+        min-height: 0;
+        overflow: hidden;
 
         display: flex;
         flex-direction: column;
-        gap: 2px;
-        margin-left: 24px;
-        padding-left: 8px;
-        border-left: 1px solid var(--color-border-light);
-
-        // Espaciado interno seguro sin romper el cálculo del acordeón
+        gap: 1px;
+        margin-left: 20px;
+        padding-left: 10px;
+        border-left: 1px solid var(--color-border-subtle);
         padding-top: 4px;
     }
 }

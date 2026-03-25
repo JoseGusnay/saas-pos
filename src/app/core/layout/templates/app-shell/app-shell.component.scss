@@ -4,23 +4,15 @@
     display: flex;
     height: 100vh;
     width: 100vw;
-    overflow: hidden; // Previene scroll del body
+    overflow: hidden;
 
     &__sidebar {
         height: 100%;
-        z-index: 20; // Asegura que esté por encima visualmente
+        z-index: 20;
 
-        // En móvil el sidebar sale del flujo, así que le decimos al Flexbox
-        // padre que este item mide 0px, para que el wrapper central ocupe todo
         @media (max-width: 768px) {
             position: fixed;
             z-index: 1000;
-        }
-
-        &--mobile-open {
-            @media (max-width: 768px) {
-                // El SidebarComponent hijo gestiona la transicion translateX
-            }
         }
     }
 
@@ -28,7 +20,8 @@
         flex: 1;
         display: flex;
         flex-direction: column;
-        min-width: 0; // Previene desbordamiento oculto del flex
+        min-width: 0;
+        transition: margin-left var(--transition-base);
     }
 
     &__header {
@@ -38,18 +31,16 @@
 
     &__main {
         flex: 1;
-        overflow-y: auto; // Esta es la UNICA capa que escrollea
+        overflow-y: auto;
         background-color: var(--color-bg-canvas);
-        padding: 32px 40px 40px 40px; // Padding inferior ajustado a la mitad (40px)
+        padding: 24px 32px 32px 32px;
         position: relative;
 
-        // Mobile Canvas Density Vercel-style (Maximiza espacio útil)
         @media (max-width: 768px) {
-            padding: 24px 16px 32px 16px; // Mitad del colchón inferior móvil (32px)
+            padding: 20px 16px 24px 16px;
         }
     }
 
-    // Estilo temporal para la fase de construcción solicitada
     &__construction-state {
         @include flex-center;
         flex-direction: column;
@@ -78,16 +69,16 @@
     }
 }
 
-// Mobile Backdrop Blur Vercel
+// Mobile Backdrop
 .sidebar-backdrop {
     position: fixed;
     inset: 0;
-    background-color: rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(4px);
+    background-color: rgba(0, 0, 0, 0.35);
+    backdrop-filter: blur(6px);
     z-index: 999;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1); // Vercel easing
+    transition: opacity var(--transition-base);
 
     &--visible {
         opacity: 1;

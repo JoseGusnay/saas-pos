@@ -100,8 +100,8 @@
     }
 
     &--warn {
-      background: rgba(251, 191, 36, 0.12);
-      color: #D97706;
+      background: var(--color-warning-bg);
+      color: var(--color-warning-text);
     }
 
     &--loss {
@@ -200,8 +200,8 @@
     font-weight: var(--font-weight-semibold);
 
     &--blue {
-      background: rgba(79, 70, 229, 0.1);
-      color: #4F46E5;
+      background: var(--color-primary-subtle);
+      color: var(--color-accent-primary);
     }
 
     &--purple {
@@ -210,18 +210,18 @@
     }
 
     &--orange {
-      background: rgba(249, 115, 22, 0.1);
-      color: #F97316;
+      background: var(--color-warning-bg);
+      color: var(--color-warning-text);
     }
 
     &--green {
-      background: rgba(34, 197, 94, 0.1);
-      color: #22C55E;
+      background: var(--color-success-bg);
+      color: var(--color-success-text);
     }
 
     &--indigo {
-      background: rgba(79, 70, 229, 0.1);
-      color: #4F46E5;
+      background: var(--color-primary-subtle);
+      color: var(--color-accent-primary);
     }
 
     &--gray {
@@ -278,7 +278,7 @@
 
     &:focus {
       border-color: var(--color-accent-primary);
-      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.08);
+      box-shadow: var(--shadow-input-focus);
     }
   }
 
@@ -302,7 +302,7 @@
 
     &:focus {
       border-color: var(--color-accent-primary);
-      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.08);
+      box-shadow: var(--shadow-input-focus);
     }
   }
 
@@ -331,7 +331,7 @@
 
     &--active {
       border-color: var(--color-accent-primary);
-      background: rgba(79, 70, 229, 0.04);
+      background: var(--color-bg-active);
     }
 
     &:hover:not(&--active) {
@@ -496,7 +496,7 @@
 
     &:focus-within {
       border-color: var(--color-accent-primary);
-      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.08);
+      box-shadow: var(--shadow-input-focus);
     }
 
     .pff--error & {
@@ -554,7 +554,7 @@
 
     &:focus-within {
       border-color: var(--color-accent-primary);
-      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.08);
+      box-shadow: var(--shadow-input-focus);
     }
 
     &-ic {

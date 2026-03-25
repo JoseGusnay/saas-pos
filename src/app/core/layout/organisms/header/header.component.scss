@@ -3,11 +3,10 @@
 .header {
     @include flex-between;
     width: 100%;
-    height: 56px;
-    min-height: 56px;
-    background-color: var(--color-bg-surface);
-    border-bottom: 1px solid var(--color-border-light);
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02); // Separador Arquitectónico Suave (Estilo Vercel)
+    height: 52px;
+    min-height: 52px;
+    background-color: var(--color-bg-canvas);
+    // border-bottom: 1px solid var(--color-border-light);
     padding: 0 24px;
 
     &__left {
@@ -16,7 +15,6 @@
         gap: 12px;
     }
 
-    // Botón Menú Hamburguesa en Móviles (UX Vercel Minimalista)
     &__mobile-toggle {
         @include flex-center;
         background: transparent;
@@ -25,7 +23,7 @@
         cursor: pointer;
         padding: 4px;
         border-radius: var(--radius-sm);
-        display: none; // Oculto en escritorio
+        display: none;
         transition: color var(--transition-fast), background-color var(--transition-fast);
 
         &:hover {
@@ -43,14 +41,12 @@
         }
     }
 
-    // Estilo minimalista de miga de pan (Breadcrumbs) UX
     &__breadcrumbs {
         display: flex;
         align-items: center;
         gap: 8px;
         font-size: var(--font-size-sm);
 
-        // Ocultamos la miga de pan en móvil para salvar espacio de UI
         @media (max-width: 768px) {
             display: none;
         }
@@ -68,8 +64,7 @@
 
     &__breadcrumb-separator {
         color: var(--color-text-muted);
-        opacity: 0.4;
-        font-size: var(--font-size-md);
+        font-size: var(--font-size-sm);
         user-select: none;
     }
 
@@ -81,25 +76,24 @@
     &__right {
         display: flex;
         align-items: center;
-        gap: 16px;
+        gap: 8px;
     }
 
-    // Buscador estilo Vercel/Linear
     &__search {
         @include flex-center;
-        background-color: var(--color-bg-canvas); // Fondo gris muy claro
-        border: 1px solid transparent; // Preparando para hover
+        background-color: transparent;
+        border: 1px solid var(--color-border-light);
         border-radius: var(--radius-md);
-        padding: 6px 10px;
+        padding: 5px 10px;
         gap: 8px;
         color: var(--color-text-muted);
         font-size: var(--font-size-sm);
         cursor: text;
-        transition: var(--transition-base);
+        transition: border-color var(--transition-fast), background var(--transition-fast);
 
         &:hover {
-            border-color: var(--color-border-light);
-            background-color: var(--color-bg-surface);
+            border-color: var(--color-border-hover);
+            background-color: var(--color-bg-hover);
         }
 
         input {
@@ -109,10 +103,10 @@
             font-family: inherit;
             font-size: inherit;
             color: var(--color-text-main);
-            width: 160px; // Ancho predeterminado sutil
+            width: 140px;
 
             &::placeholder {
-                color: var(--color-text-muted);
+                color: var(--color-placeholder);
             }
         }
 
@@ -120,28 +114,21 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            padding: 2px 6px;
-            background-color: var(--color-bg-surface); // Fondo base
+            padding: 1px 5px;
+            background-color: var(--color-bg-subtle);
             border: 1px solid var(--color-border-light);
-            border-radius: var(--radius-sm);
+            border-radius: 4px;
             font-size: 11px;
             font-weight: var(--font-weight-medium);
             color: var(--color-text-muted);
             font-family: inherit;
-
-            // Magia Linear/Vercel KBD: Sombra inferior simulando elevación física + Sombra exterior leve
-            box-shadow: inset 0 -2px 0 0 rgba(0, 0, 0, 0.05), 0 1px 1px rgba(0, 0, 0, 0.02);
-            transition: all var(--transition-fast);
         }
 
-        // Cuando la caja de búsqueda está "Activa/Hover", la tecla responde sutilmente
         &:hover .shortcut {
-            color: var(--color-text-main); // Se ilumina
-            border-color: rgba(0, 0, 0, 0.1);
+            color: var(--color-text-soft);
         }
     }
 
-    // Acciones (Campana)
     &__action {
         @include flex-center;
         width: 32px;
@@ -149,18 +136,24 @@
         border-radius: var(--radius-md);
         color: var(--color-text-muted);
         position: relative;
-        @include interactive-hover;
+        cursor: pointer;
+        border: none;
+        background: transparent;
+        transition: color var(--transition-fast), background var(--transition-fast);
 
-        // Indicador de notification no leída
+        &:hover {
+            color: var(--color-text-main);
+            background-color: var(--color-bg-hover);
+        }
+
         .indicator {
             position: absolute;
-            top: 6px;
-            right: 6px;
-            width: 8px;
-            height: 8px;
+            top: 7px;
+            right: 7px;
+            width: 6px;
+            height: 6px;
             background-color: var(--color-danger-text);
             border-radius: 50%;
-            border: 2px solid var(--color-bg-surface);
         }
     }
 }

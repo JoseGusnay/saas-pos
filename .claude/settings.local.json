@@ -22,7 +22,9 @@
       "Bash(find 'C:\\\\Users\\\\usuario\\\\Documents\\\\proyects personal\\\\netsjs' -type f -name *purchase*)",
       "Bash(find 'C:\\\\Users\\\\usuario\\\\Documents\\\\proyects personal\\\\netsjs\\\\multitenant-backend\\\\src' -type d -name *migration*)",
       "Bash(find 'C:/Users/usuario/Documents/proyects personal/netsjs/multitenant-backend/src' -name *migration* -o -name *Migration*)",
-      "Bash(echo \"EXIT CODE: $?\")"
+      "Bash(echo \"EXIT CODE: $?\")",
+      "Bash(find 'C:\\\\Users\\\\usuario\\\\Documents\\\\proyects personal\\\\angular\\\\saas-pos\\\\src' -type f -name *.ts -path */layout/* -exec grep -l selector: {})",
+      "Bash(2)"
     ]
   }
 }

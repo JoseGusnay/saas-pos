@@ -614,15 +614,16 @@ const STEPPER_STEPS = [
     .doc-header {
       display: flex; align-items: flex-end; justify-content: space-between;
       flex-wrap: wrap; gap: 1.5rem;
-      padding: 1.5rem 1.75rem;
+      padding: 1.75rem 2rem;
       background: var(--color-bg-surface);
       border: 1px solid var(--color-border-light);
       border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
     }
     .doc-header__identity { display: flex; flex-direction: column; gap: 0.375rem; }
     .doc-header__eyebrow {
-      font-size: 10px; font-weight: 700; letter-spacing: 0.12em;
-      color: var(--color-text-muted); text-transform: uppercase;
+      font-size: 10px; font-weight: 600; letter-spacing: 0.1em;
+      color: var(--color-accent-interactive); text-transform: uppercase;
     }
     .doc-header__number {
       font-size: 1.75rem; font-weight: 800; color: var(--color-text-main);
@@ -630,12 +631,12 @@ const STEPPER_STEPS = [
     }
     .doc-header__meta {
       display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
-      margin-top: 0.375rem;
+      margin-top: 0.5rem;
     }
     .meta-chip {
-      display: inline-flex; align-items: center; gap: 4px;
-      padding: 3px 10px; border-radius: 99px;
-      background: var(--color-bg-subtle); border: 1px solid var(--color-border-subtle);
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 10px; border-radius: 99px;
+      background: var(--color-bg-canvas); border: 1px solid var(--color-border-light);
       font-size: 11px; font-weight: 500; color: var(--color-text-soft);
     }
 
@@ -648,21 +649,21 @@ const STEPPER_STEPS = [
       min-width: 60px;
     }
     .stepper-dot {
-      width: 24px; height: 24px; border-radius: 50%;
+      width: 26px; height: 26px; border-radius: 50%;
       display: flex; align-items: center; justify-content: center;
-      background: var(--color-bg-subtle);
+      background: var(--color-bg-canvas);
       border: 2px solid var(--color-border-light);
       color: var(--color-text-muted);
       font-size: 10px; font-weight: 700;
       transition: all var(--transition-base);
     }
     .stepper-step--active .stepper-dot {
-      background: var(--color-accent-primary);
-      border-color: var(--color-accent-primary);
-      color: var(--color-accent-primary-text);
+      background: var(--color-accent-interactive);
+      border-color: var(--color-accent-interactive);
+      color: #fff;
     }
     .stepper-step--current .stepper-dot {
-      box-shadow: 0 0 0 3px var(--color-bg-surface), 0 0 0 5px var(--color-accent-primary);
+      box-shadow: 0 0 0 3px var(--color-bg-surface), 0 0 0 5px var(--color-accent-interactive);
     }
     .stepper-label {
       font-size: 10px; font-weight: 600; color: var(--color-text-muted);
@@ -676,7 +677,7 @@ const STEPPER_STEPS = [
       margin-bottom: 18px;
       transition: background var(--transition-base);
     }
-    .stepper-line--active { background: var(--color-accent-primary); }
+    .stepper-line--active { background: var(--color-accent-interactive); }
 
     @media (max-width: 640px) {
       .doc-stepper { display: none; }
@@ -692,12 +693,12 @@ const STEPPER_STEPS = [
       background: var(--color-bg-surface);
       border: 1px solid var(--color-border-light);
       border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
     }
     .doc-card__head {
       display: flex; align-items: center; gap: 0.5rem;
-      padding: 0.75rem 1.25rem;
+      padding: 0.625rem 1.25rem;
       border-bottom: 1px solid var(--color-border-light);
-      background: var(--color-bg-subtle);
       font-size: var(--font-size-xs); font-weight: 600; letter-spacing: 0.02em;
       color: var(--color-text-soft);
       border-radius: var(--radius-lg) var(--radius-lg) 0 0;
@@ -706,8 +707,9 @@ const STEPPER_STEPS = [
 
     /* Vendor info */
     .vendor-info-grid {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 0.875rem 1.25rem;
-      padding: 0.875rem; background: var(--color-bg-subtle);
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem 1.25rem;
+      padding: 0.75rem 0.875rem;
+      background: var(--color-bg-canvas);
       border-radius: var(--radius-md); border: 1px solid var(--color-border-subtle);
     }
     .vendor-info-item { display: flex; flex-direction: column; gap: 2px; }
@@ -720,7 +722,7 @@ const STEPPER_STEPS = [
       display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
       padding: 1.5rem 1rem; color: var(--color-text-muted);
       font-size: var(--font-size-sm); text-align: center;
-      background: var(--color-bg-subtle); border-radius: var(--radius-md);
+      background: var(--color-bg-canvas); border-radius: var(--radius-md);
       border: 1px dashed var(--color-border-light);
     }
 
@@ -736,7 +738,8 @@ const STEPPER_STEPS = [
     }
     .lf-value--date {
       display: inline-flex; align-items: center; gap: 6px;
-      padding: 0.5rem 0.75rem; background: var(--color-bg-subtle);
+      padding: 0.5rem 0.75rem;
+      background: var(--color-bg-canvas);
       border-radius: var(--radius-sm); border: 1px solid var(--color-border-subtle);
       color: var(--color-text-soft); font-weight: 500; font-size: var(--font-size-sm);
     }
@@ -752,8 +755,9 @@ const STEPPER_STEPS = [
       display: flex; align-items: center; gap: 0.75rem;
       padding: 0 1.25rem;
       background: var(--color-bg-surface);
-      border: 2px solid var(--color-border-light);
+      border: 1px solid var(--color-border-light);
       border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
       transition: border-color var(--transition-base), box-shadow var(--transition-base);
       min-height: 52px;
     }
@@ -791,7 +795,7 @@ const STEPPER_STEPS = [
       kbd {
         display: inline-flex; align-items: center; justify-content: center;
         min-width: 22px; height: 22px; padding: 0 6px;
-        background: var(--color-bg-subtle); border: 1px solid var(--color-border-light);
+        background: var(--color-bg-canvas); border: 1px solid var(--color-border-light);
         border-radius: 4px; font-size: 11px; font-weight: 600;
         color: var(--color-text-muted); font-family: inherit;
       }
@@ -843,12 +847,12 @@ const STEPPER_STEPS = [
     }
     .product-result__unit {
       font-size: 11px; color: var(--color-text-muted);
-      padding: 1px 6px; background: var(--color-bg-subtle);
+      padding: 1px 6px; background: var(--color-bg-canvas);
       border-radius: 4px; font-weight: 500;
     }
     .product-result__price {
       font-size: var(--font-size-sm); font-weight: 600;
-      color: var(--color-text-soft); white-space: nowrap;
+      color: var(--color-accent-interactive); white-space: nowrap;
     }
     .product-result__add {
       display: flex; align-items: center; justify-content: center;
@@ -858,7 +862,7 @@ const STEPPER_STEPS = [
     }
     .product-result:hover .product-result__add,
     .product-result--highlighted .product-result__add {
-      background: var(--color-accent-primary); color: var(--color-accent-primary-text);
+      background: var(--color-accent-interactive); color: #fff;
       border-radius: 50%;
     }
 
@@ -867,13 +871,13 @@ const STEPPER_STEPS = [
       background: var(--color-bg-surface);
       border: 1px solid var(--color-border-light);
       border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
     }
     .field-error-border { border-color: var(--color-danger-text); }
     .doc-section__head {
       display: flex; align-items: center; justify-content: space-between;
-      gap: 1rem; padding: 0.75rem 1.25rem;
+      gap: 1rem; padding: 0.625rem 1.25rem;
       border-bottom: 1px solid var(--color-border-light);
-      background: var(--color-bg-subtle);
       border-radius: var(--radius-lg) var(--radius-lg) 0 0;
     }
     .doc-section__head-left {
@@ -884,7 +888,7 @@ const STEPPER_STEPS = [
     .items-count {
       display: inline-flex; align-items: center; justify-content: center;
       min-width: 20px; height: 20px; padding: 0 6px;
-      background: var(--color-accent-primary); color: var(--color-accent-primary-text);
+      background: var(--color-accent-interactive); color: #fff;
       border-radius: 99px; font-size: 10px; font-weight: 700;
     }
 
@@ -895,7 +899,7 @@ const STEPPER_STEPS = [
     .items-empty--error { color: var(--color-danger-text); }
     .items-empty__icon {
       width: 56px; height: 56px; display: flex; align-items: center; justify-content: center;
-      background: var(--color-bg-subtle); border-radius: 50%;
+      background: var(--color-bg-canvas); border-radius: 50%;
       margin-bottom: 0.25rem;
     }
     .items-empty--error .items-empty__icon { background: var(--color-danger-bg); }
@@ -918,7 +922,6 @@ const STEPPER_STEPS = [
       font-size: 11px; font-weight: 600; letter-spacing: 0.02em;
       color: var(--color-text-muted);
       border-bottom: 1px solid var(--color-border-light);
-      background: var(--color-bg-subtle);
       white-space: nowrap;
     }
     .th-idx { width: 36px; text-align: center; }
@@ -974,7 +977,9 @@ const STEPPER_STEPS = [
       width: 28px; height: 28px; border: none; background: none;
       border-radius: var(--radius-sm); color: var(--color-text-muted);
       cursor: pointer; transition: all var(--transition-fast);
+      opacity: 0;
     }
+    .item-row:hover .del-btn { opacity: 1; }
     .del-btn:hover { color: var(--color-danger-text); background: var(--color-danger-bg); }
 
     /* Mobile item cards */
@@ -1011,6 +1016,7 @@ const STEPPER_STEPS = [
           border-radius: var(--radius-sm); padding: 0.5rem;
         }
       }
+      .mobile-item-card .del-btn { opacity: 1; }
       .mobile-item-card__total {
         font-weight: var(--font-weight-bold); font-size: 15px;
         color: var(--color-text-main); padding: 0.5rem 0;
@@ -1020,7 +1026,11 @@ const STEPPER_STEPS = [
     /* ── Totals block ──────────────────────────────────────────────────────── */
     .totals-block {
       display: flex; flex-direction: column; align-items: flex-end;
-      padding: 1.25rem 1.5rem; border-top: 1px solid var(--color-border-light); gap: 0.875rem;
+      padding: 1.25rem 1.5rem;
+      border-top: 1px solid var(--color-border-light);
+      background: var(--color-bg-canvas);
+      border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+      gap: 0.875rem;
     }
     .totals-rows { display: flex; flex-direction: column; gap: 0.375rem; min-width: 300px; }
     .t-row { display: flex; justify-content: space-between; align-items: center; gap: 2rem; }

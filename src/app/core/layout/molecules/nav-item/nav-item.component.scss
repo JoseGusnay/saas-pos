@@ -31,16 +31,14 @@
 
     &--active {
         background-color: var(--color-bg-active);
-        color: #4F46E5;
+        color: var(--color-accent-interactive);
         position: relative;
 
-        // Mantener indigo en hover — anula el mixin que tiene mayor especificidad
         &:hover {
-            background-color: rgba(79, 70, 229, 0.11);
-            color: #4F46E5;
+            background-color: var(--color-bg-active);
+            color: var(--color-accent-interactive);
         }
 
-        // Indicador de "Píldora" lateral (Estilo Linear/Vercel)
         &::before {
             content: '';
             position: absolute;
@@ -49,22 +47,8 @@
             transform: translateY(-50%);
             width: 3px;
             height: 16px;
-            background-color: #4F46E5;
+            background-color: var(--color-accent-interactive);
             border-radius: 0 4px 4px 0;
-        }
-
-        // Dark mode: indigo más claro para contraste sobre fondo oscuro
-        [data-theme="dark"] & {
-            color: #818CF8;
-
-            &:hover {
-                background-color: rgba(129, 140, 248, 0.18);
-                color: #818CF8;
-            }
-
-            &::before {
-                background-color: #818CF8;
-            }
         }
     }
 
