@@ -588,8 +588,10 @@ const STEPPER_STEPS = [
     /* ── Page wrapper ──────────────────────────────────────────────────────── */
     .doc-page {
       display: flex; flex-direction: column; gap: 1.25rem;
-      max-width: 1120px; margin: 0 auto; padding-bottom: 3rem;
+      max-width: 1120px; margin: 0 auto;
+      padding: 24px 32px 3rem;
     }
+    @media (max-width: 768px) { .doc-page { padding: 20px 16px 2rem; } }
     .doc-page--saving { pointer-events: none; opacity: 0.6; }
     .doc-loading { display: flex; justify-content: center; padding: 5rem; }
 

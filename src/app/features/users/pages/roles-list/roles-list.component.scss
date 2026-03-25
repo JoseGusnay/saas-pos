@@ -6,6 +6,11 @@
     flex-direction: column;
     min-height: 100%;
     width: 100%;
+    padding: 24px 32px 32px;
+
+    @media (max-width: 768px) {
+        padding: 20px 16px 24px;
+    }
 
     &__empty {
         grid-column: 1 / -1;

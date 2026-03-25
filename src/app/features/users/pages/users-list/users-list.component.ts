@@ -167,7 +167,7 @@ import { UserAdvancedFilters } from './components/user-advanced-filters/user-adv
                 </div>
               </app-data-card>
             } @else {
-              <div class="user-row-item shadow-sm" (click)="onShowDetail(user)">
+              <div class="user-row-item" (click)="onShowDetail(user)">
                 <div class="row-main">
                   <div class="user-avatar">
                     <div class="avatar-box">

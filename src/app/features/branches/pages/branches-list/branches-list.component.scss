@@ -3,8 +3,13 @@
 .branches-page {
     display: flex;
     flex-direction: column;
-    min-height: 100%; // <-- Clave: min-height permite que crezca, heredando el padding padre
+    min-height: 100%;
     width: 100%;
+    padding: 24px 32px 32px;
+
+    @media (max-width: 768px) {
+        padding: 20px 16px 24px;
+    }
 
 
 
@@ -308,10 +313,11 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            color: white;
+            background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+            color: var(--color-accent-primary-text);
             font-weight: 700;
             font-size: 18px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            box-shadow: var(--shadow-sm);
             flex-shrink: 0;
 
             ng-icon { font-size: 20px; }
@@ -337,7 +343,7 @@
                 .badge-main {
                     padding: 2px 6px;
                     background: var(--color-primary-subtle);
-                    color: var(--color-primary);
+                    color: var(--color-accent-primary);
                     font-size: 10px;
                     border-radius: 4px;
                     text-transform: uppercase;
@@ -355,7 +361,7 @@
                 overflow: hidden;
                 text-overflow: ellipsis;
 
-                ng-icon { font-size: 12px; color: var(--color-primary); }
+                ng-icon { font-size: 12px; color: var(--color-accent-primary); }
             }
         }
     }

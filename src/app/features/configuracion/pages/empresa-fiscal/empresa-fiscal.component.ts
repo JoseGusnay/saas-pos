@@ -346,7 +346,8 @@ function rucValidator(control: AbstractControl): ValidationErrors | null {
     </div>
   `,
   styles: [`
-    .ef-page { display: flex; flex-direction: column; gap: 1.5rem; max-width: 1200px; margin: 0 auto ; }
+    .ef-page { display: flex; flex-direction: column; gap: 1.5rem; max-width: 1200px; margin: 0 auto; padding: 24px 32px 32px; }
+    @media (max-width: 768px) { .ef-page { padding: 20px 16px 24px; } }
 
     /* Header */
     .ef-header {

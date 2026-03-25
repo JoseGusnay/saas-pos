@@ -6,6 +6,11 @@
     flex-direction: column;
     min-height: 100%;
     width: 100%;
+    padding: 24px 32px 32px;
+
+    @media (max-width: 768px) {
+        padding: 20px 16px 24px;
+    }
 
     &__empty {
         grid-column: 1 / -1;
@@ -225,7 +230,7 @@
             height: 40px;
             border-radius: 50%;
             @include flex-center;
-            color: white;
+            color: var(--color-accent-primary-text);
             font-weight: 700;
             border: 2px solid var(--color-border-subtle);
         }

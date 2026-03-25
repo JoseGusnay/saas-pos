@@ -182,8 +182,8 @@ import { CategoryImportModalComponent } from '../../components/category-import-m
             @for (category of categories(); track category.id) {
               <div class="category-row-item" (click)="onShowDetail(category)">
                 <div class="row-main">
-                  <div class="category-avatar" [style.background]="'var(--color-primary-subtle)'">
-                    <ng-icon name="lucideFolder" [style.color]="'var(--color-primary)'"></ng-icon>
+                  <div class="category-avatar">
+                    <ng-icon name="lucideFolder"></ng-icon>
                   </div>
                   <div class="category-info">
                     <span class="category-name">{{ category.name }}</span>

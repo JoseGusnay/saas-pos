@@ -5,6 +5,11 @@
     flex-direction: column;
     min-height: 100%;
     width: 100%;
+    padding: 24px 32px 32px;
+
+    @media (max-width: 768px) {
+        padding: 20px 16px 24px;
+    }
 
     // Skeleton Grid Styles
   .skeleton-card {
@@ -103,6 +108,19 @@
     position: relative;
     z-index: 1;
 
+    @media (max-width: 768px) {
+        grid-template-columns: 1fr auto auto;
+        gap: 8px;
+        padding: 12px 16px;
+
+        .row-parent { display: none; }
+    }
+
+    @media (max-width: 480px) {
+        grid-template-columns: 1fr auto;
+        .row-status { display: none; }
+    }
+
     &:hover {
         border-color: var(--color-border-hover);
         box-shadow: var(--shadow-md);
@@ -127,6 +145,8 @@
             align-items: center;
             justify-content: center;
             flex-shrink: 0;
+            background: var(--color-primary-subtle);
+            color: var(--color-accent-primary);
             ng-icon { font-size: 20px; }
         }
 

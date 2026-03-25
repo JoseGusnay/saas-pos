@@ -884,7 +884,8 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
     </div>
   `,
   styles: [`
-    .orders-page { display: flex; flex-direction: column; min-height: 100%; width: 100%; gap: 0; }
+    .orders-page { display: flex; flex-direction: column; min-height: 100%; width: 100%; gap: 0; padding: 24px 32px 32px; }
+    @media (max-width: 768px) { .orders-page { padding: 20px 16px 24px; } }
     .orders-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; margin-top: 0.5rem; }
     .orders-list { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.5rem; }
     .orders-empty { grid-column: 1 / -1; display: flex; justify-content: center; padding: 4rem 1rem; }

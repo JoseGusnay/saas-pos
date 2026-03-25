@@ -33,12 +33,7 @@
         flex: 1;
         overflow-y: auto;
         background-color: var(--color-bg-canvas);
-        padding: 24px 32px 32px 32px;
         position: relative;
-
-        @media (max-width: 768px) {
-            padding: 20px 16px 24px 16px;
-        }
     }
 
     &__construction-state {

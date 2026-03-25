@@ -159,7 +159,7 @@ import {
                   }
                 </div>
               } @else {
-                <div class="stock-row shadow-sm" (click)="openKardex(level)">
+                <div class="stock-row" (click)="openKardex(level)">
                   <div class="stock-row__avatar" [class]="'avatar--' + getLevelStatus(level)">
                     <ng-icon name="lucidePackage" size="20"></ng-icon>
                   </div>
@@ -254,7 +254,7 @@ import {
             }
           } @else if (movements().length > 0) {
             @for (mov of movements(); track mov.id) {
-              <div class="movement-row shadow-sm">
+              <div class="movement-row">
                 <span class="badge-movement" [class]="'type--' + mov.type">{{ getMovTypeLabel(mov.type) }}</span>
                 <div class="movement-info">
                   <span class="movement-product">{{ mov.productName }} — {{ mov.variantName }}</span>
@@ -499,7 +499,8 @@ import {
     </div>
   `,
   styles: [`
-    .stock-page { display: flex; flex-direction: column; min-height: 100%; width: 100%; }
+    .stock-page { display: flex; flex-direction: column; min-height: 100%; width: 100%; padding: 24px 32px 32px; }
+    @media (max-width: 768px) { .stock-page { padding: 20px 16px 24px; } }
     .stock-page__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.25rem; }
     .stock-page__list { display: flex; flex-direction: column; gap: 0.75rem; }
     .stock-page__empty { grid-column: 1 / -1; display: flex; justify-content: center; width: 100%; padding: 4rem 1rem; }

@@ -179,9 +179,9 @@ import { SpinnerComponent } from '../../../../shared/components/ui/spinner/spinn
               ></app-data-card>
             } @else {
               <!-- Row View Mode -->
-              <div class="branch-row-item shadow-sm" (click)="onShowDetail(branch)">
+              <div class="branch-row-item" (click)="onShowDetail(branch)">
                  <div class="row-main">
-                    <div class="branch-avatar" [style.background]="'linear-gradient(135deg, var(--color-primary), var(--color-primary-dark))'">
+                    <div class="branch-avatar">
                       <ng-icon name="lucideCloudDownload" *ngIf="branch.isMain"></ng-icon>
                       <span *ngIf="!branch.isMain">{{ branch.name[0].toUpperCase() }}</span>
                     </div>
