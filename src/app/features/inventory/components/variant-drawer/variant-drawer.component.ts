@@ -338,8 +338,7 @@ import { map } from 'rxjs';
     .drawer-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.4);
-      backdrop-filter: blur(4px);
+      background: var(--glass-bg);
       z-index: 1000;
       display: flex;
       justify-content: flex-end;
@@ -353,7 +352,8 @@ import { map } from 'rxjs';
       background: var(--color-bg-surface);
       display: flex;
       flex-direction: column;
-      box-shadow: -10px 0 40px rgba(0,0,0,0.15);
+      box-shadow: var(--shadow-lg);
+      border-left: 1px solid var(--color-border-light);
       animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
@@ -431,7 +431,7 @@ import { map } from 'rxjs';
       align-items: center;
       gap: 0.5rem;
       padding: 0.75rem 0;
-      border-bottom: 1px solid var(--color-border-subtle);
+      border-bottom: 1px solid var(--color-border-light);
 
       ng-icon { font-size: 13px; }
     }
@@ -455,7 +455,7 @@ import { map } from 'rxjs';
       text-transform: none;
       letter-spacing: 0;
       &.margin--good { background: var(--color-success-bg); color: var(--color-success-text); }
-      &.margin--warn { background: rgba(251, 191, 36, 0.12); color: #D97706; }
+      &.margin--warn { background: var(--color-warning-bg); color: var(--color-warning-text); }
       &.margin--loss { background: var(--color-danger-bg); color: var(--color-danger-text); }
     }
 
@@ -607,8 +607,8 @@ import { map } from 'rxjs';
       .variant-img-overlay {
         position: absolute;
         inset: 0;
-        background: rgba(0,0,0,0.45);
-        color: #fff;
+        background: var(--color-overlay-bg);
+        color: var(--color-overlay-text);
         font-size: 12px;
         font-weight: 600;
         display: flex;
@@ -619,6 +619,28 @@ import { map } from 'rxjs';
       }
 
       &:hover .variant-img-overlay { opacity: 1; }
+    }
+
+    /* ── Mobile responsive ────────────────────────────────────── */
+    @media (max-width: 600px) {
+      .drawer-content { max-width: 100%; border-left: none; }
+      .drawer-header { padding: 1rem; }
+      .drawer-header .header-main { gap: 0.75rem; }
+      .drawer-header .header-main .header-icon { width: 36px; height: 36px; font-size: 1rem; }
+      .drawer-header .header-main .header-text h3 { font-size: 1rem; }
+      .drawer-body { padding: 1rem; gap: 1.25rem; }
+      .section-card { gap: 0.75rem; }
+      .form-stack { gap: 1rem; }
+      .drawer-footer { padding: 1rem; gap: 0.75rem; }
+      .variant-image-drop { height: 80px; }
+      .duration-chip { padding: 0.3rem 0.75rem; font-size: var(--font-size-xs); }
+    }
+
+    @media (max-width: 380px) {
+      .drawer-header { padding: 0.875rem; }
+      .drawer-body { padding: 0.875rem; gap: 1rem; }
+      .drawer-footer { padding: 0.875rem; }
+      .color-field { flex-wrap: wrap; .color-input { width: 100%; height: 36px; } }
     }
   `]
 })

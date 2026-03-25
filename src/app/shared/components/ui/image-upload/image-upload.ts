@@ -177,13 +177,13 @@ import { lucideImage, lucideX, lucideUpload } from '@ng-icons/lucide';
       &__overlay {
         position: absolute;
         inset: 0;
-        background: rgba(0, 0, 0, 0.45);
+        background: var(--color-overlay-bg);
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
         gap: 6px;
-        color: #ffffff;
+        color: var(--color-overlay-text);
         font-size: var(--font-size-sm);
         font-weight: var(--font-weight-medium);
         opacity: 0;
@@ -199,18 +199,18 @@ import { lucideImage, lucideX, lucideUpload } from '@ng-icons/lucide';
         width: 28px;
         height: 28px;
         border-radius: 50%;
-        background: rgba(0, 0, 0, 0.55);
+        background: var(--color-overlay-bg);
         border: none;
-        color: #ffffff;
+        color: var(--color-overlay-text);
         cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
         font-size: 14px;
-        transition: background-color var(--transition-fast);
+        transition: opacity var(--transition-fast);
         z-index: 2;
 
-        &:hover { background: rgba(0, 0, 0, 0.8); }
+        &:hover { opacity: 0.85; }
       }
     }
 

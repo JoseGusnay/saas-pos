@@ -95,7 +95,7 @@ let uid = 0;
     .fi {
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 8px;
     }
 
     .fi--sm .fi__wrap {

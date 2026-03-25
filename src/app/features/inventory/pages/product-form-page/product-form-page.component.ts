@@ -926,8 +926,8 @@ export class ProductFormPageComponent implements OnInit {
       trackLots: (type !== 'SERVICE' && type !== 'COMBO') && sv.stockTrackable ? (sv.trackLots ?? false) : false,
       trackExpiry: (type !== 'SERVICE' && type !== 'COMBO') && sv.stockTrackable ? (sv.trackExpiry ?? false) : false,
       durationMinutes: type === 'SERVICE' && sv.durationMinutes ? Number(sv.durationMinutes) : undefined,
-      minimumStock: (type === 'PHYSICAL' || type === 'RAW_MATERIAL') && sv.stockTrackable && sv.minimumStock != null ? Number(sv.minimumStock) : null,
-      maximumStock: (type === 'PHYSICAL' || type === 'RAW_MATERIAL') && sv.stockTrackable && sv.maximumStock != null ? Number(sv.maximumStock) : null,
+      minimumStock: (type === 'PHYSICAL' || type === 'RAW_MATERIAL') && sv.stockTrackable && sv.minimumStock != null ? Number(sv.minimumStock) : undefined,
+      maximumStock: (type === 'PHYSICAL' || type === 'RAW_MATERIAL') && sv.stockTrackable && sv.maximumStock != null ? Number(sv.maximumStock) : undefined,
       attributeValues: attributeValues.length ? attributeValues : undefined,
       recipe: this.buildRecipePayload(sv.recipe),
     };
@@ -954,8 +954,8 @@ export class ProductFormPageComponent implements OnInit {
       trackLots: stockTrackable ? (v.trackLots ?? false) : false,
       trackExpiry: stockTrackable ? (v.trackExpiry ?? false) : false,
       durationMinutes: type === 'SERVICE' && v.durationMinutes ? Number(v.durationMinutes) : undefined,
-      minimumStock: (v.stockTrackable && v.minimumStock != null) ? Number(v.minimumStock) : null,
-      maximumStock: (v.stockTrackable && v.maximumStock != null) ? Number(v.maximumStock) : null,
+      minimumStock: (v.stockTrackable && v.minimumStock != null) ? Number(v.minimumStock) : undefined,
+      maximumStock: (v.stockTrackable && v.maximumStock != null) ? Number(v.maximumStock) : undefined,
       imageUrl: v.imageUrl || undefined,
       imagePublicId: v.imagePublicId || undefined,
       attributeValues: attributeValues.length ? attributeValues : undefined,
@@ -982,9 +982,8 @@ export class ProductFormPageComponent implements OnInit {
   }
 
   private buildRecipePayload(recipe: any) {
-    // null explícito → backend borra la receta existente
-    if (!recipe?.enabled || !recipe?.ingredients?.length) return null;
-    if (!recipe?.yieldUnitId) return null;
+    if (!recipe?.enabled || !recipe?.ingredients?.length) return undefined;
+    if (!recipe?.yieldUnitId) return undefined;
     return {
       yield: Number(recipe.yield),
       yieldUnitId: recipe.yieldUnitId,
@@ -1012,8 +1011,8 @@ export class ProductFormPageComponent implements OnInit {
         if (value === null || value === undefined || value === '') return null;
         return {
           attributeTypeId: cat.attributeTypeId,
-          valueText: cat.attributeType.dataType !== 'NUMBER' ? String(value) : null,
-          valueNumber: cat.attributeType.dataType === 'NUMBER' ? Number(value) : null,
+          valueText: cat.attributeType.dataType !== 'NUMBER' ? String(value) : undefined,
+          valueNumber: cat.attributeType.dataType === 'NUMBER' ? Number(value) : undefined,
         };
       })
       .filter(Boolean) as any[];
