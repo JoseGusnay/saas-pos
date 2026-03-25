@@ -524,7 +524,7 @@ export class ProductsListComponent {
   }
 
   goToDetail(id: string) {
-    this.router.navigate(['/inventory/productos', id]);
+    this.router.navigate(['/inventario/productos', id]);
   }
 
   getMinPrice(product: any): number {
@@ -532,7 +532,7 @@ export class ProductsListComponent {
   }
 
   getMainSku(product: any): string {
-    return product.mainSku || product.variants?.[0]?.sku || 'N/A';
+    return product.mainSku || product.variants?.[0]?.sku || 'N/D';
   }
 
   readonly response = toSignal(

@@ -147,7 +147,7 @@
                     </span>
                   </div>
                   <div class="pfc__fields">
-                    <app-recipe-builder [recipeGroup]="$any(simpleVariant.get('recipe'))"></app-recipe-builder>
+                    <app-recipe-builder [recipeGroup]="$any(simpleVariant.get('recipe'))" [excludeProductId]="productId() ?? undefined"></app-recipe-builder>
                   </div>
                 </section>
               }

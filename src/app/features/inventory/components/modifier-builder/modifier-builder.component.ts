@@ -285,7 +285,16 @@ export class ModifierBuilderComponent implements OnInit, OnDestroy {
 
     if (this.isNewOption() && opt) {
       const gi = this.editingGroupIndex()!;
-      this.getOptions(this.formArray.at(gi)).push(opt);
+      const options = this.getOptions(this.formArray.at(gi));
+      const newName = (opt.get('name')?.value ?? '').trim().toLowerCase();
+      const isDuplicate = options.controls.some(c =>
+        (c.get('name')?.value ?? '').trim().toLowerCase() === newName
+      );
+      if (isDuplicate) {
+        opt.get('name')?.setErrors({ duplicate: true });
+        return;
+      }
+      options.push(opt);
     }
 
     this._backToGroup();

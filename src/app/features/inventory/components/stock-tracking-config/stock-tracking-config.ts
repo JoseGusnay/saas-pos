@@ -1,10 +1,12 @@
 import {
   Component,
   OnInit,
+  DestroyRef,
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   inject
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ControlContainer, ReactiveFormsModule, FormGroup } from '@angular/forms';
 import { ToggleSwitchComponent } from '../../../../shared/components/ui/toggle-switch/toggle-switch';
 import { FieldInputComponent } from '../../../../shared/components/ui/field-input/field-input';
@@ -90,6 +92,7 @@ import { FieldInputComponent } from '../../../../shared/components/ui/field-inpu
 })
 export class StockTrackingConfigComponent implements OnInit {
   private cdr = inject(ChangeDetectorRef);
+  private destroyRef = inject(DestroyRef);
   private fg = inject(ControlContainer).control as FormGroup;
 
   get isTracking(): boolean {
@@ -97,8 +100,8 @@ export class StockTrackingConfigComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.fg.get('stockTrackable')?.valueChanges.subscribe(() => {
-      this.cdr.markForCheck();
-    });
+    this.fg.get('stockTrackable')?.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.cdr.markForCheck());
   }
 }

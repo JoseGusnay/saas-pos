@@ -40,6 +40,7 @@ export const INVENTORY_ROUTES: Routes = [
   {
     path: 'productos/crear',
     loadComponent: () => import('./pages/product-form-page/product-form-page.component').then(m => m.ProductFormPageComponent),
+    canDeactivate: [unsavedChangesGuard],
     data: { breadcrumb: 'Nuevo Producto' }
   },
   {
@@ -50,6 +51,7 @@ export const INVENTORY_ROUTES: Routes = [
   {
     path: 'productos/:id/editar',
     loadComponent: () => import('./pages/product-form-page/product-form-page.component').then(m => m.ProductFormPageComponent),
+    canDeactivate: [unsavedChangesGuard],
     data: { breadcrumb: 'Editar Producto' }
   },
   {

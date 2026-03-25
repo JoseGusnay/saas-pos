@@ -159,7 +159,7 @@ export class RawMaterialFormComponent {
     this.unitsSvc.findAll({ search: query, page, limit: 8, onlyActive: true }).pipe(
       map(res => ({
         data: res.data.map((u: any) => ({ value: u.id, label: `${u.name} (${u.abbreviation})` } as SearchSelectOption)),
-        hasMore: res.data.length === 8
+        hasMore: res.data.length >= 8
       }))
     );
 }

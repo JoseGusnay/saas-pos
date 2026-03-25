@@ -3,10 +3,11 @@ import {
   inject,
   signal,
   OnInit,
-
+  DestroyRef,
   ViewChild,
   ChangeDetectionStrategy
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { trigger, transition, style, animate } from '@angular/animations';
 import { CommonModule } from '@angular/common';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -45,7 +46,8 @@ import { FieldInputComponent } from '../../../../shared/components/ui/field-inpu
 import { BackButtonComponent } from '../../../../shared/components/ui/back-button/back-button';
 import { SearchSelectOption } from '../../../../shared/models/search-select.models';
 import { CategoryAttributeType, CreateProductPayload } from '../../models/product.model';
-import { map } from 'rxjs';
+import { HasUnsavedChanges } from '../../../../core/guards/unsaved-changes.guard';
+import { map, switchMap, of, catchError } from 'rxjs';
 
 @Component({
   selector: 'app-product-form-page',
@@ -90,16 +92,20 @@ import { map } from 'rxjs';
   templateUrl: './product-form-page.html',
   styleUrls: ['./product-form-page.scss']
 })
-export class ProductFormPageComponent implements OnInit {
+export class ProductFormPageComponent implements OnInit, HasUnsavedChanges {
   private fb = inject(FormBuilder);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
+  private destroyRef = inject(DestroyRef);
   private productSvc = inject(ProductService);
   private categorySvc = inject(CategoryService);
   private taxSvc = inject(TaxService);
   private unitsSvc = inject(UnitsService);
   private presentationSvc = inject(PresentationService);
   private toastSvc = inject(ToastService);
+
+  savedSuccessfully = false;
+  isDirty = () => this.form?.dirty ?? false;
 
   // ── State ──────────────────────────────────────────────────────────────────
   isSubmitting = signal(false);
@@ -234,7 +240,8 @@ export class ProductFormPageComponent implements OnInit {
 
     // Tipo pre-seleccionado desde la pantalla de tipo
     const tipoParam = this.route.snapshot.queryParams['tipo'];
-    if (tipoParam) {
+    const validTypes = ['PHYSICAL', 'SERVICE', 'COMBO', 'RAW_MATERIAL'];
+    if (tipoParam && validTypes.includes(tipoParam)) {
       this.typePreset.set(true);
       this.typeCtrl.setValue(tipoParam, { emitEvent: true });
     }
@@ -242,25 +249,25 @@ export class ProductFormPageComponent implements OnInit {
 
   private loadProduct(id: string) {
     this.isLoadingProduct.set(true);
-    this.productSvc.findOne(id).subscribe({
-      next: (product) => {
+    this.productSvc.findOne(id).pipe(
+      switchMap(product => {
         if (product.categoryId) {
-          this.categorySvc.getCategoryAttributes(product.categoryId).subscribe({
-            next: attrs => {
-              this.categoryAttributes.set(attrs);
-              this.initialCategoryAttributes.set(attrs);
-              this.patchForm(product);
-              this.isLoadingProduct.set(false);
-            },
-            error: () => {
-              this.patchForm(product);
-              this.isLoadingProduct.set(false);
-            }
-          });
-        } else {
-          this.patchForm(product);
-          this.isLoadingProduct.set(false);
+          return this.categorySvc.getCategoryAttributes(product.categoryId).pipe(
+            catchError(() => of([] as CategoryAttributeType[])),
+            map(attrs => ({ product, attrs }))
+          );
         }
+        return of({ product, attrs: [] as CategoryAttributeType[] });
+      }),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe({
+      next: ({ product, attrs }) => {
+        if (attrs.length) {
+          this.categoryAttributes.set(attrs);
+          this.initialCategoryAttributes.set(attrs);
+        }
+        this.patchForm(product);
+        this.isLoadingProduct.set(false);
       },
       error: () => {
         this.toastSvc.error('Error al cargar el producto');
@@ -301,18 +308,24 @@ export class ProductFormPageComponent implements OnInit {
     if (!hasVariantsValue && p.variants?.length === 1) {
       const v0 = p.variants[0];
       if (v0.baseUnitId) {
-        this.unitsSvc.findAll({ onlyActive: false }).subscribe(res => {
-          const u = res.data.find((x: any) => x.id === v0.baseUnitId);
-          if (u) this.initialUnitOption.set({ value: u.id, label: `${u.name} (${u.abbreviation})` });
+        this.unitsSvc.findAll({ onlyActive: false }).subscribe({
+          next: res => {
+            const u = res.data.find((x: any) => x.id === v0.baseUnitId);
+            if (u) this.initialUnitOption.set({ value: u.id, label: `${u.name} (${u.abbreviation})` });
+          },
+          error: () => {}
         });
       }
       const taxIds = p.variants[0].variantTaxes?.map((vt: any) => vt.taxId) ?? [];
       if (taxIds.length) {
-        this.taxSvc.findAllSimple().subscribe(taxes => {
-          const matched = taxes.filter((t: any) => taxIds.includes(t.id));
-          this.initialTaxOptions.set(
-            matched.map((t: any) => ({ value: t.id, label: `${t.name} (${t.percentage}%)` }))
-          );
+        this.taxSvc.findAllSimple().subscribe({
+          next: taxes => {
+            const matched = taxes.filter((t: any) => taxIds.includes(t.id));
+            this.initialTaxOptions.set(
+              matched.map((t: any) => ({ value: t.id, label: `${t.name} (${t.percentage}%)` }))
+            );
+          },
+          error: () => {}
         });
       }
     }
@@ -327,8 +340,9 @@ export class ProductFormPageComponent implements OnInit {
       const v = p.variants[0];
       this.rebuildSimpleVariantAttributes(this.categoryAttributes(), v.attributeValues ?? []);
       if (v.presentationId) {
-        this.presentationSvc.findOne(v.presentationId).subscribe(p => {
-          this.initialPresentationOption.set({ value: p.id, label: p.name });
+        this.presentationSvc.findOne(v.presentationId).subscribe({
+          next: p => this.initialPresentationOption.set({ value: p.id, label: p.name }),
+          error: () => {}
         });
       }
       this.simpleVariant.patchValue({
@@ -441,7 +455,7 @@ export class ProductFormPageComponent implements OnInit {
       })
     });
 
-    this.hasVariants.valueChanges.subscribe(enabled => {
+    this.hasVariants.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(enabled => {
       if (!enabled && this.variants.length > 0 && this.variantsHaveData()) {
         this.hasVariants.setValue(true, { emitEvent: false });
         this.isVariantClearModalOpen.set(true);
@@ -450,7 +464,7 @@ export class ProductFormPageComponent implements OnInit {
       this.applyHasVariantsChange(enabled);
     });
 
-    this.typeCtrl.valueChanges.subscribe(type => {
+    this.typeCtrl.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(type => {
       if (type === 'SERVICE') {
         this.simpleVariant.patchValue(
           { sku: '', barcode: '', presentationId: '', trackLots: false, trackExpiry: false, stockTrackable: false },
@@ -473,7 +487,7 @@ export class ProductFormPageComponent implements OnInit {
       this.syncValidators();
     });
 
-    this.comboPriceModeCtrl.valueChanges.subscribe(() => this.syncValidators());
+    this.comboPriceModeCtrl.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => this.syncValidators());
 
     this.syncValidators();
   }
@@ -568,7 +582,18 @@ export class ProductFormPageComponent implements OnInit {
   }
 
   // ── Image handling ─────────────────────────────────────────────────────────
+  private readonly ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+  private readonly MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
+
   onImageFileSelected(file: File) {
+    if (!this.ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      this.toastSvc.error('Formato de imagen no válido. Usa JPG, PNG, WebP o GIF.');
+      return;
+    }
+    if (file.size > this.MAX_IMAGE_SIZE) {
+      this.toastSvc.error('La imagen no debe superar 5 MB.');
+      return;
+    }
     this.selectedImageFile.set(file);
   }
 
@@ -626,7 +651,7 @@ export class ProductFormPageComponent implements OnInit {
       conversionFactor: [existingVariant?.conversionFactor ?? 1, [Validators.min(0.0001)]],
       costPrice: [this.round2(existingVariant?.costPrice ?? 0), [Validators.min(0)]],
       salePrice: [this.round2(existingVariant?.salePrice ?? null),
-        this.typeCtrl.value === 'RAW_MATERIAL' ? [Validators.min(0)] : [Validators.required, Validators.min(0)]],
+        this.typeCtrl.value === 'RAW_MATERIAL' ? [Validators.min(0)] : [Validators.required, Validators.min(0.01)]],
       stockTrackable: [existingVariant?.stockTrackable ?? (this.typeCtrl.value !== 'SERVICE')],
       trackLots: [existingVariant?.trackLots ?? false],
       trackExpiry: [existingVariant?.trackExpiry ?? false],
@@ -809,6 +834,10 @@ export class ProductFormPageComponent implements OnInit {
     const val = this.form.value;
 
     if (val.hasVariants) {
+      if (this.variants.length === 0) {
+        this.toastSvc.error(`Agrega al menos una ${this.variantNoun}`);
+        return;
+      }
       if (this.variants.invalid) return;
     } else {
       if (this.simpleVariant.invalid) return;
@@ -835,8 +864,10 @@ export class ProductFormPageComponent implements OnInit {
       isSellable: val.isSellable,
       isPurchasable: val.isPurchasable,
       // Preserve existing image URL if no new file selected
-      imageUrl: !this.selectedImageFile() && this.imagePreviewUrl() && !this.imagePreviewUrl()!.startsWith('data:')
-        ? this.imagePreviewUrl()! : undefined,
+      imageUrl: (() => {
+        const preview = this.imagePreviewUrl();
+        return !this.selectedImageFile() && preview && !preview.startsWith('data:') ? preview : undefined;
+      })(),
       imagePublicId: !this.selectedImageFile() ? (this.imagePublicId() ?? undefined) : undefined,
       variants: val.hasVariants
         ? this.variants.controls.map(ctrl => this.mapVariant(ctrl.value))
@@ -889,6 +920,7 @@ export class ProductFormPageComponent implements OnInit {
 
     obs$.subscribe({
       next: res => {
+        this.savedSuccessfully = true;
         const msg = this.isEditing() ? 'Producto actualizado' : `Producto "${res.name}" creado`;
         this.toastSvc.success(`${msg} exitosamente`);
         this.router.navigate(['/inventario/productos']);

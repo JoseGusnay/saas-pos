@@ -45,6 +45,7 @@ interface IngredientResult {
 })
 export class RecipeBuilderComponent implements OnInit, OnChanges, OnDestroy {
   @Input({ required: true }) recipeGroup!: FormGroup;
+  @Input() excludeProductId?: string;
 
   private fb = inject(FormBuilder);
   private productSvc = inject(ProductService);
@@ -134,7 +135,7 @@ export class RecipeBuilderComponent implements OnInit, OnChanges, OnDestroy {
           return of([]);
         }
         this.isSearchingIngredients.set(true);
-        return this.productSvc.searchVariants(q, undefined, ['RAW_MATERIAL']);
+        return this.productSvc.searchVariants(q, this.excludeProductId, ['RAW_MATERIAL']);
       }),
       takeUntil(this.destroy$)
     ).subscribe({
@@ -251,6 +252,7 @@ export class RecipeBuilderComponent implements OnInit, OnChanges, OnDestroy {
 
   addIngredient(r: IngredientResult) {
     if (this.isIngredientAdded(r.variantId)) return;
+    if (this.excludeProductId && r.variantId === this.excludeProductId) return;
     this.ingredients.push(this.fb.group({
       variantId: [r.variantId, Validators.required],
       variantName: [r.variantName !== r.productName ? `${r.productName} — ${r.variantName}` : r.productName],
@@ -311,22 +313,25 @@ export class RecipeBuilderComponent implements OnInit, OnChanges, OnDestroy {
 
     if (!ingredientUnitIds.length && !yieldUnitId) return;
 
-    this.unitsSvc.findAll({ onlyActive: false }).subscribe(res => {
-      // Ingredient units
-      const opts: Record<number, SearchSelectOption | undefined> = {};
-      for (const { i, unitId } of ingredientUnitIds) {
-        const u = res.data.find((x: any) => x.id === unitId);
-        if (u) opts[i] = { value: u.id, label: `${u.name} (${u.abbreviation})` };
-      }
-      this.ingredientUnitOptions.set(opts);
+    this.unitsSvc.findAll({ onlyActive: false }).subscribe({
+      next: res => {
+        // Ingredient units
+        const opts: Record<number, SearchSelectOption | undefined> = {};
+        for (const { i, unitId } of ingredientUnitIds) {
+          const u = res.data.find((x: any) => x.id === unitId);
+          if (u) opts[i] = { value: u.id, label: `${u.name} (${u.abbreviation})` };
+        }
+        this.ingredientUnitOptions.set(opts);
 
-      // Yield unit
-      if (yieldUnitId) {
-        const u = res.data.find((x: any) => x.id === yieldUnitId);
-        if (u) this.initialYieldUnitOption.set({ value: u.id, label: `${u.name} (${u.abbreviation})` });
-      }
+        // Yield unit
+        if (yieldUnitId) {
+          const u = res.data.find((x: any) => x.id === yieldUnitId);
+          if (u) this.initialYieldUnitOption.set({ value: u.id, label: `${u.name} (${u.abbreviation})` });
+        }
 
-      this.cdr.markForCheck();
+        this.cdr.markForCheck();
+      },
+      error: () => this.cdr.markForCheck()
     });
   }
 

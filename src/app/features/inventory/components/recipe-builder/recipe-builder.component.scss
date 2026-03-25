@@ -66,7 +66,7 @@
     border-radius: 50%;
     background: var(--color-bg-surface);
     transition: transform var(--transition-fast);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    box-shadow: var(--shadow-sm);
 
     .rb__toggle-switch--on & {
       transform: translateX(16px);
@@ -420,8 +420,8 @@
     width: 48px;
     height: 48px;
     border-radius: 50%;
-    background: var(--color-warning-bg, #fff8e1);
-    color: var(--color-warning-text, #f59e0b);
+    background: var(--color-warning-bg);
+    color: var(--color-warning-text);
     font-size: 22px;
   }
 

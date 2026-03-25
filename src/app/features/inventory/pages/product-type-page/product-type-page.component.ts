@@ -185,15 +185,10 @@ interface TypeCard {
         font-size: 20px;
         flex-shrink: 0;
 
-        &--blue   { background: rgba(79, 70, 229, 0.1);  color: #4F46E5; }
-        &--purple { background: rgba(168, 85, 247, 0.1); color: #A855F7; }
-        &--orange { background: rgba(249, 115, 22, 0.1); color: #F97316; }
-        &--green  { background: rgba(34, 197, 94, 0.1);  color: #22C55E; }
-
-        [data-theme='dark'] &--blue   { background: rgba(99, 102, 241, 0.15);  color: #818CF8; }
-        [data-theme='dark'] &--purple { background: rgba(192, 132, 252, 0.15); color: #C084FC; }
-        [data-theme='dark'] &--orange { background: rgba(251, 146, 60, 0.15);  color: #FB923C; }
-        [data-theme='dark'] &--green  { background: rgba(74, 222, 128, 0.15);  color: #4ADE80; }
+        &--blue   { background: color-mix(in srgb, var(--color-accent-primary) 10%, transparent); color: var(--color-accent-primary); }
+        &--purple { background: color-mix(in srgb, var(--color-info-text, #8b5cf6) 10%, transparent); color: var(--color-info-text, #8b5cf6); }
+        &--orange { background: color-mix(in srgb, var(--color-warning-text) 10%, transparent); color: var(--color-warning-text); }
+        &--green  { background: color-mix(in srgb, var(--color-success-text) 10%, transparent); color: var(--color-success-text); }
       }
 
       &__card-body {

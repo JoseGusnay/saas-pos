@@ -222,8 +222,9 @@ export class ProductDetailPageComponent {
 
   confirmEdit(variantId: string, branchId: string) {
     const productId = this.product()?.id;
-    if (!productId || this.editingValue() <= 0) return;
-    this.productService.upsertVariantPrice(productId, variantId, branchId, { salePrice: this.editingValue() })
+    const price = this.editingValue();
+    if (!productId || !price || isNaN(price) || price <= 0) return;
+    this.productService.upsertVariantPrice(productId, variantId, branchId, { salePrice: price })
       .subscribe({
         next: updated => {
           this.pricesMap.update(m => ({
@@ -231,7 +232,8 @@ export class ProductDetailPageComponent {
             [variantId]: (m[variantId] ?? []).map(p => p.branchId === branchId ? { ...p, salePrice: updated.salePrice } : p)
           }));
           this.cancelEdit();
-        }
+        },
+        error: () => this.error.set('Error al actualizar el precio.')
       });
   }
 
@@ -244,7 +246,8 @@ export class ProductDetailPageComponent {
           ...m,
           [variantId]: (m[variantId] ?? []).filter(p => p.branchId !== branchId)
         }));
-      }
+      },
+      error: () => this.error.set('Error al eliminar el precio.')
     });
   }
 
@@ -267,7 +270,8 @@ export class ProductDetailPageComponent {
             [variantId]: [...(m[variantId] ?? []), created]
           }));
           this.cancelAdd();
-        }
+        },
+        error: () => this.error.set('Error al agregar el precio.')
       });
   }
 
@@ -287,7 +291,8 @@ export class ProductDetailPageComponent {
             ? settings.map(s => s.branchId === branchId ? { ...s, isAvailable } : s)
             : [...settings, updated];
         });
-      }
+      },
+      error: () => this.error.set('Error al actualizar la visibilidad.')
     });
   }
 
@@ -295,7 +300,8 @@ export class ProductDetailPageComponent {
     const productId = this.product()?.id;
     if (!productId) return;
     this.productService.deleteProductBranch(productId, branchId).subscribe({
-      next: () => this.branchSettings.update(s => s.filter(x => x.branchId !== branchId))
+      next: () => this.branchSettings.update(s => s.filter(x => x.branchId !== branchId)),
+      error: () => this.error.set('Error al restablecer la configuración.')
     });
   }
 
@@ -324,7 +330,10 @@ export class ProductDetailPageComponent {
 
   private loadBranchesIfNeeded() {
     if (this.branches().length > 0) return;
-    this.branchService.findAll({ limit: 100 }).subscribe(res => this.branches.set(res.data));
+    this.branchService.findAll({ limit: 100 }).subscribe({
+      next: res => this.branches.set(res.data),
+      error: () => this.error.set('Error al cargar sucursales.')
+    });
   }
 
   private loadHistory() {
@@ -341,7 +350,7 @@ export class ProductDetailPageComponent {
   }
 
   copyToClipboard(text: string) {
-    navigator.clipboard.writeText(text);
+    navigator.clipboard.writeText(text).catch(() => {});
     this.isCopied.set(true);
     setTimeout(() => this.isCopied.set(false), 2000);
   }

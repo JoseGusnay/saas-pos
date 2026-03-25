@@ -260,7 +260,7 @@ import { map } from 'rxjs';
         &:focus { 
           border-color: var(--color-accent-primary); 
           outline: none; 
-          box-shadow: 0 0 0 2px rgba(0,0,0,0.05);
+          box-shadow: var(--shadow-input-focus);
           background: var(--color-bg-surface);
         }
         &::placeholder { color: var(--color-text-muted); opacity: 0.5; }

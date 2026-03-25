@@ -295,6 +295,7 @@ export class ComboBuilderComponent implements OnInit, OnDestroy {
 
   addItem(r: VariantResult) {
     if (this.isAdded(r.variantId)) return;
+    if (this.excludeProductId && r.variantId === this.excludeProductId) return;
     this.formArray.push(this.fb.group({
       productVariantId: [r.variantId, Validators.required],
       quantity: [1, [Validators.required, Validators.min(1)]],
@@ -309,6 +310,7 @@ export class ComboBuilderComponent implements OnInit, OnDestroy {
 
   removeItem(index: number) {
     this.formArray.removeAt(index);
+    this.expandedItems.set(new Set());
   }
 
   adjustQty(index: number, delta: number) {
