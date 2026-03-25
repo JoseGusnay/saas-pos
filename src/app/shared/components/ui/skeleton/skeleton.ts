@@ -18,17 +18,17 @@ import { CommonModule } from '@angular/common';
   `,
   styles: [`
     .skeleton {
-      background: var(--color-bg-hover); // Color base sutil
+      background: var(--color-bg-subtle);
       position: relative;
       overflow: hidden;
       border-radius: var(--radius-sm);
-      
+
       &--circle {
         border-radius: 50%;
       }
 
       &--pulse {
-        animation: skeleton-pulse 1.5s ease-in-out infinite;
+        animation: skeleton-pulse 1.8s ease-in-out infinite;
       }
 
       &--shimmer {
@@ -41,19 +41,18 @@ import { CommonModule } from '@angular/common';
           height: 100%;
           background: linear-gradient(
             90deg,
-            transparent,
-            rgba(255, 255, 255, 0.08),
-            transparent
+            transparent 0%,
+            var(--color-bg-surface) 50%,
+            transparent 100%
           );
-          animation: skeleton-shimmer 2s infinite;
+          animation: skeleton-shimmer 1.8s ease-in-out infinite;
         }
       }
     }
 
     @keyframes skeleton-pulse {
-      0% { opacity: 1; }
-      50% { opacity: 0.4; }
-      100% { opacity: 1; }
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
     }
 
     @keyframes skeleton-shimmer {

@@ -80,9 +80,10 @@ export interface TabItem {
     .tab-bar__tab {
       background: transparent;
       border: none;
-      padding: 0 0 12px 0;
+      padding: 0 2px 12px;
       font-size: var(--font-size-sm);
       font-weight: var(--font-weight-medium);
+      font-family: inherit;
       color: var(--color-text-muted);
       cursor: pointer;
       position: relative;
@@ -96,11 +97,18 @@ export interface TabItem {
       }
 
       &:hover {
-        color: var(--color-text-main);
+        color: var(--color-text-soft);
+      }
+
+      &:focus-visible {
+        outline: 2px solid var(--color-accent-interactive);
+        outline-offset: -2px;
+        border-radius: var(--radius-sm);
       }
 
       &--active {
-        color: var(--color-text-main);
+        color: var(--color-accent-primary);
+        font-weight: var(--font-weight-semibold);
 
         &::after {
           content: '';
@@ -108,9 +116,9 @@ export interface TabItem {
           bottom: -1px;
           left: 0;
           right: 0;
-          height: 2px;
-          background-color: var(--color-text-main);
-          border-radius: 2px 2px 0 0;
+          height: 2.5px;
+          background: var(--color-accent-primary);
+          border-radius: 2.5px 2.5px 0 0;
         }
       }
     }

@@ -2,13 +2,13 @@
 
 .pagination {
     @include flex-between;
-    margin-top: 24px;
+    margin-top: 20px;
     padding-top: 16px;
     border-top: 1px solid var(--color-border-light);
 
     @media (max-width: 768px) {
         flex-direction: column;
-        gap: 16px;
+        gap: 12px;
     }
 
     &__info {
@@ -18,7 +18,7 @@
 
     &__controls {
         display: flex;
-        gap: 8px;
+        gap: 6px;
 
         @media (max-width: 768px) {
             width: 100%;
@@ -29,36 +29,38 @@
     &__btn {
         @include flex-center;
         gap: 4px;
-        background-color: var(--color-bg-surface);
-        border: 1px solid var(--color-border-subtle);
-        border-radius: var(--radius-sm);
-        padding: 6px 12px;
+        height: 32px;
+        padding: 0 12px;
+        background: transparent;
+        border: 1px solid var(--color-border-light);
+        border-radius: var(--radius-md);
         font-size: var(--font-size-sm);
         font-weight: var(--font-weight-medium);
-        color: var(--color-text-main);
+        font-family: inherit;
+        color: var(--color-text-soft);
         cursor: pointer;
-        transition: var(--transition-base);
+        transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
 
         app-icon {
             width: 14px;
             height: 14px;
-            color: var(--color-icon-muted);
-            transition: color var(--transition-fast);
+            color: inherit;
         }
 
         &:hover:not(:disabled) {
-            border-color: var(--color-text-muted);
-            background-color: var(--color-bg-hover);
+            background: var(--color-bg-hover);
+            border-color: var(--color-border-hover);
+            color: var(--color-text-main);
+        }
 
-            app-icon {
-                color: var(--color-text-main);
-            }
+        &:focus-visible {
+            outline: 2px solid var(--color-accent-interactive);
+            outline-offset: 2px;
         }
 
         &:disabled {
-            opacity: 0.4;
+            opacity: 0.35;
             cursor: not-allowed;
-            background-color: var(--color-bg-canvas);
         }
     }
 }

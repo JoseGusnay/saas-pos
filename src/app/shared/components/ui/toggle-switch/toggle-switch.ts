@@ -44,11 +44,11 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
       width: 44px;
       height: 24px;
       border-radius: 999px;
-      border: none;
+      border: 1.5px solid var(--color-border-hover);
       padding: 2px;
-      background-color: var(--color-border-light);
+      background-color: var(--color-bg-subtle);
       cursor: pointer;
-      transition: background-color var(--transition-base);
+      transition: background-color var(--transition-base), border-color var(--transition-base);
       flex-shrink: 0;
 
       &--sm {
@@ -58,6 +58,7 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
       &--on {
         background-color: var(--color-accent-primary);
+        border-color: var(--color-accent-primary);
       }
 
       &--disabled {

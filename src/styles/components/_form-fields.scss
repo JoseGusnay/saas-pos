@@ -205,8 +205,8 @@
     }
 
     &--purple {
-      background: rgba(168, 85, 247, 0.1);
-      color: #A855F7;
+      background: rgba(168, 85, 247, 0.08);
+      color: var(--color-accent-soft);
     }
 
     &--orange {
@@ -364,7 +364,7 @@
     border-color: var(--color-danger-text);
 
     &:focus {
-      box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.08);
+      box-shadow: 0 0 0 3px rgba(179, 38, 30, 0.12);
     }
   }
 
@@ -503,7 +503,7 @@
       border-color: var(--color-danger-text);
 
       &:focus-within {
-        box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.08);
+        box-shadow: 0 0 0 3px rgba(179, 38, 30, 0.12);
       }
     }
   }

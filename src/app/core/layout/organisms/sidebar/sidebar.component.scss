@@ -51,7 +51,7 @@
         }
 
         &::-webkit-scrollbar-thumb {
-            background: transparent;
+            background: var(--color-border-light);
             border-radius: 10px;
         }
 

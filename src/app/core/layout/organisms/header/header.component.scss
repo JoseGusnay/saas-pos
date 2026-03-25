@@ -64,8 +64,11 @@
 
     &__breadcrumb-separator {
         color: var(--color-text-muted);
-        font-size: var(--font-size-sm);
+        opacity: 0.4;
         user-select: none;
+        display: inline-flex;
+        width: 14px;
+        height: 14px;
     }
 
     &__breadcrumb-current {

@@ -61,9 +61,9 @@
     --color-tertiary-container: #A5D6A7;
 
     /* ── Glass ─────────────────────────────────────────────────────────── */
-    --glass-bg: rgba(231, 227, 240, 0.8);
-    --glass-blur: 12px;
-    --glass-border: rgba(198, 197, 212, 0.2);
+    --glass-bg: rgba(0, 0, 0, 0.35);
+    --glass-blur: 0px;
+    --glass-border: rgba(26, 35, 126, 0.06);
 
     /* ── Borders ───────────────────────────────────────────────────────── */
     --border-ghost: rgba(198, 197, 212, 0.2);
@@ -101,6 +101,10 @@
     --color-text-main: var(--text-primary);
     --color-text-soft: var(--text-secondary);
     --color-text-muted: var(--text-muted);
+
+    /* 3b. Aliases */
+    --color-border-main: rgba(0, 0, 0, 0.12);
+    --color-icon-muted: var(--text-muted);
 
     /* 4. Borders — thin & delicate (Tailwind-style) */
     --color-border-light: rgba(0, 0, 0, 0.08);
@@ -148,17 +152,28 @@
     --shadow-lg: 0 10px 25px -5px rgba(26, 35, 126, 0.08), 0 8px 10px -6px rgba(26, 35, 126, 0.04);
     --shadow-dropdown: 0 10px 15px -3px rgba(26, 35, 126, 0.07), 0 4px 6px -2px rgba(26, 35, 126, 0.03), 0 0 0 1px var(--color-border-light);
 
-    /* 8. Radius & Transitions */
+    /* 8. Spacing scale */
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 12px;
+    --spacing-lg: 16px;
+    --spacing-xl: 20px;
+    --spacing-2xl: 24px;
+    --spacing-3xl: 32px;
+    --spacing-4xl: 40px;
+
+    /* 9. Radius & Transitions */
     --radius-sm: 6px;
     --radius-md: 8px;
     --radius-lg: 12px;
-    --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-fast: 0.12s cubic-bezier(0.16, 1, 0.3, 1);
     --transition-base: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-slow: 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 
-    /* 9. Focus */
+    /* 10. Focus */
     --color-focus-ring: rgba(26, 35, 126, 0.35);
 
-    /* 10. Z-index */
+    /* 11. Z-index */
     --z-dropdown: 100;
     --z-sticky: 200;
     --z-drawer: 1000;
@@ -166,7 +181,7 @@
     --z-sheet: 9998;
     --z-toast: 10000;
 
-    /* 11. Drawer Sizes */
+    /* 12. Drawer Sizes */
     --drawer-width-sm: 400px;
     --drawer-width-md: 640px;
     --drawer-width-lg: 800px;
@@ -211,8 +226,9 @@
     --color-info: #4FC3F7;
     --color-info-container: rgba(79, 195, 247, 0.12);
 
-    --glass-bg: rgba(42, 43, 54, 0.8);
-    --glass-border: rgba(255, 255, 255, 0.08);
+    --glass-bg: rgba(0, 0, 0, 0.45);
+    --glass-blur: 0px;
+    --glass-border: rgba(255, 255, 255, 0.06);
     --border-ghost: rgba(255, 255, 255, 0.08);
     --border-subtle: rgba(255, 255, 255, 0.04);
     --state-hover: rgba(159, 168, 255, 0.06);
@@ -226,6 +242,9 @@
     --gradient-primary: linear-gradient(135deg, #1A237E 0%, #3949AB 100%);
 
     /* ── Legacy Overrides ──────────────────────────────────────────────── */
+    --color-border-main: rgba(255, 255, 255, 0.14);
+    --color-icon-muted: var(--text-muted);
+
     --color-border-light: rgba(255, 255, 255, 0.08);
     --color-border-subtle: rgba(255, 255, 255, 0.04);
     --color-border-hover: rgba(255, 255, 255, 0.15);

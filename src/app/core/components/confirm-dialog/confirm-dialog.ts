@@ -49,8 +49,9 @@ import { ConfirmService } from '../../services/confirm.service';
   styles: [`
     .confirm-backdrop {
       position: fixed; inset: 0; z-index: 1100;
-      background: rgba(0, 0, 0, 0.4);
-      backdrop-filter: blur(4px);
+      background: var(--glass-bg);
+      backdrop-filter: blur(var(--glass-blur));
+      -webkit-backdrop-filter: blur(var(--glass-blur));
       display: flex; align-items: center; justify-content: center;
       animation: confirmFadeIn 0.2s ease-out forwards;
       padding: 1rem;
@@ -63,7 +64,7 @@ import { ConfirmService } from '../../services/confirm.service';
       background: var(--color-bg-surface);
       border: 1px solid var(--color-border-subtle);
       border-radius: var(--radius-lg);
-      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.02), 0 30px 60px -12px rgba(0, 0, 0, 0.25);
+      box-shadow: var(--shadow-lg), 0 0 0 1px var(--color-border-light);
       width: 420px; max-width: 100%;
       animation: confirmSlideUp 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
       overflow: hidden;

@@ -18,12 +18,12 @@ import { RouterLink } from '@angular/router';
           <app-icon name="lucideMenu"></app-icon>
         </button>
 
-        <!-- Breadcrumbs Dinámicos Premium -->
+        <!-- Breadcrumbs -->
         <nav class="header__breadcrumbs">
           @for (bc of breadcrumbs.breadcrumbs(); track bc.url; let last = $last) {
             @if (!last) {
               <a [routerLink]="bc.url" class="header__breadcrumb-link">{{ bc.label }}</a>
-              <span class="header__breadcrumb-separator">/</span>
+              <app-icon name="lucideChevronRight" class="header__breadcrumb-separator"></app-icon>
             } @else {
               <span class="header__breadcrumb-current">{{ bc.label }}</span>
             }

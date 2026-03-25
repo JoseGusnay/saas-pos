@@ -78,53 +78,44 @@ import { FormButtonComponent } from '../form-button/form-button';
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 80px;
-        height: 80px;
-        border-radius: 24px;
-        background: linear-gradient(135deg, var(--color-bg-hover), var(--color-bg-surface));
-        color: var(--color-primary);
-        box-shadow: var(--shadow-md);
-        transform: rotate(-3deg);
+        width: 72px;
+        height: 72px;
+        border-radius: 20px;
+        background: var(--color-primary-subtle);
+        color: var(--color-accent-primary);
       }
 
       &__icon {
-        font-size: 36px;
+        font-size: 32px;
         z-index: 2;
       }
 
       &__icon-ring {
         position: absolute;
-        inset: -12px;
-        border-radius: 32px;
-        border: 2px solid var(--color-primary-subtle);
-        opacity: 0.2;
+        inset: -8px;
+        border-radius: 26px;
+        border: 1.5px solid var(--color-border-light);
         animation: ringPulse 4s infinite ease-in-out;
       }
 
       &__icon-glow {
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        background-color: var(--color-primary);
-        filter: blur(20px);
-        opacity: 0.1;
-        z-index: 1;
+        display: none;
       }
 
       &__title {
-        font-size: 1.5rem;
-        font-weight: var(--font-weight-bold);
+        font-size: var(--font-size-lg);
+        font-weight: var(--font-weight-semibold);
         color: var(--color-text-main);
-        margin-bottom: 12px;
-        letter-spacing: -0.02em;
+        margin-bottom: 8px;
+        letter-spacing: -0.01em;
       }
 
       &__description {
-        font-size: 1rem;
+        font-size: var(--font-size-sm);
         color: var(--color-text-muted);
-        max-width: 360px;
-        line-height: 1.6;
-        margin-bottom: 32px;
+        max-width: 340px;
+        line-height: 1.5;
+        margin-bottom: 24px;
       }
 
       &__actions {
