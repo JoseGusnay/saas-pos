@@ -147,6 +147,9 @@ const STEPPER_STEPS = [
           </div>
         </div>
 
+        <!-- ══ SCROLLABLE CONTENT ════════════════════════════════════════ -->
+        <div class="doc-scroll">
+
         <!-- ══ DOCUMENT HEADER ════════════════════════════════════════════ -->
         <div class="doc-header">
           <div class="doc-header__identity">
@@ -581,7 +584,24 @@ const STEPPER_STEPS = [
             placeholder="Observaciones, condiciones especiales, instrucciones de entrega..."></textarea>
         </div>
 
+      </div><!-- /doc-scroll -->
+
       }
+
+      <!-- Mobile sticky footer -->
+      <div class="doc-mobile-footer">
+        <button class="mobile-fab__btn mobile-fab__btn--ghost" [disabled]="isSaving()" (click)="save(false)">
+          <ng-icon name="lucideSave" size="18"></ng-icon>
+          <span>{{ isEdit() ? 'Actualizar' : 'Borrador' }}</span>
+        </button>
+        @if (!isEdit()) {
+          <button class="mobile-fab__btn" [disabled]="isSaving()" (click)="save(true)">
+            <ng-icon name="lucideCheck" size="18"></ng-icon>
+            <span>Guardar y Aprobar</span>
+          </button>
+        }
+      </div>
+
     </div>
   `,
   styles: [`
@@ -595,6 +615,7 @@ const STEPPER_STEPS = [
     @media (max-width: 768px) { .doc-page { padding: 20px 16px 2rem; } }
     .doc-page--saving { pointer-events: none; opacity: 0.6; }
     .doc-loading { display: flex; justify-content: center; padding: 5rem; }
+    .doc-scroll { display: flex; flex-direction: column; gap: 1.25rem; }
 
     /* ── Top bar ───────────────────────────────────────────────────────────── */
     .doc-topbar {
@@ -1069,16 +1090,47 @@ const STEPPER_STEPS = [
     .notes-input::placeholder { color: var(--color-placeholder); }
 
     /* ── Responsive ───────────────────────────────────────────────────────── */
-    @media (max-width: 768px) {
-      .doc-page { gap: 1rem; padding-bottom: 2rem; }
+    /* Mobile footer: hidden by default */
+    .doc-mobile-footer { display: none; }
 
-      /* Top bar: stack actions below back button */
-      .doc-topbar { flex-direction: column; align-items: stretch; gap: 0.75rem; }
-      .doc-topbar__actions {
-        display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;
+    @media (max-width: 768px) {
+      .doc-page {
+        gap: 0; padding: 0;
+        display: flex; flex-direction: column;
       }
-      .doc-topbar__actions .status-pill { grid-column: 1 / -1; justify-content: center; }
-      .doc-topbar__actions ::ng-deep .btn { width: 100%; justify-content: center; }
+
+      /* Topbar: simplified, scrolls with content */
+      .doc-topbar { padding: 12px 16px; }
+      .doc-topbar__actions { display: none; }
+
+      /* Scrollable content area */
+      .doc-scroll {
+        flex: 1; overflow-y: auto;
+        display: flex; flex-direction: column; gap: 1rem;
+        padding: 0 16px 24px;
+      }
+
+      /* Mobile sticky footer */
+      .doc-mobile-footer {
+        display: flex;
+        flex-shrink: 0;
+        gap: 8px;
+        padding: 12px 16px;
+        padding-bottom: calc(12px + env(safe-area-inset-bottom));
+        background: var(--color-bg-surface);
+        border-top: 1px solid var(--color-border-light);
+      }
+      .doc-mobile-footer .mobile-fab__btn {
+        flex: 1;
+      }
+      .doc-mobile-footer .mobile-fab__btn--ghost {
+        background: var(--color-bg-hover);
+        color: var(--color-text-main);
+        border: 1px solid var(--color-border-light);
+      }
+      .doc-mobile-footer .mobile-fab__btn:disabled {
+        opacity: 0.5; cursor: not-allowed;
+      }
 
       /* Totals */
       .totals-block { align-items: stretch; padding: 1rem; }

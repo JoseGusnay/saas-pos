@@ -1,7 +1,7 @@
 <div class="pfp" [class.pfp--loading]="isLoadingProduct()">
   <form [formGroup]="form" (ngSubmit)="onSubmit()">
 
-    <!-- ═══ HEADER ═══ -->
+    <!-- ═══ HEADER (fixed) ═══ -->
     <div class="pfp__header">
       <div class="pfp__header-left">
         <app-back-button
@@ -60,6 +60,9 @@
         }
       </div>
     </div>
+
+    <!-- ═══ SCROLLABLE CONTENT ═══ -->
+    <div class="pfp__scroll">
 
     <!-- ═══ STEP 1 ═══ -->
     @if (step() === 1) {
@@ -448,6 +451,28 @@
         <app-form-button label="Salir sin guardar" variant="danger" type="button" [fullWidth]="false" (click)="confirmExitVariant()"></app-form-button>
       </div>
     </app-modal>
+
+    </div><!-- /pfp__scroll -->
+
+    <!-- Mobile sticky footer -->
+    <div class="pfp__mobile-footer">
+      @if (!showVariantStep) {
+        <button class="mobile-fab__btn" type="submit" [disabled]="form.invalid || isSubmitting()">
+          <ng-icon name="lucideCheck" size="18"></ng-icon>
+          <span>{{ isEditing() ? 'Actualizar' : 'Guardar' }}</span>
+        </button>
+      } @else if (step() === 1) {
+        <button class="mobile-fab__btn" type="button" [disabled]="form.invalid" (click)="goToVariantStep()">
+          <ng-icon name="lucideChevronRight" size="18"></ng-icon>
+          <span>Continuar</span>
+        </button>
+      } @else {
+        <button class="mobile-fab__btn" type="submit" [disabled]="variants.invalid || variants.length === 0 || isSubmitting()">
+          <ng-icon name="lucideCheck" size="18"></ng-icon>
+          <span>{{ isEditing() ? 'Actualizar' : 'Guardar' }}</span>
+        </button>
+      }
+    </div>
 
   </form>
 </div>

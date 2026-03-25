@@ -208,6 +208,13 @@ export class RecipeBuilderComponent implements OnInit, OnChanges, OnDestroy {
       unitCtrl.setValidators([Validators.required]);
       ingredientsCtrl.setValidators([(ctrl) => (ctrl as FormArray).length > 0 ? null : { required: true }]);
     } else {
+      // Clear all recipe fields when disabled
+      yieldCtrl.reset(null, { emitEvent: false });
+      unitCtrl.reset('', { emitEvent: false });
+      this.recipeGroup.get('notes')!.reset('', { emitEvent: false });
+      ingredientsCtrl.clear();
+      this.initialYieldUnitOption.set(undefined);
+
       yieldCtrl.setValidators([Validators.min(0.0001)]);
       unitCtrl.clearValidators();
       ingredientsCtrl.clearValidators();

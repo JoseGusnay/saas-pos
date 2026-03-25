@@ -1431,12 +1431,11 @@ export class PurchaseOrdersListComponent {
     if (action.id === 'view') { this.onViewDetail(order); return; }
     if (action.id === 'edit') { this.onEdit(order); return; }
     if (action.id === 'duplicate') { this.onDuplicate(order); return; }
-    if (action.id === 'cancel') { this.loadDetailThen(order, () => { this.isCancelModalOpen.set(true); }); return; }
-    if (action.id === 'delete') { this.loadDetailThen(order, () => { this.isDeleteModalOpen.set(true); }); return; }
-    if (action.id === 'approve') { this.loadDetailThen(order, () => this.openApproveModal()); return; }
-    if (action.id === 'receipt') { this.loadDetailThen(order, () => this.openReceiptDrawer()); return; }
-    if (action.id === 'retention') { this.loadDetailThen(order, () => this.openRetentionModal()); return; }
-    if (action.id === 'payment') { this.loadDetailThen(order, () => this.openPaymentModal()); return; }
+    // All detail-dependent actions now navigate to detail page
+    if (['cancel', 'delete', 'approve', 'receipt', 'retention', 'payment'].includes(action.id)) {
+      this.onViewDetail(order);
+      return;
+    }
   }
 
   /** Carga datos de la OC sin abrir el drawer de detalle, luego ejecuta callback */
@@ -1502,19 +1501,8 @@ export class PurchaseOrdersListComponent {
     });
   }
 
-  onViewDetail(order: PurchaseOrder, afterLoad?: () => void) {
-    this.isDetailOpen.set(true);
-    this.isDetailLoading.set(true);
-    this.detail.set(null);
-    this.detailTab.set('receipts');
-    this.orderService.findOne(order.id).subscribe({
-      next: d => {
-        this.detail.set(d);
-        this.isDetailLoading.set(false);
-        afterLoad?.();
-      },
-      error: () => { this.toastService.error('Error al cargar detalle'); this.isDetailLoading.set(false); }
-    });
+  onViewDetail(order: PurchaseOrder) {
+    this.router.navigate(['/inventario/ordenes-compra', order.id]);
   }
 
   // ─── Open sub-forms ───────────────────────────────────────────────────────

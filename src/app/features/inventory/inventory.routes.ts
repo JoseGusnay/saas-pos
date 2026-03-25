@@ -84,6 +84,11 @@ export const INVENTORY_ROUTES: Routes = [
     data: { breadcrumb: 'Nueva Orden de Compra' }
   },
   {
+    path: 'ordenes-compra/:id',
+    loadComponent: () => import('./pages/purchase-order-detail/purchase-order-detail.component').then(m => m.PurchaseOrderDetailComponent),
+    data: { breadcrumb: 'Detalle Orden' }
+  },
+  {
     path: 'ordenes-compra/:id/editar',
     loadComponent: () => import('./pages/purchase-order-form/purchase-order-form.component').then(m => m.PurchaseOrderFormComponent),
     canDeactivate: [unsavedChangesGuard],

@@ -96,25 +96,6 @@ import { ProductsAdvancedFilters } from './components/products-advanced-filters/
         </div>
       </app-page-header>
 
-      <!-- Type filter chips -->
-      <div class="products-page__type-chips">
-        @for (chip of typeChips; track chip.value) {
-          <button
-            class="type-chip"
-            [class.type-chip--active]="typeFilter() === chip.value"
-            (click)="onTypeFilter(chip.value)"
-          >
-            <ng-icon [name]="chip.icon"></ng-icon>
-            {{ chip.label }}
-          </button>
-        }
-        @if (typeFilter()) {
-          <button class="type-chip type-chip--clear" (click)="typeFilter.set(null)">
-            <ng-icon name="lucideX"></ng-icon>
-          </button>
-        }
-      </div>
-
       <app-list-toolbar
         searchPlaceholder="Buscar por nombre, SKU, código de barras..."
         [searchQuery]="searchQuery()"
@@ -375,11 +356,32 @@ import { ProductsAdvancedFilters } from './components/products-advanced-filters/
 
     <!-- Mobile sticky footer -->
     <div class="mobile-fab">
-      <button class="mobile-fab__btn" (click)="onFullAddProduct()">
+      <button class="mobile-fab__btn" (click)="mobileTypeSheet.set(true)">
         <ng-icon name="lucidePlus" size="18"></ng-icon>
         <span>Nuevo Producto</span>
       </button>
     </div>
+
+    <!-- Mobile type picker sheet -->
+    @if (mobileTypeSheet()) {
+      <div class="type-sheet__backdrop" (click)="mobileTypeSheet.set(false)"></div>
+      <div class="type-sheet">
+        <div class="type-sheet__handle"></div>
+        <h3 class="type-sheet__title">Tipo de producto</h3>
+        @for (item of typeMenuItems; track item.value) {
+          <button class="type-sheet__item" (click)="onSelectType(item.value)">
+            <div class="type-sheet__icon type-sheet__icon--{{ item.colorClass }}">
+              <ng-icon [name]="item.icon"></ng-icon>
+            </div>
+            <div class="type-sheet__text">
+              <span class="type-sheet__label">{{ item.label }}</span>
+              <span class="type-sheet__desc">{{ item.description }}</span>
+            </div>
+            <ng-icon name="lucideChevronRight" class="type-sheet__arrow"></ng-icon>
+          </button>
+        }
+      </div>
+    }
     </div>
   `,
   styleUrl: './products-list.component.scss'
@@ -411,6 +413,7 @@ export class ProductsListComponent {
   ];
   
   typeDropdownOpen = signal(false);
+  mobileTypeSheet = signal(false);
 
   readonly typeMenuItems = [
     { value: 'PHYSICAL',     label: 'Físico',        description: 'Con inventario, stock y presentaciones.', icon: 'lucidePackage', colorClass: 'blue'   },
@@ -445,7 +448,13 @@ export class ProductsListComponent {
   sortField = signal('createdAt');
   sortOrder = signal<'ASC' | 'DESC'>('DESC');
   
-  productTabs = [{ label: 'Todos', value: 'Todos' }, { label: 'Activos', value: 'Activos' }, { label: 'Inactivos', value: 'Inactivos' }];
+  productTabs = [
+    { label: 'Todos', value: 'Todos' },
+    { label: 'Físico', value: 'PHYSICAL' },
+    { label: 'Servicio', value: 'SERVICE' },
+    { label: 'Combo', value: 'COMBO' },
+    { label: 'Materia Prima', value: 'RAW_MATERIAL' },
+  ];
 
   sortOptions = [
     { label: 'Más Recientes', value: 'createdAt:desc' },
@@ -532,7 +541,6 @@ export class ProductsListComponent {
       limit: this.pageSize(),
       search: this.searchQuery(),
       filterModel: QueryMapper.toAgGridFilterModel(this.filterTree(), this.filterConfig),
-      tab: this.activeTab(),
       typeFilter: this.typeFilter(),
       sortField: this.sortField(),
       sortOrder: this.sortOrder(),
@@ -626,7 +634,11 @@ export class ProductsListComponent {
     return map[type] ?? 'gray';
   }
 
-  onTabChange(tab: string) { this.activeTab.set(tab); this.currentPage.set(1); }
+  onTabChange(tab: string) {
+    this.activeTab.set(tab);
+    this.typeFilter.set(tab === 'Todos' ? null : tab);
+    this.currentPage.set(1);
+  }
   onSearch(q: string) { this.searchQuery.set(q); this.currentPage.set(1); }
   onSortChange(ev: any) { this.sortField.set(ev.field); this.sortOrder.set(ev.order.toUpperCase()); this.currentPage.set(1); }
   
