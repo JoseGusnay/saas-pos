@@ -1,9 +1,10 @@
 @use "../../../../../styles/abstracts/mixins" as *;
 
 .units-page {
+  flex: 1;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
-  min-height: 100%;
   width: 100%;
   padding: 24px 32px 32px;
 
@@ -179,4 +180,10 @@
   @media (max-width: 768px) {
     flex-direction: column-reverse;
   }
+}
+
+@media (max-width: 768px) {
+    .units-page ::ng-deep .page-header__actions app-form-button:last-child {
+        display: none;
+    }
 }

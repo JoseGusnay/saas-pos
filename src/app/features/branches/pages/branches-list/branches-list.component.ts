@@ -63,6 +63,7 @@ import { SpinnerComponent } from '../../../../shared/components/ui/spinner/spinn
     provideIcons({ lucidePlus, lucideSave, lucidePencil, lucideTrash2, lucideDownload, lucideHistory, lucidePlusCircle, lucideRefreshCw, lucideTrash, lucideCloudDownload })
   ],
   template: `
+    <div class="page-shell">
     <div class="branches-page">
       <app-page-header
         title="Sucursales"
@@ -414,6 +415,15 @@ import { SpinnerComponent } from '../../../../shared/components/ui/spinner/spinn
         #importModal
         (imported)="refreshTrigger.set(refreshTrigger() + 1)"
       ></app-branch-import-modal>
+    </div>
+
+    <!-- Mobile sticky footer -->
+    <div class="mobile-fab">
+      <button class="mobile-fab__btn" (click)="onAddBranch()">
+        <ng-icon name="lucidePlus" size="18"></ng-icon>
+        <span>Nueva Sucursal</span>
+      </button>
+    </div>
     </div>
   `,
   styleUrl: './branches-list.component.scss'

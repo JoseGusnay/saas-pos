@@ -499,7 +499,7 @@ import {
     </div>
   `,
   styles: [`
-    .stock-page { display: flex; flex-direction: column; min-height: 100%; width: 100%; padding: 24px 32px 32px; }
+    .stock-page { flex: 1; overflow-y: auto; display: flex; flex-direction: column; width: 100%; padding: 24px 32px 32px; }
     @media (max-width: 768px) { .stock-page { padding: 20px 16px 24px; } }
     .stock-page__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.25rem; }
     .stock-page__list { display: flex; flex-direction: column; gap: 0.75rem; }

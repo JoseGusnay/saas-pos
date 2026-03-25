@@ -2,7 +2,7 @@ import { Component, computed, inject, signal, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { switchMap, debounceTime, tap } from 'rxjs';
-import { provideIcons } from '@ng-icons/core';
+import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import {
   lucidePlus, lucideSave, lucidePencil, lucideTrash2, lucideDownload,
   lucideHistory, lucidePlusCircle, lucideRefreshCw, lucideTrash,
@@ -44,6 +44,7 @@ import { SupplierImportModalComponent } from '../../components/supplier-import-m
     FormButtonComponent, ActionsMenuComponent, DatelineComponent,
     SupplierFormComponent, SupplierDetailComponent,
     SuppliersAdvancedFilters, SupplierImportModalComponent,
+    NgIconComponent,
   ],
   providers: [
     provideIcons({
@@ -53,6 +54,7 @@ import { SupplierImportModalComponent } from '../../components/supplier-import-m
     })
   ],
   template: `
+    <div class="page-shell">
     <div class="suppliers-page">
       <app-page-header
         title="Proveedores"
@@ -252,6 +254,15 @@ import { SupplierImportModalComponent } from '../../components/supplier-import-m
       </app-modal>
 
       <app-supplier-import-modal #importModal (imported)="refreshTrigger.update(v => v + 1)"></app-supplier-import-modal>
+    </div>
+
+    <!-- Mobile sticky footer -->
+    <div class="mobile-fab">
+      <button class="mobile-fab__btn" (click)="onAdd()">
+        <ng-icon name="lucidePlus" size="18"></ng-icon>
+        <span>Nuevo Proveedor</span>
+      </button>
+    </div>
     </div>
   `,
   styleUrl: './suppliers-list.component.scss'

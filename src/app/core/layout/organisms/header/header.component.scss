@@ -6,8 +6,13 @@
     height: 52px;
     min-height: 52px;
     background-color: var(--color-bg-canvas);
-    // border-bottom: 1px solid var(--color-border-light);
     padding: 0 24px;
+
+    @media (max-width: 768px) {
+        padding: 0 16px;
+        height: 48px;
+        min-height: 48px;
+    }
 
     &__left {
         display: flex;
@@ -93,6 +98,10 @@
         font-size: var(--font-size-sm);
         cursor: text;
         transition: border-color var(--transition-fast), background var(--transition-fast);
+
+        @media (max-width: 768px) {
+            display: none;
+        }
 
         &:hover {
             border-color: var(--color-border-hover);

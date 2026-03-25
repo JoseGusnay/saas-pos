@@ -2,7 +2,7 @@ import { Component, computed, inject, signal, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { switchMap, debounceTime, tap } from 'rxjs';
-import { provideIcons } from '@ng-icons/core';
+import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import {
   lucidePlus, lucideSave, lucidePencil, lucideTrash2, lucideDownload,
   lucideHistory, lucidePlusCircle, lucideRefreshCw, lucideTrash,
@@ -44,6 +44,7 @@ import { PresentationImportModalComponent } from '../../components/presentation-
     FormButtonComponent, ActionsMenuComponent, DatelineComponent,
     PresentationFormComponent, PresentationDetailComponent,
     PresentationsAdvancedFilters, PresentationImportModalComponent,
+    NgIconComponent,
   ],
   providers: [
     provideIcons({
@@ -53,6 +54,7 @@ import { PresentationImportModalComponent } from '../../components/presentation-
     })
   ],
   template: `
+    <div class="page-shell">
     <div class="presentations-page">
       <app-page-header
         title="Presentaciones"
@@ -309,6 +311,15 @@ import { PresentationImportModalComponent } from '../../components/presentation-
         #importModal
         (imported)="refreshTrigger.update(v => v + 1)"
       ></app-presentation-import-modal>
+    </div>
+
+    <!-- Mobile sticky footer -->
+    <div class="mobile-fab">
+      <button class="mobile-fab__btn" (click)="onAddPresentation()">
+        <ng-icon name="lucidePlus" size="18"></ng-icon>
+        <span>Nueva Presentación</span>
+      </button>
+    </div>
     </div>
   `,
   styleUrl: './presentations-list.component.scss'

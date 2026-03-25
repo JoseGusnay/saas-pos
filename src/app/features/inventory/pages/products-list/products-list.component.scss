@@ -1,9 +1,10 @@
 @use "../../../../../styles/abstracts/mixins" as *;
 
 .products-page {
+  flex: 1;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
-  min-height: 100%;
   width: 100%;
   padding: 24px 32px 32px;
 
@@ -603,4 +604,8 @@
   opacity: 0.8;
 }
 
-
+@media (max-width: 768px) {
+    .products-page ::ng-deep .page-header__actions .ptd {
+        display: none;
+    }
+}

@@ -52,6 +52,7 @@ import { ProductsAdvancedFilters } from './components/products-advanced-filters/
     provideIcons({ lucidePlus, lucideSave, lucidePencil, lucideTrash2, lucideDownload, lucideHistory, lucidePlusCircle, lucideRefreshCw, lucideTrash, lucideGlobe, lucideSearch, lucideCheckCircle2, lucideXCircle, lucideCloudDownload, lucideFileText, lucideInbox, lucideTag, lucideDollarSign, lucideChevronDown, lucideHash, lucideBarcode, lucideClock, lucidePackage, lucideX, lucideWrench, lucideLeaf, lucideGift })
   ],
   template: `
+    <div class="page-shell">
     <div class="products-page">
       <app-page-header
         title="Catálogo de Productos"
@@ -370,6 +371,15 @@ import { ProductsAdvancedFilters } from './components/products-advanced-filters/
         #importModal
         (imported)="refreshTrigger.update(v => v + 1)"
       ></app-product-import-modal>
+    </div>
+
+    <!-- Mobile sticky footer -->
+    <div class="mobile-fab">
+      <button class="mobile-fab__btn" (click)="onFullAddProduct()">
+        <ng-icon name="lucidePlus" size="18"></ng-icon>
+        <span>Nuevo Producto</span>
+      </button>
+    </div>
     </div>
   `,
   styleUrl: './products-list.component.scss'

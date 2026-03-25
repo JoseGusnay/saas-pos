@@ -82,6 +82,7 @@ import { CategoryImportModalComponent } from '../../components/category-import-m
     })
   ],
   template: `
+    <div class="page-shell">
     <div class="categories-page">
       <app-page-header
         title="Categorías"
@@ -382,6 +383,15 @@ import { CategoryImportModalComponent } from '../../components/category-import-m
         #importModal
         (imported)="refreshTrigger.update(v => v + 1)"
       ></app-category-import-modal>
+    </div>
+
+    <!-- Mobile sticky footer (outside scroll) -->
+    <div class="mobile-fab">
+      <button class="mobile-fab__btn" (click)="onAddCategory()">
+        <ng-icon name="lucidePlus" size="18"></ng-icon>
+        <span>Nueva Categoría</span>
+      </button>
+    </div>
     </div>
   `,
   styleUrl: './categories-list.component.scss'

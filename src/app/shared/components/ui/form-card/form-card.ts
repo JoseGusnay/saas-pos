@@ -24,6 +24,18 @@ import { NgIconComponent } from '@ng-icons/core';
       background: var(--color-bg-surface);
       border: 1px solid var(--color-border-light);
       border-radius: var(--radius-lg);
+
+      @media (max-width: 600px) {
+        background: transparent;
+        border: none;
+        border-radius: 0;
+      }
+    }
+
+    .fc + .fc {
+      @media (max-width: 600px) {
+        margin-top: 8px;
+      }
     }
 
     .fc__head {
@@ -39,6 +51,12 @@ import { NgIconComponent } from '@ng-icons/core';
       letter-spacing: 0.08em;
       color: var(--color-text-muted);
       text-transform: uppercase;
+
+      @media (max-width: 600px) {
+        padding: 0 0 10px 0;
+        background: transparent;
+        border-radius: 0;
+      }
     }
 
     .fc__body {
@@ -46,6 +64,10 @@ import { NgIconComponent } from '@ng-icons/core';
       display: flex;
       flex-direction: column;
       gap: 1.25rem;
+
+      @media (max-width: 600px) {
+        padding: 0.75rem 0 0;
+      }
     }
   `]
 })

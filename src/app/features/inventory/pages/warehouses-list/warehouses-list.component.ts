@@ -39,6 +39,7 @@ import { WarehousesAdvancedFilters } from './components/warehouses-advanced-filt
     provideIcons({ lucidePlus, lucideSave, lucidePencil, lucideTrash2, lucideWarehouse, lucideMapPin, lucideGrid3x3, lucideHistory })
   ],
   template: `
+    <div class="page-shell">
     <div class="wh-page">
       <app-page-header
         title="Bodegas"
@@ -283,6 +284,15 @@ import { WarehousesAdvancedFilters } from './components/warehouses-advanced-filt
           <app-form-button label="Salir sin guardar" variant="danger" type="button" [fullWidth]="false" (click)="forceCloseDrawer()"></app-form-button>
         </div>
       </app-modal>
+    </div>
+
+    <!-- Mobile sticky footer -->
+    <div class="mobile-fab">
+      <button class="mobile-fab__btn" (click)="onAdd()">
+        <ng-icon name="lucidePlus" size="18"></ng-icon>
+        <span>Nueva Bodega</span>
+      </button>
+    </div>
     </div>
   `,
   styleUrl: './warehouses-list.component.scss'

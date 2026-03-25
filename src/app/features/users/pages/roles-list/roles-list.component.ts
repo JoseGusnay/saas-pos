@@ -50,6 +50,7 @@ import { RoleDetailComponent } from '../../components/role-detail/role-detail.co
     })
   ],
   template: `
+    <div class="page-shell">
     <div class="roles-page">
       <app-page-header
         title="Gestión de Roles y Permisos"
@@ -304,6 +305,15 @@ import { RoleDetailComponent } from '../../components/role-detail/role-detail.co
             [fullWidth]="false" [loading]="isDeleting()" (click)="confirmDelete()"></app-form-button>
         </div>
       </app-modal>
+    </div>
+
+    <!-- Mobile sticky footer -->
+    <div class="mobile-fab">
+      <button class="mobile-fab__btn" (click)="onOpenCreateForm()">
+        <ng-icon name="lucidePlus" size="18"></ng-icon>
+        <span>Nuevo Rol</span>
+      </button>
+    </div>
     </div>
   `,
   styleUrl: './roles-list.component.scss'

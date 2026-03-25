@@ -2,9 +2,10 @@
 @use 'abstracts/mixins' as *;
 
 .roles-page {
+    flex: 1;
+    overflow-y: auto;
     display: flex;
     flex-direction: column;
-    min-height: 100%;
     width: 100%;
     padding: 24px 32px 32px;
 
@@ -317,4 +318,10 @@
     background: var(--color-bg-light);
     border-radius: var(--radius-md);
     border: 1px dashed var(--color-border-subtle);
+}
+
+@media (max-width: 768px) {
+    .roles-page ::ng-deep .page-header__actions app-form-button:last-child {
+        display: none;
+    }
 }

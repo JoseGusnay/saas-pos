@@ -2,7 +2,7 @@ import { Component, computed, inject, signal, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { switchMap, debounceTime, tap } from 'rxjs';
-import { provideIcons } from '@ng-icons/core';
+import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import {
   lucidePlus, lucideSave, lucidePencil, lucideTrash2, lucideDownload,
   lucideHistory, lucidePlusCircle, lucideRefreshCw, lucideTrash,
@@ -44,6 +44,7 @@ import { AttributeTypeImportModalComponent } from '../../components/attribute-ty
     FormButtonComponent, ActionsMenuComponent, DatelineComponent,
     AttributeTypeFormComponent, AttributeTypeDetailComponent,
     AttributeTypesAdvancedFilters, AttributeTypeImportModalComponent,
+    NgIconComponent,
   ],
   providers: [
     provideIcons({
@@ -53,6 +54,7 @@ import { AttributeTypeImportModalComponent } from '../../components/attribute-ty
     })
   ],
   template: `
+    <div class="page-shell">
     <div class="attr-page">
       <app-page-header
         title="Tipos de Atributo"
@@ -317,6 +319,15 @@ import { AttributeTypeImportModalComponent } from '../../components/attribute-ty
         #importModal
         (imported)="refreshTrigger.update(v => v + 1)"
       ></app-attribute-type-import-modal>
+    </div>
+
+    <!-- Mobile sticky footer -->
+    <div class="mobile-fab">
+      <button class="mobile-fab__btn" (click)="onAddAttr()">
+        <ng-icon name="lucidePlus" size="18"></ng-icon>
+        <span>Nuevo Atributo</span>
+      </button>
+    </div>
     </div>
   `,
   styleUrl: './attribute-types-list.component.scss'

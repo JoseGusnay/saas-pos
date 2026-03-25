@@ -1,9 +1,10 @@
 @use "../../../../../styles/abstracts/mixins" as *;
 
 .categories-page {
+    flex: 1;
+    overflow-y: auto;
     display: flex;
     flex-direction: column;
-    min-height: 100%;
     width: 100%;
     padding: 24px 32px 32px;
 
@@ -197,9 +198,16 @@
 
     @media (max-width: 768px) {
         flex-direction: column-reverse;
-        
+
         ::ng-deep .btn {
             width: 100%;
         }
+    }
+}
+
+// Hide primary CTA on mobile (shown in sticky footer instead)
+@media (max-width: 768px) {
+    .categories-page ::ng-deep .page-header__actions app-form-button:last-child {
+        display: none;
     }
 }

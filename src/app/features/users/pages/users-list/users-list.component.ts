@@ -2,7 +2,7 @@ import { Component, signal, inject, computed, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { switchMap, debounceTime, tap } from 'rxjs';
-import { provideIcons } from '@ng-icons/core';
+import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import {
   lucidePlus, lucidePencil, lucideTrash2, lucideDownload,
   lucideHistory, lucidePlusCircle, lucideRefreshCw, lucideTrash,
@@ -44,7 +44,7 @@ import { UserAdvancedFilters } from './components/user-advanced-filters/user-adv
     BadgeComponent, DrawerComponent, ModalComponent,
     UserFormComponent, UserDetailComponent, UserImportModalComponent,
     SpinnerComponent, ActionsMenuComponent, DatelineComponent,
-    FormButtonComponent, UserAdvancedFilters,
+    FormButtonComponent, UserAdvancedFilters, NgIconComponent,
   ],
   providers: [
     provideIcons({
@@ -55,6 +55,7 @@ import { UserAdvancedFilters } from './components/user-advanced-filters/user-adv
     })
   ],
   template: `
+    <div class="page-shell">
     <div class="users-page">
       <app-page-header
         title="Gestión de Usuarios"
@@ -354,6 +355,15 @@ import { UserAdvancedFilters } from './components/user-advanced-filters/user-adv
         #importModal
         (imported)="onImportCompleted()"
       ></app-user-import-modal>
+    </div>
+
+    <!-- Mobile sticky footer -->
+    <div class="mobile-fab">
+      <button class="mobile-fab__btn" (click)="onOpenCreateForm()">
+        <ng-icon name="lucidePlus" size="18"></ng-icon>
+        <span>Nuevo Usuario</span>
+      </button>
+    </div>
     </div>
   `,
   styleUrls: ['./users-list.component.scss']

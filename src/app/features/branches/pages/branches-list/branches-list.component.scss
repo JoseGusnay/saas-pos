@@ -1,9 +1,10 @@
 @use "../../../../../styles/abstracts/mixins" as *;
 
 .branches-page {
+    flex: 1;
+    overflow-y: auto;
     display: flex;
     flex-direction: column;
-    min-height: 100%;
     width: 100%;
     padding: 24px 32px 32px;
 
@@ -482,4 +483,10 @@
     background: var(--color-bg-light);
     border-radius: var(--radius-md);
     border: 1px dashed var(--color-border-subtle);
+}
+
+@media (max-width: 768px) {
+    .branches-page ::ng-deep .page-header__actions app-form-button:last-child {
+        display: none;
+    }
 }

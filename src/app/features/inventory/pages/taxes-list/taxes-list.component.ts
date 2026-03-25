@@ -2,7 +2,7 @@ import { Component, computed, inject, signal, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { switchMap, debounceTime, tap } from 'rxjs';
-import { provideIcons } from '@ng-icons/core';
+import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import {
   lucidePlus, lucideSave, lucidePencil, lucideTrash2, lucideDownload,
   lucideHistory, lucidePlusCircle, lucideRefreshCw, lucideTrash,
@@ -43,7 +43,7 @@ import { TaxImportModalComponent } from '../../components/tax-import-modal/tax-i
     DrawerComponent, ModalComponent, SpinnerComponent,
     FormButtonComponent, ActionsMenuComponent, DatelineComponent,
     TaxFormComponent, TaxDetailComponent, TaxesAdvancedFilters,
-    TaxImportModalComponent,
+    TaxImportModalComponent, NgIconComponent,
   ],
   providers: [
     provideIcons({
@@ -53,6 +53,7 @@ import { TaxImportModalComponent } from '../../components/tax-import-modal/tax-i
     })
   ],
   template: `
+    <div class="page-shell">
     <div class="taxes-page">
       <app-page-header
         title="Impuestos"
@@ -329,6 +330,15 @@ import { TaxImportModalComponent } from '../../components/tax-import-modal/tax-i
         #importModal
         (imported)="refreshTrigger.update(v => v + 1)"
       ></app-tax-import-modal>
+    </div>
+
+    <!-- Mobile sticky footer -->
+    <div class="mobile-fab">
+      <button class="mobile-fab__btn" (click)="onAddTax()">
+        <ng-icon name="lucidePlus" size="18"></ng-icon>
+        <span>Nuevo Impuesto</span>
+      </button>
+    </div>
     </div>
   `,
   styleUrl: './taxes-list.component.scss'

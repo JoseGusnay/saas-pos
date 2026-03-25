@@ -91,6 +91,7 @@ function rucValidator(control: AbstractControl): ValidationErrors | null {
     lucideSave, lucideInfo,
   })],
   template: `
+    <div class="page-shell">
     <div class="ef-page">
 
       <!-- Header -->
@@ -344,9 +345,18 @@ function rucValidator(control: AbstractControl): ValidationErrors | null {
 
       }
     </div>
+
+    <!-- Mobile sticky footer -->
+    <div class="mobile-fab">
+      <button class="mobile-fab__btn" [disabled]="isSaving() || isLoading()" (click)="save()">
+        <ng-icon name="lucideSave" size="18"></ng-icon>
+        <span>{{ empresa() ? 'Guardar Cambios' : 'Configurar Empresa' }}</span>
+      </button>
+    </div>
+    </div>
   `,
   styles: [`
-    .ef-page { display: flex; flex-direction: column; gap: 1.5rem; max-width: 1200px; margin: 0 auto; padding: 24px 32px 32px; }
+    .ef-page { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 1.5rem; max-width: 1200px; margin: 0 auto; padding: 24px 32px 32px; width: 100%; box-sizing: border-box; }
     @media (max-width: 768px) { .ef-page { padding: 20px 16px 24px; } }
 
     /* Header */
@@ -446,6 +456,12 @@ function rucValidator(control: AbstractControl): ValidationErrors | null {
 
     /* Modal message */
     .modal-msg { font-size: var(--font-size-sm); color: var(--color-text-muted); line-height: 1.6; margin: 0; }
+
+    /* Mobile: hide header save button, shown in sticky footer */
+    @media (max-width: 768px) {
+      .ef-header > app-form-button { display: none; }
+      .mobile-fab__btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    }
   `]
 })
 export class EmpresaFiscalComponent implements OnInit {

@@ -2,7 +2,7 @@ import { Component, computed, inject, signal, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { switchMap, debounceTime, tap } from 'rxjs';
-import { provideIcons } from '@ng-icons/core';
+import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import {
   lucidePlus, lucideSave, lucidePencil, lucideTrash2, lucideDownload,
   lucideHistory, lucidePlusCircle, lucideRefreshCw, lucideTrash,
@@ -43,7 +43,7 @@ import { BrandImportModalComponent } from '../../components/brand-import-modal/b
     DrawerComponent, ModalComponent, SpinnerComponent,
     FormButtonComponent, ActionsMenuComponent, DatelineComponent,
     BrandFormComponent, BrandDetailComponent, BrandsAdvancedFilters,
-    BrandImportModalComponent,
+    BrandImportModalComponent, NgIconComponent,
   ],
   providers: [
     provideIcons({
@@ -53,6 +53,7 @@ import { BrandImportModalComponent } from '../../components/brand-import-modal/b
     })
   ],
   template: `
+    <div class="page-shell">
     <div class="brands-page">
       <app-page-header
         title="Marcas"
@@ -309,6 +310,15 @@ import { BrandImportModalComponent } from '../../components/brand-import-modal/b
         #importModal
         (imported)="refreshTrigger.update(v => v + 1)"
       ></app-brand-import-modal>
+    </div>
+
+    <!-- Mobile sticky footer -->
+    <div class="mobile-fab">
+      <button class="mobile-fab__btn" (click)="onAddBrand()">
+        <ng-icon name="lucidePlus" size="18"></ng-icon>
+        <span>Nueva Marca</span>
+      </button>
+    </div>
     </div>
   `,
   styleUrl: './brands-list.component.scss'

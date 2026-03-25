@@ -15,7 +15,7 @@ import { RouterLink } from '@angular/router';
       <div class="header__left">
         <!-- Botón Hamburguesa Móvil (Visible solo < 768px) -->
         <button class="header__mobile-toggle" (click)="layout.toggleMobileMenu()">
-          <app-icon name="lucideMenu"></app-icon>
+          <app-icon name="lucidePanelLeftOpen"></app-icon>
         </button>
 
         <!-- Breadcrumbs -->

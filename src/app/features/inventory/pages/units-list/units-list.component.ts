@@ -2,7 +2,7 @@ import { Component, computed, inject, signal, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { switchMap, debounceTime, tap } from 'rxjs';
-import { provideIcons } from '@ng-icons/core';
+import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import {
   lucidePlus, lucideSave, lucidePencil, lucideTrash2, lucideDownload,
   lucideHistory, lucidePlusCircle, lucideRefreshCw, lucideTrash,
@@ -43,7 +43,7 @@ import { UnitImportModalComponent } from '../../components/unit-import-modal/uni
     DrawerComponent, ModalComponent, SpinnerComponent,
     FormButtonComponent, ActionsMenuComponent, DatelineComponent,
     UnitFormComponent, UnitDetailComponent, UnitsAdvancedFilters,
-    UnitImportModalComponent,
+    UnitImportModalComponent, NgIconComponent,
   ],
   providers: [
     provideIcons({
@@ -53,6 +53,7 @@ import { UnitImportModalComponent } from '../../components/unit-import-modal/uni
     })
   ],
   template: `
+    <div class="page-shell">
     <div class="units-page">
       <app-page-header
         title="Unidades de Medida"
@@ -314,6 +315,15 @@ import { UnitImportModalComponent } from '../../components/unit-import-modal/uni
         #importModal
         (imported)="refreshTrigger.update(v => v + 1)"
       ></app-unit-import-modal>
+    </div>
+
+    <!-- Mobile sticky footer -->
+    <div class="mobile-fab">
+      <button class="mobile-fab__btn" (click)="onAddUnit()">
+        <ng-icon name="lucidePlus" size="18"></ng-icon>
+        <span>Nueva Unidad</span>
+      </button>
+    </div>
     </div>
   `,
   styleUrl: './units-list.component.scss'
