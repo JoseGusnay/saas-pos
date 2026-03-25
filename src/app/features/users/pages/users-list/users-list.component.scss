@@ -197,16 +197,15 @@
     grid-template-columns: 2fr 1.5fr 1fr 0.5fr;
     align-items: center;
     border: 1px solid var(--color-border-subtle);
-    transition: all 0.2s ease;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
     cursor: pointer;
     position: relative;
     z-index: 1;
 
-
     &:hover {
-        border-color: var(--color-primary-light);
+        border-color: var(--color-border-hover);
+        box-shadow: var(--shadow-md);
         background: var(--color-bg-hover);
-        transform: scale(1.005);
         z-index: 10;
     }
 

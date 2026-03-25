@@ -159,8 +159,9 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
       <div class="toolbar-extras">
         <div class="toolbar-filter">
           <ng-icon name="lucideBuilding2" size="14"></ng-icon>
-          <span class="toolbar-filter__label">Sucursal:</span>
+          <span class="toolbar-filter__label">Sucursal</span>
           <app-custom-select
+            size="sm"
             [options]="branchOptions()"
             [value]="filterBranch()"
             (valueChange)="filterBranch.set($event); currentPage.set(1)"
@@ -945,24 +946,23 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
       .ri-row { grid-template-columns: 1fr; }
     }
 
-    .toolbar-extras { display: flex; gap: 0.75rem; padding: 0.25rem 0; flex-wrap: wrap; }
+    .toolbar-extras { display: flex; gap: 0.75rem; padding: 0.25rem 0; flex-wrap: wrap; align-items: center; }
     .toolbar-filter {
-      display: inline-flex; align-items: center; gap: 6px;
-      padding: 4px 10px; border-radius: var(--radius-md);
-      border: 1px solid var(--color-border-light); background: var(--color-bg-surface);
-      font-size: var(--font-size-xs); color: var(--color-text-muted);
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: var(--font-size-sm); color: var(--color-text-muted);
     }
-    .toolbar-filter__label { font-weight: var(--font-weight-semibold); white-space: nowrap; }
-    .select-filter { padding: 0.375rem 0.75rem; border-radius: var(--radius-md); border: 1px solid var(--color-border-light); background: var(--color-bg-surface); color: var(--color-text-main); font-size: var(--font-size-sm); cursor: pointer; }
+    .toolbar-filter__label { font-weight: var(--font-weight-medium); white-space: nowrap; }
+    .toolbar-filter app-custom-select { width: 200px; }
 
     /* Order row */
     .order-row {
       display: flex; align-items: center; gap: 0.875rem; padding: 0.875rem 1.25rem;
       background: var(--color-bg-surface); border: 1px solid var(--color-border-light);
-      border-radius: var(--radius-lg); cursor: pointer; transition: all var(--transition-base);
-      position: relative;
+      border-radius: var(--radius-lg); cursor: pointer;
+      transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
+      position: relative; z-index: 1;
     }
-    .order-row:hover { border-color: var(--color-accent-primary); background: var(--color-bg-hover); }
+    .order-row:hover { border-color: var(--color-border-hover); box-shadow: var(--shadow-md); background: var(--color-bg-hover); z-index: 10; }
     .skeleton-row { pointer-events: none; }
 
     .order-number { font-family: monospace; font-size: var(--font-size-xs); font-weight: var(--font-weight-semibold); color: var(--color-text-muted); white-space: nowrap; min-width: 110px; }

@@ -4,8 +4,15 @@
   background: var(--color-bg-surface);
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-lg);
-  // Sin overflow: hidden para no cortar dropdowns absolutamente posicionados.
-  // Los elementos con fondo propio (kicker) manejan su border-radius individualmente.
+
+  // Mobile: card desaparece, contenido queda plano sobre el canvas
+  @media (max-width: 600px) {
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    // Separación entre secciones sin borde
+    & + .pfc { margin-top: 8px; }
+  }
 
   &__kicker {
     display: flex;
@@ -21,6 +28,13 @@
 
     ng-icon {
       font-size: 13px;
+    }
+
+    @media (max-width: 600px) {
+      padding: 0 0 10px 0;
+      border-bottom: 1px solid var(--color-border-light);
+      border-radius: 0;
+      margin-bottom: 4px;
     }
   }
 
@@ -43,13 +57,8 @@
     padding: 20px;
 
     @media (max-width: 600px) {
-      padding: 16px;
+      padding: 12px 0 0 0;
       gap: 16px;
-    }
-
-    @media (max-width: 480px) {
-      padding: 12px;
-      gap: 14px;
     }
   }
 
@@ -59,6 +68,10 @@
     justify-content: space-between;
     gap: 16px;
     padding: 12px 20px;
+
+    @media (max-width: 600px) {
+      padding: 12px 0;
+    }
     border-bottom: 1px solid var(--color-border-subtle);
     transition: background-color var(--transition-fast);
 
@@ -141,6 +154,11 @@
     background: var(--color-bg-canvas);
     border-top: 1px solid var(--color-border-light);
 
+    @media (max-width: 600px) {
+      padding: 10px 0;
+      background: transparent;
+    }
+
     ng-icon {
       font-size: 13px;
       flex-shrink: 0;
@@ -176,6 +194,10 @@
     justify-content: space-between;
     padding: 10px 20px;
     border-bottom: 1px solid var(--color-border-subtle);
+
+    @media (max-width: 600px) {
+      padding: 10px 0;
+    }
 
     &:last-child {
       border-bottom: none;

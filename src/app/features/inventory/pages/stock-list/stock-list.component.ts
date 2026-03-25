@@ -19,6 +19,7 @@ import { SkeletonComponent } from '../../../../shared/components/ui/skeleton/ske
 import { EmptyStateComponent } from '../../../../shared/components/ui/empty-state/empty-state';
 import { SpinnerComponent } from '../../../../shared/components/ui/spinner/spinner';
 import { ActionsMenuComponent, ActionItem } from '../../../../shared/components/ui/actions-menu/actions-menu';
+import { CustomSelectComponent, SelectOption } from '../../../../shared/components/ui/custom-select/custom-select.component';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import {
   lucideWarehouse, lucideArrowUpDown, lucideAlertTriangle, lucideClipboardList,
@@ -42,6 +43,7 @@ import {
     EmptyStateComponent,
     SpinnerComponent,
     ActionsMenuComponent,
+    CustomSelectComponent,
     NgIconComponent
   ],
   providers: [
@@ -73,12 +75,16 @@ import {
           (viewModeChange)="viewModePreference.set($event)"
         ></app-list-toolbar>
         <div class="toolbar-extras">
-          <select class="select-branch" [(ngModel)]="selectedBranchId" (ngModelChange)="onBranchChange($event)">
-            <option value="">Todas las sucursales</option>
-            @for (branch of branches(); track branch.id) {
-              <option [value]="branch.id">{{ branch.name }}</option>
-            }
-          </select>
+          <div class="toolbar-filter">
+            <ng-icon name="lucideWarehouse" size="14"></ng-icon>
+            <span class="toolbar-filter__label">Sucursal</span>
+            <app-custom-select
+              size="sm"
+              [options]="branchOptions()"
+              [value]="selectedBranchId"
+              (valueChange)="onBranchChange($event)"
+            ></app-custom-select>
+          </div>
           <label class="low-stock-toggle">
             <input type="checkbox" [ngModel]="showLowStock()" (ngModelChange)="showLowStock.set($event)" />
             Solo bajo stock
@@ -211,18 +217,26 @@ import {
           (searchChange)="onMovSearch($event)"
         ></app-list-toolbar>
         <div class="toolbar-extras">
-          <select class="select-branch" [ngModel]="movBranchId()" (ngModelChange)="movBranchId.set($event); movPage.set(1)">
-            <option value="">Todas las sucursales</option>
-            @for (branch of branches(); track branch.id) {
-              <option [value]="branch.id">{{ branch.name }}</option>
-            }
-          </select>
-          <select class="select-branch" [ngModel]="movTypeFilter()" (ngModelChange)="movTypeFilter.set($event); movPage.set(1)">
-            <option value="">Todos los tipos</option>
-            @for (mt of movementTypes; track mt.value) {
-              <option [value]="mt.value">{{ mt.label }}</option>
-            }
-          </select>
+          <div class="toolbar-filter">
+            <ng-icon name="lucideWarehouse" size="14"></ng-icon>
+            <span class="toolbar-filter__label">Sucursal</span>
+            <app-custom-select
+              size="sm"
+              [options]="branchOptions()"
+              [value]="movBranchId()"
+              (valueChange)="movBranchId.set($event); movPage.set(1)"
+            ></app-custom-select>
+          </div>
+          <div class="toolbar-filter">
+            <ng-icon name="lucideArrowUpDown" size="14"></ng-icon>
+            <span class="toolbar-filter__label">Tipo</span>
+            <app-custom-select
+              size="sm"
+              [options]="movTypeOptions"
+              [value]="movTypeFilter()"
+              (valueChange)="movTypeFilter.set($event); movPage.set(1)"
+            ></app-custom-select>
+          </div>
         </div>
 
         <div class="stock-page__list">
@@ -279,12 +293,16 @@ import {
       <!-- ─── Tab: Alertas ──────────────────────────────────────────── -->
       @if (activeTab() === 'Alertas') {
         <div class="alerts-toolbar">
-          <select class="select-branch" [ngModel]="alertBranchId()" (ngModelChange)="alertBranchId.set($event)">
-            <option value="">Todas las sucursales</option>
-            @for (branch of branches(); track branch.id) {
-              <option [value]="branch.id">{{ branch.name }}</option>
-            }
-          </select>
+          <div class="toolbar-filter">
+            <ng-icon name="lucideWarehouse" size="14"></ng-icon>
+            <span class="toolbar-filter__label">Sucursal</span>
+            <app-custom-select
+              size="sm"
+              [options]="branchOptions()"
+              [value]="alertBranchId()"
+              (valueChange)="alertBranchId.set($event)"
+            ></app-custom-select>
+          </div>
           <span class="alerts-count" [class]="alerts().length > 0 ? 'has-alerts' : ''">
             {{ alerts().length }} alerta{{ alerts().length !== 1 ? 's' : '' }}
           </span>
@@ -487,22 +505,24 @@ import {
     .stock-page__empty { grid-column: 1 / -1; display: flex; justify-content: center; width: 100%; padding: 4rem 1rem; }
 
     /* Toolbar extras */
-    .toolbar-extras { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
-    .select-branch {
-      padding: 0.375rem 0.75rem; border-radius: var(--radius-md); border: 1px solid var(--color-border-light);
-      background: var(--color-bg-surface); color: var(--color-text-main); font-size: var(--font-size-sm);
-      cursor: pointer;
+    .toolbar-extras { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; padding: 0.25rem 0; }
+    .toolbar-filter {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: var(--font-size-sm); color: var(--color-text-muted);
     }
+    .toolbar-filter__label { font-weight: var(--font-weight-medium); white-space: nowrap; }
+    .toolbar-filter app-custom-select { width: 200px; }
     .low-stock-toggle { display: flex; align-items: center; gap: 0.375rem; font-size: var(--font-size-sm); color: var(--color-text-muted); cursor: pointer; }
 
     /* Stock Card (grid) */
     .stock-card {
       background: var(--color-bg-surface); border-radius: var(--radius-lg); border: 1px solid var(--color-border-light);
       padding: 1.25rem; display: flex; flex-direction: column; gap: 0.875rem;
-      box-shadow: var(--shadow-sm); cursor: pointer; transition: all var(--transition-base);
-      position: relative;
+      box-shadow: var(--shadow-sm); cursor: pointer;
+      transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
+      position: relative; z-index: 1;
     }
-    .stock-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); border-color: var(--color-accent-primary); }
+    .stock-card:hover { border-color: var(--color-border-hover); box-shadow: var(--shadow-md); background: var(--color-bg-hover); z-index: 10; }
     .stock-card--out-of-stock { border-left: 3px solid var(--color-danger); }
     .stock-card--low-stock { border-left: 3px solid var(--color-warning, #f59e0b); }
     .stock-card--ok { border-left: 3px solid var(--color-success); }
@@ -536,10 +556,11 @@ import {
     .stock-row {
       display: flex; align-items: center; gap: 1rem; padding: 0.875rem 1.25rem;
       background: var(--color-bg-surface); border: 1px solid var(--color-border-light);
-      border-radius: var(--radius-lg); cursor: pointer; transition: all var(--transition-base);
+      border-radius: var(--radius-lg); cursor: pointer;
+      transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
       position: relative; z-index: 1;
     }
-    .stock-row:hover { transform: translateX(4px); border-color: var(--color-accent-primary); background: var(--color-bg-hover); z-index: 10; }
+    .stock-row:hover { border-color: var(--color-border-hover); box-shadow: var(--shadow-md); background: var(--color-bg-hover); z-index: 10; }
     .stock-row:has(.actions-menu-open) { z-index: 50; }
     .skeleton-row { pointer-events: none; }
 
@@ -731,6 +752,14 @@ export class StockListComponent {
     { initialValue: { data: [] as any[], total: 0 } }
   );
   branches = computed<Branch[]>(() => (this.branchesResponse() as any)?.data ?? []);
+  branchOptions = computed<SelectOption[]>(() => [
+    { value: '', label: 'Todas las sucursales' },
+    ...this.branches().map(b => ({ value: b.id, label: b.name }))
+  ]);
+  movTypeOptions: SelectOption[] = [
+    { value: '', label: 'Todos los tipos' },
+    ...this.movementTypes.map(mt => ({ value: mt.value, label: mt.label }))
+  ];
 
   // ─── Levels reactive stream ───────────────────────────────────────────────
 

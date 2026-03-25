@@ -335,10 +335,11 @@
     background: var(--color-bg-surface);
     border: 1px solid var(--color-border-subtle);
     border-radius: 12px;
-    transition: var(--transition-fast);
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
 
     &:hover {
       border-color: var(--color-border-hover);
+      box-shadow: var(--shadow-md);
       background: var(--color-bg-hover);
     }
 
@@ -468,12 +469,13 @@
     background: var(--color-bg-surface);
     cursor: pointer;
     font-family: inherit;
-    transition: var(--transition-fast);
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
     width: 100%;
     text-align: left;
 
     &:hover {
       border-color: var(--color-border-hover);
+      box-shadow: var(--shadow-md);
       background: var(--color-bg-hover);
     }
 
