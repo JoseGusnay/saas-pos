@@ -17,7 +17,6 @@ import { BarcodeFieldComponent } from '../../../../shared/components/ui/barcode-
 import { RecipeBuilderComponent } from '../recipe-builder/recipe-builder.component';
 import { FieldInputComponent } from '../../../../shared/components/ui/field-input/field-input';
 import { UnitDrawerComponent } from '../unit-drawer/unit-drawer.component';
-import { PresentationService } from '../../../../core/services/presentation.service';
 import { TaxService } from '../../../../core/services/tax.service';
 import { UnitsService } from '../../../../core/services/units.service';
 import { Unit } from '../../../../core/models/unit.models';
@@ -62,9 +61,9 @@ import { map } from 'rxjs';
         <!-- BODY -->
         <div class="drawer-body">
 
-          <!-- Section: Identity -->
+          <!-- Section: General -->
           <div class="section-card">
-            <div class="section-kicker"><ng-icon name="lucideTag"></ng-icon> Identidad</div>
+            <div class="section-kicker"><ng-icon name="lucideTag"></ng-icon> General</div>
             <div class="form-stack">
               <app-field-input
                 formControlName="name"
@@ -73,36 +72,6 @@ import { map } from 'rxjs';
                 [required]="true"
                 [errorMessages]="{ required: 'Requerido.' }"
               ></app-field-input>
-
-              <app-field-input
-                formControlName="sku"
-                label="SKU Interno"
-                placeholder="Ej: CAM-ROJO-XL, BEB-001"
-                prefixIcon="lucideHash"
-                [optional]="true"
-              ></app-field-input>
-
-              @if (!isService) {
-                <div class="field">
-                  <label>Código de Barras</label>
-                  <app-barcode-field
-                    formControlName="barcode"
-                    [productName]="form.get('name')?.value"
-                    [salePrice]="form.get('salePrice')?.value">
-                  </app-barcode-field>
-                </div>
-
-                <div class="field">
-                  <label>Presentación</label>
-                  <app-search-select
-                    formControlName="presentationId"
-                    placeholder="Ej: Botella Vidrio"
-                    [searchFn]="searchPresentationsFn.bind(this)"
-                    [initialOption]="initialPresentationOption()"
-                    (selectionChange)="onPresentationChange($event)"
-                  ></app-search-select>
-                </div>
-              }
 
               @if (isService) {
                 <div class="field">
@@ -125,7 +94,6 @@ import { map } from 'rxjs';
                 </div>
               }
 
-              <!-- Variante activa -->
               <div class="pff__toggle-row" (click)="isActiveToggle.toggle()">
                 <div class="pff__toggle-info">
                   <span class="pff__toggle-label">{{ isService ? 'Modalidad activa' : isRawMaterial ? 'Formato activo' : 'Variante activa' }}</span>
@@ -134,7 +102,6 @@ import { map } from 'rxjs';
                 <app-toggle-switch #isActiveToggle formControlName="isActive" size="sm" (click)="$event.stopPropagation()"></app-toggle-switch>
               </div>
 
-              <!-- Imagen de variante -->
               <div class="field">
                 <label>Imagen <span class="optional">Opcional — sobreescribe la del producto</span></label>
                 <label class="variant-image-drop" for="variant-img-{{index}}">
@@ -154,11 +121,78 @@ import { map } from 'rxjs';
             </div>
           </div>
 
-          <!-- Section: Base Unit -->
+          <!-- Section: Pricing -->
+          <div class="section-card">
+            <div class="section-kicker">
+              <ng-icon name="lucideDollarSign"></ng-icon> Precio
+              @if (!isRawMaterial && margin() !== null) {
+                <span class="margin-badge" [class.margin--good]="margin()! >= 20" [class.margin--warn]="margin()! > 0 && margin()! < 20" [class.margin--loss]="margin()! <= 0">
+                  {{ margin()! <= 0 ? 'Pérdida' : 'Margen ' + (margin()! | number:'1.0-1') + '%' }}
+                </span>
+              }
+            </div>
+
+            <div class="pfc__pricing-row">
+              @if (!isRawMaterial) {
+                <app-field-input
+                  formControlName="salePrice"
+                  label="Precio de Venta"
+                  type="number"
+                  placeholder="0.00"
+                  prefix="$"
+                  [required]="true"
+                  [step]="0.01"
+                  [min]="0"
+                  [errorMessages]="{ required: 'Precio de venta requerido.', min: 'El precio debe ser mayor a 0' }"
+                ></app-field-input>
+              }
+              <app-field-input
+                formControlName="costPrice"
+                label="Costo Neto"
+                type="number"
+                placeholder="0.00"
+                prefix="$"
+                [optional]="true"
+                [step]="0.01"
+                [min]="0"
+              ></app-field-input>
+            </div>
+
+            <div class="field">
+              <label>Impuestos Aplicables</label>
+              <app-search-select
+                formControlName="taxIds"
+                placeholder="Añadir IVA, ICE..."
+                [multiple]="true"
+                [searchFn]="searchTaxesFn.bind(this)"
+                [initialOptions]="initialTaxOptions()"
+                (selectionChange)="onTaxSelectionChange($event)"
+              ></app-search-select>
+            </div>
+          </div>
+
+          <!-- Section: Identification -->
           @if (!isService) {
             <div class="section-card">
-              <div class="section-kicker"><ng-icon name="lucideLayers"></ng-icon> Unidad de Medida <span class="section-optional">Opcional</span></div>
+              <div class="section-kicker"><ng-icon name="lucideHash"></ng-icon> Identificación</div>
               <div class="form-stack">
+                <app-field-input
+                  formControlName="sku"
+                  label="SKU Interno"
+                  placeholder="Ej: CAM-ROJO-XL, BEB-001"
+                  prefixIcon="lucideHash"
+                  [optional]="true"
+                ></app-field-input>
+
+                <div class="field">
+                  <label>Código de Barras</label>
+                  <app-barcode-field
+                    formControlName="barcode"
+                    [productName]="form.get('name')?.value"
+                    [salePrice]="form.get('salePrice')?.value">
+                  </app-barcode-field>
+                </div>
+
                 <div class="field">
                   <label>Unidad Base <span class="optional">Ej: kg, lt, und</span></label>
                   <app-search-select
@@ -171,15 +205,32 @@ import { map } from 'rxjs';
                     (createNew)="unitCreateOpen.set(true)"
                   ></app-search-select>
                 </div>
+                @if (hasBaseUnit()) {
+                  <app-field-input
+                    formControlName="conversionFactor"
+                    label="Factor de Conversión"
+                    type="number"
+                    placeholder="Ej: 1, 10, 0.5"
+                    [optional]="true"
+                    [min]="0.0001"
+                    [step]="0.001"
+                    hint="Entero para unidades contables (UNIT), decimal para peso o volumen."
+                  ></app-field-input>
+                }
+              </div>
+            </div>
+          }
+
+          @if (isService) {
+            <div class="section-card">
+              <div class="section-kicker"><ng-icon name="lucideHash"></ng-icon> Identificación</div>
+              <div class="form-stack">
                 <app-field-input
-                  formControlName="conversionFactor"
-                  label="Factor de Conversión"
-                  type="number"
-                  placeholder="Ej: 1, 10, 0.5"
+                  formControlName="sku"
+                  label="SKU Interno"
+                  placeholder="Ej: SRV-CORTE-PREM"
+                  prefixIcon="lucideHash"
                   [optional]="true"
-                  [min]="0.0001"
-                  [step]="0.001"
-                  hint="Entero para unidades contables (UNIT), decimal para peso o volumen."
                 ></app-field-input>
               </div>
             </div>
@@ -235,60 +286,10 @@ import { map } from 'rxjs';
           <!-- Section: Tracking -->
           @if (!isService) {
             <div class="section-card">
-              <div class="section-kicker"><ng-icon name="lucideBoxes"></ng-icon> Trazabilidad</div>
+              <div class="section-kicker"><ng-icon name="lucideBoxes"></ng-icon> Inventario</div>
               <app-stock-tracking-config></app-stock-tracking-config>
             </div>
           }
-
-          <!-- Section: Pricing -->
-          <div class="section-card">
-            <div class="section-kicker">
-              <ng-icon name="lucideDollarSign"></ng-icon> Precios
-              @if (!isRawMaterial && margin() !== null) {
-                <span class="margin-badge" [class.margin--good]="margin()! >= 20" [class.margin--warn]="margin()! > 0 && margin()! < 20" [class.margin--loss]="margin()! <= 0">
-                  {{ margin()! <= 0 ? 'Pérdida' : 'Margen ' + (margin()! | number:'1.0-1') + '%' }}
-                </span>
-              }
-            </div>
-
-            <div class="pfc__pricing-row">
-              @if (!isRawMaterial) {
-                <app-field-input
-                  formControlName="salePrice"
-                  label="Precio de Venta"
-                  type="number"
-                  placeholder="0.00"
-                  prefix="$"
-                  [required]="true"
-                  [step]="0.01"
-                  [min]="0"
-                  [errorMessages]="{ required: 'Precio de venta requerido.', min: 'El precio debe ser mayor a 0' }"
-                ></app-field-input>
-              }
-              <app-field-input
-                formControlName="costPrice"
-                label="Costo Neto"
-                type="number"
-                placeholder="0.00"
-                prefix="$"
-                [optional]="true"
-                [step]="0.01"
-                [min]="0"
-              ></app-field-input>
-            </div>
-
-            <div class="field">
-              <label>Impuestos Aplicables</label>
-              <app-search-select
-                formControlName="taxIds"
-                placeholder="Añadir IVA, ICE..."
-                [multiple]="true"
-                [searchFn]="searchTaxesFn.bind(this)"
-                [initialOptions]="initialTaxOptions()"
-                (selectionChange)="onTaxSelectionChange($event)"
-              ></app-search-select>
-            </div>
-          </div>
 
           <!-- Section: Recipe -->
           @if (!isService) {
@@ -657,7 +658,6 @@ export class VariantDrawerComponent implements OnInit, OnDestroy {
   @Output() saved = new EventEmitter<FormGroup>();
   @Output() cancelled = new EventEmitter<void>();
 
-  private presentationService = inject(PresentationService);
   private taxService = inject(TaxService);
   private unitsService = inject(UnitsService);
 
@@ -670,19 +670,23 @@ export class VariantDrawerComponent implements OnInit, OnDestroy {
     return m > 0 ? `${h}h ${m}min` : `${h}h`;
   }
 
-  initialPresentationOption = signal<SearchSelectOption | undefined>(undefined);
   initialUnitOption = signal<SearchSelectOption | undefined>(undefined);
   initialTaxOptions = signal<SearchSelectOption[]>([]);
   margin = signal<number | null>(null);
   imagePreview = signal<string | null>(null);
   unitCreateOpen = signal(false);
+  hasBaseUnit = signal(false);
 
   private priceSub?: Subscription;
 
   ngOnInit() {
     this.loadInitialOptions();
     this.updateMargin();
-    this.priceSub = this.form.valueChanges.subscribe(() => this.updateMargin());
+    this.hasBaseUnit.set(!!this.form.get('baseUnitId')?.value);
+    this.priceSub = this.form.valueChanges.subscribe(() => {
+      this.updateMargin();
+      this.hasBaseUnit.set(!!this.form.get('baseUnitId')?.value);
+    });
     const existingImage = this.form.get('imageUrl')?.value;
     if (existingImage) this.imagePreview.set(existingImage);
   }
@@ -731,14 +735,6 @@ export class VariantDrawerComponent implements OnInit, OnDestroy {
       });
     }
 
-    const presentationId = this.form.get('presentationId')?.value;
-    if (presentationId) {
-      this.presentationService.findAll({}).subscribe(res => {
-        const p = res.data.find((x: any) => x.id === presentationId);
-        if (p) this.initialPresentationOption.set({ value: p.id, label: p.name });
-      });
-    }
-
     const taxIds = this.form.get('taxIds')?.value as string[];
     if (taxIds?.length) {
       this.taxService.findAllSimple().subscribe(taxes => {
@@ -759,10 +755,6 @@ export class VariantDrawerComponent implements OnInit, OnDestroy {
     this.unitCreateOpen.set(false);
   }
 
-  onPresentationChange(event: SearchSelectOption | SearchSelectOption[] | null) {
-    if (!Array.isArray(event)) this.initialPresentationOption.set(event ?? undefined);
-  }
-
   onTaxSelectionChange(event: SearchSelectOption | SearchSelectOption[] | null) {
     if (Array.isArray(event)) this.initialTaxOptions.set(event);
     else if (!event) this.initialTaxOptions.set([]);
@@ -773,15 +765,6 @@ export class VariantDrawerComponent implements OnInit, OnDestroy {
       map(res => ({
         data: res.data.map((u: any) => ({ value: u.id, label: `${u.name} (${u.abbreviation})` })),
         hasMore: res.data.length === 8
-      }))
-    );
-  }
-
-  searchPresentationsFn(query: string) {
-    return this.presentationService.findAll({ search: query }).pipe(
-      map(res => ({
-        data: res.data.map((i: any) => ({ value: i.id, label: i.name })),
-        hasMore: false
       }))
     );
   }

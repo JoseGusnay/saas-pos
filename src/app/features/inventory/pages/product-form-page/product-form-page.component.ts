@@ -480,6 +480,16 @@ export class ProductFormPageComponent implements OnInit, HasUnsavedChanges {
       } else if (type === 'RAW_MATERIAL') {
         this.simpleVariant.patchValue({ durationMinutes: null, stockTrackable: true }, { emitEvent: false });
         this.form.patchValue({ isSellable: false }, { emitEvent: false });
+        // Auto-select default unit "Unidad (und)" if no unit is set
+        if (!this.simpleVariant.get('baseUnitId')?.value) {
+          this.unitsSvc.findAll({ search: 'und', limit: 1, onlyActive: true }).subscribe(res => {
+            const unit = res.data.find((u: any) => u.abbreviation === 'und');
+            if (unit) {
+              this.simpleVariant.patchValue({ baseUnitId: unit.id }, { emitEvent: false });
+              this.initialUnitOption.set({ value: unit.id, label: `${unit.name} (${unit.abbreviation})` });
+            }
+          });
+        }
       } else {
         this.simpleVariant.patchValue({ durationMinutes: null, stockTrackable: true }, { emitEvent: false });
         this.form.patchValue({ isSellable: true, isPurchasable: true }, { emitEvent: false });

@@ -24,7 +24,9 @@
   </div>
 }
 
-<!-- Precio de venta + Costo -->
+<!-- ── Precio ──────────────────────────────────────────────────────────────── -->
+<div class="pff__section-label">Precio</div>
+
 <div class="pfc__pricing-row">
   <div class="pff" [class.pff--error]="salePriceCtrl?.invalid && salePriceCtrl?.touched">
     <label class="pff__label">
@@ -62,7 +64,6 @@
   ></app-field-input>
 </div>
 
-<!-- Impuestos -->
 <div class="pff">
   <label class="pff__label">Impuestos <span class="pff__optional">Opcional</span></label>
   <app-search-select
@@ -76,20 +77,9 @@
   ></app-search-select>
 </div>
 
-<!-- Presentación -->
-<div class="pff">
-  <label class="pff__label">Presentación <span class="pff__optional">Opcional</span></label>
-  <app-search-select
-    formControlName="presentationId"
-    placeholder="Ej: Unidad, Caja x12, Botella…"
-    searchPlaceholder="Buscar presentación…"
-    [searchFn]="searchPresentationsFn"
-    [initialOption]="_presentationOption()"
-    (selectionChange)="onPresentationChange($event)"
-  ></app-search-select>
-</div>
+<!-- ── Identificación ─────────────────────────────────────────────────────── -->
+<div class="pff__section-label">Identificación</div>
 
-<!-- SKU + Código de barras -->
 <div class="pff__row">
   <app-field-input
     formControlName="sku"
@@ -107,20 +97,19 @@
   ></app-barcode-field>
 </div>
 
-<!-- Unidad de medida -->
-<div class="pff__row">
-  <div class="pff">
-    <label class="pff__label">Unidad Base <span class="pff__optional">Opcional</span></label>
-    <app-search-select
-      formControlName="baseUnitId"
-      placeholder="Buscar unidad (kg, lt, und…)"
-      [searchFn]="searchUnitsFn"
-      [initialOption]="_unitOption()"
-      createNewLabel="Crear nueva unidad"
-      (selectionChange)="onUnitChange($event)"
-      (createNew)="unitCreateOpen.set(true)"
-    ></app-search-select>
-  </div>
+<div class="pff">
+  <label class="pff__label">Unidad Base <span class="pff__optional">Opcional</span></label>
+  <app-search-select
+    formControlName="baseUnitId"
+    placeholder="Buscar unidad (kg, lt, und…)"
+    [searchFn]="searchUnitsFn"
+    [initialOption]="_unitOption()"
+    createNewLabel="Crear nueva unidad"
+    (selectionChange)="onUnitChange($event)"
+    (createNew)="unitCreateOpen.set(true)"
+  ></app-search-select>
+</div>
+@if (hasBaseUnit()) {
   <app-field-input
     formControlName="conversionFactor"
     label="Factor de Conversión"
@@ -131,9 +120,11 @@
     [step]="0.001"
     hint="Entero para unidades contables (UNIT), decimal para peso o volumen."
   ></app-field-input>
-</div>
+}
 
-<!-- Control de stock -->
+<!-- ── Inventario ─────────────────────────────────────────────────────────── -->
+<div class="pff__section-label">Inventario</div>
+
 <app-stock-tracking-config></app-stock-tracking-config>
 
 <app-unit-drawer

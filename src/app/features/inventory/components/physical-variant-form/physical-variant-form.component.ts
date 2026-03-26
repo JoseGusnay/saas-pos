@@ -15,7 +15,6 @@ import { StockTrackingConfigComponent } from '../stock-tracking-config/stock-tra
 import { ToggleSwitchComponent } from '../../../../shared/components/ui/toggle-switch/toggle-switch';
 import { UnitDrawerComponent } from '../unit-drawer/unit-drawer.component';
 import { TaxService } from '../../../../core/services/tax.service';
-import { PresentationService } from '../../../../core/services/presentation.service';
 import { UnitsService } from '../../../../core/services/units.service';
 import { Unit } from '../../../../core/models/unit.models';
 import { SearchSelectOption } from '../../../../shared/models/search-select.models';
@@ -37,7 +36,6 @@ import { CategoryAttributeType } from '../../models/product.model';
 })
 export class PhysicalVariantFormComponent {
   private taxSvc          = inject(TaxService);
-  private presentationSvc = inject(PresentationService);
   private unitsSvc        = inject(UnitsService);
   private fg = inject(ControlContainer).control as FormGroup;
 
@@ -45,7 +43,6 @@ export class PhysicalVariantFormComponent {
   categoryAttributes      = input<CategoryAttributeType[]>([]);
   productName             = input('');
   initialTaxOptions       = input<SearchSelectOption[]>([]);
-  initialPresentationOption = input<SearchSelectOption | undefined>(undefined);
   initialUnitOption       = input<SearchSelectOption | undefined>(undefined);
 
   // ── Reactive form values ─────────────────────────────────────────────────
@@ -58,6 +55,11 @@ export class PhysicalVariantFormComponent {
     { initialValue: this.fg.get('costPrice')?.value ?? 0 }
   );
 
+  hasBaseUnit = toSignal(
+    this.fg.get('baseUnitId')!.valueChanges,
+    { initialValue: this.fg.get('baseUnitId')?.value ?? '' }
+  );
+
   simpleMargin = computed(() => {
     const sale = Number(this.salePriceValue()) || 0;
     const cost = Number(this.costPriceValue()) || 0;
@@ -66,18 +68,15 @@ export class PhysicalVariantFormComponent {
 
   // ── Signal outputs ──────────────────────────────────────────────────────
   taxOptionsChange = output<SearchSelectOption[]>();
-  presentationOptionChange = output<SearchSelectOption | undefined>();
   unitOptionChange = output<SearchSelectOption | undefined>();
 
   // ── Internal option tracking ─────────────────────────────────────────────
   _taxOptions         = signal<SearchSelectOption[]>([]);
-  _presentationOption = signal<SearchSelectOption | undefined>(undefined);
   _unitOption         = signal<SearchSelectOption | undefined>(undefined);
   unitCreateOpen      = signal(false);
 
   constructor() {
     effect(() => { this._taxOptions.set(this.initialTaxOptions()); });
-    effect(() => { const o = this.initialPresentationOption(); if (o) this._presentationOption.set(o); });
     effect(() => { const o = this.initialUnitOption(); if (o) this._unitOption.set(o); });
   }
 
@@ -88,13 +87,6 @@ export class PhysicalVariantFormComponent {
   onTaxChange(event: SearchSelectOption | SearchSelectOption[] | null) {
     if (Array.isArray(event))  { this._taxOptions.set(event); this.taxOptionsChange.emit(event); }
     else if (!event)           { this._taxOptions.set([]); this.taxOptionsChange.emit([]); }
-  }
-
-  onPresentationChange(event: SearchSelectOption | SearchSelectOption[] | null) {
-    if (!Array.isArray(event)) {
-      this._presentationOption.set(event ?? undefined);
-      this.presentationOptionChange.emit(event ?? undefined);
-    }
   }
 
   onUnitChange(event: SearchSelectOption | SearchSelectOption[] | null) {
@@ -119,17 +111,6 @@ export class PhysicalVariantFormComponent {
         data: (res.data ?? []).map(t => ({ value: t.id, label: `${t.name} (${t.percentage}%)` } as SearchSelectOption)).reverse(),
         hasMore: (res.data ?? []).length === 20
       }))
-    );
-
-  searchPresentationsFn = (query: string, page: number) =>
-    this.presentationSvc.findAll({ search: query, page, limit: 15 }).pipe(
-      map((res: any) => {
-        const items = Array.isArray(res) ? res : (res.data ?? []);
-        return {
-          data: items.map((p: any) => ({ label: p.name, value: p.id } as SearchSelectOption)),
-          hasMore: items.length === 15
-        };
-      })
     );
 
   searchUnitsFn = (query: string, page: number = 1) =>

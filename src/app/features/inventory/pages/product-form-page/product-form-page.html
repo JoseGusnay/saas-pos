@@ -115,10 +115,8 @@
                         [categoryAttributes]="categoryAttributes()"
                         [productName]="form.get('name')?.value"
                         [initialTaxOptions]="initialTaxOptions()"
-                        [initialPresentationOption]="initialPresentationOption()"
                         [initialUnitOption]="initialUnitOption()"
                         (taxOptionsChange)="initialTaxOptions.set($event)"
-                        (presentationOptionChange)="initialPresentationOption.set($event)"
                         (unitOptionChange)="initialUnitOption.set($event)"
                       ></app-physical-variant-form>
                     } @else if (isService) {

@@ -71,26 +71,28 @@ import { CategoryAttributeType } from '../../models/product.model';
       ></app-barcode-field>
     </div>
 
-    <!-- Unidad base + Factor de conversión -->
-    <div class="pff__row">
-      <div class="pff" [class.pff--error]="fg.get('baseUnitId')?.invalid && fg.get('baseUnitId')?.touched">
-        <label class="pff__label">Unidad Base <span class="pff__req">*</span></label>
-        <app-search-select
-          formControlName="baseUnitId"
-          placeholder="Buscar unidad (kg, lt, und…)"
-          [searchFn]="searchUnitsFn"
-          [initialOption]="_unitOption()"
-          createNewLabel="Crear nueva unidad"
-          (selectionChange)="onUnitChange($event)"
-          (createNew)="unitCreateOpen.set(true)"
-        ></app-search-select>
-        @if (fg.get('baseUnitId')?.invalid && fg.get('baseUnitId')?.touched) {
-          <small class="pff__error">
-            <ng-icon name="lucideAlertCircle"></ng-icon>
-            Selecciona una unidad de medida.
-          </small>
-        }
-      </div>
+    <!-- Unidad base -->
+    <div class="pff" [class.pff--error]="fg.get('baseUnitId')?.invalid && fg.get('baseUnitId')?.touched">
+      <label class="pff__label">Unidad Base <span class="pff__req">*</span></label>
+      <app-search-select
+        formControlName="baseUnitId"
+        placeholder="Buscar unidad (kg, lt, und…)"
+        [searchFn]="searchUnitsFn"
+        [initialOption]="_unitOption()"
+        createNewLabel="Crear nueva unidad"
+        (selectionChange)="onUnitChange($event)"
+        (createNew)="unitCreateOpen.set(true)"
+      ></app-search-select>
+      @if (fg.get('baseUnitId')?.invalid && fg.get('baseUnitId')?.touched) {
+        <small class="pff__error">
+          <ng-icon name="lucideAlertCircle"></ng-icon>
+          Selecciona una unidad de medida.
+        </small>
+      }
+    </div>
+
+    <!-- Factor de conversión (aparece al seleccionar unidad) -->
+    @if (fg.get('baseUnitId')?.value) {
       <app-field-input
         formControlName="conversionFactor"
         label="Factor de Conversión"
@@ -101,7 +103,7 @@ import { CategoryAttributeType } from '../../models/product.model';
         [step]="0.001"
         hint="Cuántas unidades base equivale a 1 unidad de compra"
       ></app-field-input>
-    </div>
+    }
 
     <!-- Costo unitario -->
     <app-field-input
