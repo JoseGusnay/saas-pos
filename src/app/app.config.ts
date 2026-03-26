@@ -1,4 +1,6 @@
-import { ApplicationConfig } from "@angular/core";
+import { ApplicationConfig, LOCALE_ID } from "@angular/core";
+import { registerLocaleData } from '@angular/common';
+import localeEs from '@angular/common/locales/es';
 import { provideHttpClient, withFetch, withInterceptorsFromDi, withInterceptors } from "@angular/common/http";
 import { PreloadAllModules, Router, provideRouter, withPreloading } from "@angular/router";
 import { provideAnimationsAsync } from "@angular/platform-browser/animations/async";
@@ -65,10 +67,14 @@ import {
   lucideRefreshCw,
   lucideInfo,
   lucideRuler,
+  lucideFlaskConical,
 } from '@ng-icons/lucide';
+
+registerLocaleData(localeEs);
 
 export const appConfig: ApplicationConfig = {
   providers: [
+    { provide: LOCALE_ID, useValue: 'es' },
     provideRouter(routes, withPreloading(PreloadAllModules)),
     provideAnimationsAsync(),
     provideHttpClient(withFetch(), withInterceptors([tenantInterceptor]), withInterceptorsFromDi()),
@@ -146,6 +152,7 @@ export const appConfig: ApplicationConfig = {
       lucideRefreshCw,
       lucideInfo,
       lucideRuler,
+      lucideFlaskConical,
     })
   ],
 };

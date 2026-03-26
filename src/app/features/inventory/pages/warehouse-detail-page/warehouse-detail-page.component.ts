@@ -97,6 +97,7 @@ export class WarehouseDetailPageComponent {
 
   locationActions: ActionItem[] = [
     { id: 'edit', label: 'Editar', icon: 'lucidePencil' },
+    { id: 'logs', label: 'Ver historial', icon: 'lucideHistory' },
     { id: 'delete', label: 'Eliminar', icon: 'lucideTrash2', variant: 'danger' },
   ];
 
@@ -139,6 +140,27 @@ export class WarehouseDetailPageComponent {
       user: log.userName || 'Sistema',
       icon: log.action === 'CREATE' ? 'lucidePlusCircle' : log.action === 'UPDATE' ? 'lucideRefreshCw' : log.action === 'DELETE' ? 'lucideTrash' : 'lucideHistory',
       message: log.action === 'CREATE' ? 'Registro inicial de la bodega.' : undefined,
+      changes: log.action === 'UPDATE' && log.details?.oldData
+        ? this.getChangedFields(log.details.oldData, log.details.newData)
+        : undefined,
+    }))
+  );
+
+  // ── Location History ───────────────────────────────────────────────────────
+  isLocationHistoryOpen = signal(false);
+  isLocationHistoryLoading = signal(false);
+  locationLogs = signal<any[]>([]);
+  locationHistoryTarget = signal<Location | null>(null);
+
+  mappedLocationLogs = computed<DatelineItem[]>(() =>
+    this.locationLogs().map(log => ({
+      id: log.id,
+      date: log.createdAt,
+      action: log.action,
+      actionLabel: log.action === 'CREATE' ? 'Creacion' : log.action === 'UPDATE' ? 'Actualizacion' : log.action === 'DELETE' ? 'Eliminacion' : log.action,
+      user: log.userName || 'Sistema',
+      icon: log.action === 'CREATE' ? 'lucidePlusCircle' : log.action === 'UPDATE' ? 'lucideRefreshCw' : log.action === 'DELETE' ? 'lucideTrash' : 'lucideHistory',
+      message: log.action === 'CREATE' ? 'Registro inicial de la ubicacion.' : undefined,
       changes: log.action === 'UPDATE' && log.details?.oldData
         ? this.getChangedFields(log.details.oldData, log.details.newData)
         : undefined,
@@ -215,9 +237,31 @@ export class WarehouseDetailPageComponent {
     this.locationFormRef?.resetForm();
   }
 
+  forceCloseActiveDrawer() {
+    if (this.isEditDrawerOpen()) {
+      this.forceCloseEditDrawer();
+    } else if (this.isLocationDrawerOpen()) {
+      this.forceCloseLocationDrawer();
+    } else {
+      this.isConfirmCloseOpen.set(false);
+    }
+  }
+
   handleLocationAction(action: ActionItem, loc: Location) {
     if (action.id === 'edit') this.onEditLocation(loc);
+    else if (action.id === 'logs') this.onShowLocationHistory(loc);
     else if (action.id === 'delete') this.onDeleteLocation(loc);
+  }
+
+  onShowLocationHistory(loc: Location) {
+    this.locationHistoryTarget.set(loc);
+    this.isLocationHistoryOpen.set(true);
+    this.isLocationHistoryLoading.set(true);
+    this.locationLogs.set([]);
+    this.warehouseService.getLocationLogs(loc.id).subscribe({
+      next: logs => { this.locationLogs.set(logs ?? []); this.isLocationHistoryLoading.set(false); },
+      error: () => { this.toastService.error('Error al cargar el historial'); this.isLocationHistoryLoading.set(false); }
+    });
   }
 
   onDeleteLocation(loc: Location) {

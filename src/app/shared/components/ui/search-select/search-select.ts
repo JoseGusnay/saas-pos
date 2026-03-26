@@ -536,7 +536,15 @@ export class SearchSelectComponent implements AfterViewInit, ControlValueAccesso
 
   private _initialOptions = signal<SearchSelectOption[]>([]);
   @Input() set initialOptions(vals: SearchSelectOption[] | null | undefined) {
-    this._initialOptions.set(vals || []);
+    const options = vals || [];
+    this._initialOptions.set(options);
+    if (this.multiple && options.length > 0) {
+      this.value.set(options.map(o => o.value));
+      this.selectedOptionsMap.update(map => {
+        options.forEach(o => map.set(o.value, o));
+        return new Map(map);
+      });
+    }
   }
   get initialOptions(): SearchSelectOption[] {
     return this._initialOptions();

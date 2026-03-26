@@ -1,0 +1,453 @@
+<!-- Loading -->
+@if (isLoading() && !level()) {
+  <div class="kp__loading">
+    <app-spinner></app-spinner>
+    <span>Cargando kardex...</span>
+  </div>
+}
+
+<!-- Error -->
+@if (error()) {
+  <div class="kp__error">
+    <ng-icon name="lucideAlertCircle"></ng-icon>
+    <h3>No se pudo cargar el kardex</h3>
+    <p>{{ error() }}</p>
+    <button class="kp__error-btn" (click)="goBack()">
+      <ng-icon name="lucideArrowLeft"></ng-icon>
+      Volver a Stock
+    </button>
+  </div>
+}
+
+<!-- Main -->
+@if (level(); as lv) {
+  <div class="kp">
+
+    <!-- ═══ HEADER ═══ -->
+    <header class="kp__header">
+      <div class="kp__header-top">
+        <nav class="kp__breadcrumb">
+          <app-back-button (clicked)="goBack()"></app-back-button>
+          <span class="kp__breadcrumb-sep">/</span>
+          <a class="kp__breadcrumb-link" (click)="goBack()">Stock</a>
+          <span class="kp__breadcrumb-sep">/</span>
+          <span class="kp__breadcrumb-current">Kardex</span>
+        </nav>
+
+        <div class="kp__header-actions">
+          <app-form-button label="Excel" icon="lucideDownload" variant="ghost" type="button" [fullWidth]="false" (click)="exportExcel()"></app-form-button>
+          <app-form-button label="PDF" icon="lucideFileText" variant="ghost" type="button" [fullWidth]="false" (click)="exportPdf()"></app-form-button>
+          <app-form-button label="Ajustar" icon="lucideArrowUpDown" variant="secondary" type="button" [fullWidth]="false" (click)="openAdjust()"></app-form-button>
+          <app-form-button label="Transferir" icon="lucideArrowLeftRight" variant="primary" type="button" [fullWidth]="false" (click)="openTransfer()"></app-form-button>
+        </div>
+      </div>
+
+      <!-- Hero -->
+      <div class="kp__hero">
+        <div class="kp__hero-icon">
+          <ng-icon name="lucidePackage"></ng-icon>
+        </div>
+        <div class="kp__hero-content">
+          <div class="kp__hero-title-row">
+            <h1 class="kp__hero-name">{{ lv.productName }}</h1>
+            <span class="kp__badge" [class]="'kp__badge--' + getLevelStatus(lv)">{{ getLevelStatusLabel(lv) }}</span>
+          </div>
+          <p class="kp__hero-sub">{{ lv.variantName }} · <span class="kp__sku">{{ lv.sku }}</span></p>
+          <span class="kp__hero-wh"><ng-icon name="lucideWarehouse" size="13"></ng-icon> {{ lv.warehouseName }}</span>
+        </div>
+      </div>
+
+      <!-- Sticky product bar (mobile only, visible on scroll) -->
+      <div class="kp__sticky-bar">
+        <div class="kp__sticky-info">
+          <span class="kp__sticky-name">{{ lv.productName }} — {{ lv.variantName }}</span>
+          <span class="kp__sticky-meta">{{ lv.sku }} · {{ lv.warehouseName }} · Stock: <strong>{{ lv.quantity }}</strong></span>
+        </div>
+        <span class="kp__badge kp__badge--sm" [class]="'kp__badge--' + getLevelStatus(lv)">{{ getLevelStatusLabel(lv) }}</span>
+      </div>
+
+      <!-- Summary cards -->
+      <div class="kp__summary">
+        <div class="kp__summary-card">
+          <span class="kp__summary-value">{{ lv.quantity }}</span>
+          <span class="kp__summary-label">Stock actual</span>
+        </div>
+        @if (availability()) {
+          <div class="kp__summary-card kp__summary-card--reserved">
+            <span class="kp__summary-value">{{ availability()!.reserved }}</span>
+            <span class="kp__summary-label">Reservado</span>
+          </div>
+          <div class="kp__summary-card kp__summary-card--available">
+            <span class="kp__summary-value">{{ availability()!.available }}</span>
+            <span class="kp__summary-label">Disponible</span>
+          </div>
+        }
+        @if (lv.minimumStock != null) {
+          <div class="kp__summary-card">
+            <span class="kp__summary-value">{{ lv.minimumStock }}</span>
+            <span class="kp__summary-label">Stock mínimo</span>
+          </div>
+        }
+        @if (lv.maximumStock != null) {
+          <div class="kp__summary-card">
+            <span class="kp__summary-value">{{ lv.maximumStock }}</span>
+            <span class="kp__summary-label">Stock máximo</span>
+          </div>
+        }
+      </div>
+    </header>
+
+    <!-- ═══ LOTES FEFO ═══ -->
+    @if (lots().length > 0) {
+      <section class="kp__section">
+        <h2 class="kp__section-title">
+          <ng-icon name="lucideFlaskConical"></ng-icon>
+          Lotes (FEFO)
+          <span class="kp__section-count">{{ lots().length }}</span>
+        </h2>
+        <div class="kp__lots-grid">
+          @for (lot of lots(); track lot.lotId) {
+            <div class="kp__lot-card">
+              <span class="kp__lot-number">{{ lot.lotNumber }}</span>
+              <div class="kp__lot-meta">
+                @if (lot.expiryDate) {
+                  <span class="kp__lot-expiry"><ng-icon name="lucideCalendar" size="12"></ng-icon> {{ lot.expiryDate | date:'dd/MM/yyyy' }}</span>
+                } @else {
+                  <span class="kp__lot-no-exp">Sin vencimiento</span>
+                }
+                <span class="kp__lot-qty">{{ lot.quantity }} uds.</span>
+              </div>
+              @if (lot.costPrice != null) {
+                <span class="kp__lot-cost">Costo: {{ lot.costPrice | currency:'USD':'symbol':'1.2-4' }}</span>
+              }
+            </div>
+          }
+        </div>
+      </section>
+    }
+
+    <!-- ═══ TABLA KARDEX ═══ -->
+    <section class="kp__section">
+      <div class="kp__section-header">
+        <h2 class="kp__section-title">
+          Kardex de movimientos
+          @if (movTotal() > 0) {
+            <span class="kp__section-count">{{ movTotal() }}</span>
+          }
+        </h2>
+
+        @if (hasActiveFilters()) {
+          <app-form-button label="Limpiar filtros" variant="ghost" type="button" [fullWidth]="false" (click)="clearFilters()"></app-form-button>
+        }
+      </div>
+
+      <!-- Filtros -->
+      <div class="kp__filters">
+        <div class="kp__filter">
+          <label>Tipo</label>
+          <app-custom-select size="sm" [options]="movTypeOptions" [value]="movTypeFilter()" (valueChange)="onMovTypeChange($event)"></app-custom-select>
+        </div>
+        <div class="kp__filter">
+          <label>Desde</label>
+          <app-date-picker [ngModel]="dateFrom()" (ngModelChange)="onDateFromChange($event)" placeholder="Fecha inicio..." [clearable]="true"></app-date-picker>
+        </div>
+        <div class="kp__filter">
+          <label>Hasta</label>
+          <app-date-picker [ngModel]="dateTo()" (ngModelChange)="onDateToChange($event)" placeholder="Fecha fin..." [clearable]="true"></app-date-picker>
+        </div>
+      </div>
+
+      @if (movLoading()) {
+        <div class="kp__table-loading">
+          @for (n of [1,2,3,4,5]; track n) {
+            <div class="kp__skel-row">
+              <app-skeleton width="100px" height="14px"></app-skeleton>
+              <app-skeleton width="70px" height="20px" radius="99px"></app-skeleton>
+              <app-skeleton width="140px" height="14px"></app-skeleton>
+              <app-skeleton width="50px" height="14px"></app-skeleton>
+              <app-skeleton width="50px" height="14px"></app-skeleton>
+              <app-skeleton width="50px" height="14px"></app-skeleton>
+            </div>
+          }
+        </div>
+      } @else if (movements().length > 0) {
+
+        <!-- ═══ MOBILE: Card layout ═══ -->
+        @if (isMobile()) {
+          <!-- Saldo inicial -->
+          @if (openingBalance() !== null && hasDateFilter()) {
+            <div class="kp__m-opening">
+              <span>Saldo inicial del período</span>
+              <strong>{{ openingBalance() }}</strong>
+            </div>
+          }
+
+          <div class="kp__m-list">
+            @for (mov of movements(); track mov.id) {
+              <div class="kp__m-card">
+                <div class="kp__m-card-top">
+                  <span class="kp__mov-badge" [class]="'kp__mov-badge--' + (isOutType(mov.type) ? 'out' : 'in')">
+                    {{ getMovTypeLabel(mov.type) }}
+                  </span>
+                  <span class="kp__m-card-date">{{ mov.createdAt | date:'dd/MM/yy HH:mm' }}</span>
+                </div>
+                <div class="kp__m-card-amounts">
+                  @if (!isOutType(mov.type)) {
+                    <span class="kp__table-in">+{{ mov.quantity }}</span>
+                  } @else {
+                    <span class="kp__table-out">-{{ mov.quantity }}</span>
+                  }
+                  <span class="kp__m-card-arrow">→</span>
+                  <span class="kp__m-card-balance">Saldo: {{ mov.stockAfter }}</span>
+                  @if (mov.lotStockAfter != null) {
+                    <span class="kp__m-card-lot-balance">Lote: {{ mov.lotStockAfter }}</span>
+                  }
+                </div>
+                @if (getReferenceLabel(mov) || mov.notes || mov.locationName || mov.lotNumber) {
+                  <div class="kp__m-card-detail">
+                    @if (getReferenceLabel(mov)) {
+                      @if (getReferenceRoute(mov)) {
+                        <a class="kp__table-doc-link" [routerLink]="getReferenceRoute(mov)">{{ getReferenceLabel(mov) }}</a>
+                      } @else {
+                        <span class="kp__m-card-ref">{{ getReferenceLabel(mov) }}</span>
+                      }
+                    }
+                    @if (mov.notes) {
+                      <span class="kp__m-card-notes">{{ mov.notes }}</span>
+                    }
+                    @if (mov.locationName || mov.lotNumber) {
+                      <div class="kp__m-card-tags">
+                        @if (mov.locationName) {
+                          <span class="kp__m-card-tag">{{ mov.locationName }}@if (mov.locationCode) { ({{ mov.locationCode }}) }</span>
+                        }
+                        @if (mov.lotNumber) {
+                          <span class="kp__m-card-tag">Lote: {{ mov.lotNumber }}</span>
+                          @if (mov.lotExpiryDate) {
+                            <span class="kp__m-card-tag kp__m-card-tag--expiry">Vence: {{ mov.lotExpiryDate | date:'dd/MM/yy' }}</span>
+                          }
+                          @if (mov.lotCostPrice != null) {
+                            <span class="kp__m-card-tag">C. Lote: {{ mov.lotCostPrice | currency:'USD':'symbol':'1.2-4' }}</span>
+                          }
+                        }
+                      </div>
+                    }
+                  </div>
+                }
+                <div class="kp__m-card-footer">
+                  <span class="kp__m-card-user">{{ mov.userName || 'Sistema' }}</span>
+                  @if (mov.costPrice != null) {
+                    <span class="kp__m-card-cost">{{ mov.costPrice | currency:'USD':'symbol':'1.2-4' }} /ud</span>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+
+          <!-- Totales mobile -->
+          <div class="kp__m-totals">
+            <div class="kp__m-totals-row">
+              <span>Total entradas</span>
+              <span class="kp__table-in">+{{ totalEntradas() }}</span>
+            </div>
+            <div class="kp__m-totals-row">
+              <span>Total salidas</span>
+              <span class="kp__table-out">-{{ totalSalidas() }}</span>
+            </div>
+            @if (hasCostData()) {
+              <div class="kp__m-totals-row">
+                <span>Costo entradas</span>
+                <span class="kp__table-in">{{ totalCostoEntradas() | currency:'USD':'symbol':'1.2-2' }}</span>
+              </div>
+              <div class="kp__m-totals-row">
+                <span>Costo salidas</span>
+                <span class="kp__table-out">{{ totalCostoSalidas() | currency:'USD':'symbol':'1.2-2' }}</span>
+              </div>
+            }
+            <div class="kp__m-totals-row kp__m-totals-row--main">
+              <span>Saldo final</span>
+              <strong>{{ movements().length > 0 ? movements()[0].stockAfter : '—' }}</strong>
+            </div>
+          </div>
+
+        } @else {
+          <!-- ═══ DESKTOP: Table layout ═══ -->
+          <div class="kp__table-wrap">
+            <table class="kp__table">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Tipo</th>
+                  <th>Documento</th>
+                  <th>Detalle</th>
+                  <th>Lote</th>
+                  <th>Ubicación</th>
+                  <th class="kp__table--right">Entrada</th>
+                  <th class="kp__table--right">Salida</th>
+                  <th class="kp__table--right">Saldo</th>
+                  <th class="kp__table--right">Saldo Lote</th>
+                  <th class="kp__table--right">C. Unit.</th>
+                  <th class="kp__table--right">C. Total</th>
+                  <th>Usuario</th>
+                </tr>
+              </thead>
+              <tbody>
+                @if (openingBalance() !== null && hasDateFilter()) {
+                  <tr class="kp__table-opening">
+                    <td colspan="6"><strong>Saldo inicial del período</strong></td>
+                    <td></td>
+                    <td></td>
+                    <td class="kp__table--right kp__table-balance">{{ openingBalance() }}</td>
+                    <td></td><td></td><td></td><td></td>
+                  </tr>
+                }
+
+                @for (mov of movements(); track mov.id) {
+                  <tr>
+                    <td class="kp__table-date">{{ mov.createdAt | date:'dd/MM/yyyy HH:mm' }}</td>
+                    <td>
+                      <span class="kp__mov-badge" [class]="'kp__mov-badge--' + (isOutType(mov.type) ? 'out' : 'in')">
+                        {{ getMovTypeLabel(mov.type) }}
+                      </span>
+                    </td>
+                    <td class="kp__table-doc">
+                      @if (getReferenceRoute(mov)) {
+                        <a class="kp__table-doc-link" [routerLink]="getReferenceRoute(mov)">{{ getReferenceLabel(mov) }}</a>
+                      } @else if (getReferenceLabel(mov)) {
+                        {{ getReferenceLabel(mov) }}
+                      } @else {
+                        <span class="kp__table-muted">—</span>
+                      }
+                    </td>
+                    <td class="kp__table-detail">{{ mov.notes || '—' }}</td>
+                    <td class="kp__table-lot">
+                      @if (mov.lotNumber) {
+                        <span class="kp__lot-tag">{{ mov.lotNumber }}</span>
+                        @if (mov.lotExpiryDate) {
+                          <span class="kp__lot-expiry">Vence: {{ mov.lotExpiryDate | date:'dd/MM/yy' }}</span>
+                        }
+                        @if (mov.lotCostPrice != null) {
+                          <span class="kp__lot-cost-tag">{{ mov.lotCostPrice | currency:'USD':'symbol':'1.2-4' }}</span>
+                        }
+                      } @else {
+                        <span class="kp__table-muted">—</span>
+                      }
+                    </td>
+                    <td class="kp__table-loc">
+                      @if (mov.locationName) {
+                        {{ mov.locationName }}
+                        @if (mov.locationCode) { <span class="kp__table-muted">({{ mov.locationCode }})</span> }
+                      } @else {
+                        <span class="kp__table-muted">—</span>
+                      }
+                    </td>
+                    <td class="kp__table--right">
+                      @if (!isOutType(mov.type)) { <span class="kp__table-in">+{{ mov.quantity }}</span> }
+                    </td>
+                    <td class="kp__table--right">
+                      @if (isOutType(mov.type)) { <span class="kp__table-out">-{{ mov.quantity }}</span> }
+                    </td>
+                    <td class="kp__table--right kp__table-balance">{{ mov.stockAfter }}</td>
+                    <td class="kp__table--right">{{ mov.lotStockAfter != null ? mov.lotStockAfter : '—' }}</td>
+                    <td class="kp__table--right kp__table-cost">{{ mov.costPrice != null ? (mov.costPrice | currency:'USD':'symbol':'1.2-4') : '—' }}</td>
+                    <td class="kp__table--right kp__table-cost">{{ mov.costPrice != null ? (mov.quantity * mov.costPrice | currency:'USD':'symbol':'1.2-2') : '—' }}</td>
+                    <td class="kp__table-user">{{ mov.userName || 'Sistema' }}</td>
+                  </tr>
+                }
+              </tbody>
+              <tfoot>
+                <tr class="kp__table-totals">
+                  <td colspan="6"><strong>Totales del período</strong></td>
+                  <td class="kp__table--right"><span class="kp__table-in">+{{ totalEntradas() }}</span></td>
+                  <td class="kp__table--right"><span class="kp__table-out">-{{ totalSalidas() }}</span></td>
+                  <td class="kp__table--right kp__table-balance">{{ movements().length > 0 ? movements()[0].stockAfter : '—' }}</td>
+                  <td></td>
+                  <td></td>
+                  <td class="kp__table--right kp__table-cost">
+                    <span class="kp__table-in">{{ totalCostoEntradas() | currency:'USD':'symbol':'1.2-2' }}</span>
+                    /
+                    <span class="kp__table-out">{{ totalCostoSalidas() | currency:'USD':'symbol':'1.2-2' }}</span>
+                  </td>
+                  <td></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        }
+
+        @if (movTotal() > movPageSize()) {
+          <app-pagination [totalItems]="movTotal()" [pageSize]="movPageSize()" [currentPage]="movPage()" (pageChange)="onMovPageChange($event)"></app-pagination>
+        }
+      } @else {
+        <app-empty-state
+          icon="lucidePackage"
+          [title]="hasActiveFilters() ? 'Sin resultados' : 'Sin movimientos'"
+          [description]="hasActiveFilters() ? 'No hay movimientos con los filtros seleccionados.' : 'No hay movimientos registrados para este producto en esta bodega.'"
+          [actionLabel]="hasActiveFilters() ? 'Limpiar filtros' : undefined"
+          (action)="clearFilters()"
+        ></app-empty-state>
+      }
+    </section>
+  </div>
+
+  <!-- Mobile action bar -->
+  <div class="kp__mobile-actions">
+    <app-form-button label="Excel" icon="lucideDownload" variant="ghost" type="button" (click)="exportExcel()"></app-form-button>
+    <app-form-button label="PDF" icon="lucideFileText" variant="ghost" type="button" (click)="exportPdf()"></app-form-button>
+    <app-form-button label="Ajustar" icon="lucideArrowUpDown" variant="secondary" type="button" (click)="openAdjust()"></app-form-button>
+    <app-form-button label="Transferir" icon="lucideArrowLeftRight" variant="primary" type="button" (click)="openTransfer()"></app-form-button>
+  </div>
+
+  <!-- ═══ DRAWER: Ajustar ═══ -->
+  <app-drawer [isOpen]="isAdjustOpen()" title="Ajustar Stock" (close)="isAdjustOpen.set(false)" size="sm">
+    <div drawerBody>
+      <div class="drawer-hero">
+        <span class="drawer-hero__product">{{ lv.productName }} — {{ lv.variantName }}</span>
+        <span class="drawer-hero__current">Stock actual: {{ lv.quantity }}</span>
+      </div>
+      <div class="drawer-form">
+        <div class="form-group"><label>Bodega *</label><app-custom-select [options]="adjustWarehouseOptions()" [value]="adjustWarehouseId()" (valueChange)="onAdjustWarehouseChange($event)"></app-custom-select></div>
+        @if (showAdjustLocations()) { <div class="form-group"><label>Ubicación</label><app-custom-select [options]="adjustLocationOptions()" [value]="adjustLocationId()" (valueChange)="adjustLocationId.set($event)"></app-custom-select></div> }
+        @if (showAdjustLots()) { <div class="form-group"><label>Lote</label><app-custom-select [options]="adjustLotOptions()" [value]="adjustLotId()" (valueChange)="adjustLotId.set($event)"></app-custom-select></div> }
+        <div class="form-group">
+          <label>Nueva cantidad *</label>
+          <input type="number" class="form-control" min="0" [(ngModel)]="adjustNewQty" placeholder="0" />
+          @if (adjustNewQty !== null && adjustNewQty !== lv.quantity) {
+            <span class="qty-diff" [class]="adjustNewQty > lv.quantity ? 'diff-up' : 'diff-down'">
+              {{ adjustNewQty > lv.quantity ? '+' : '' }}{{ adjustNewQty - lv.quantity }} unidades
+            </span>
+          }
+        </div>
+        <div class="form-group"><label>Motivo / Notas</label><textarea class="form-control" rows="3" [(ngModel)]="adjustNotes" placeholder="Ej: Conteo físico, merma..."></textarea></div>
+      </div>
+    </div>
+    <div drawerFooter class="drawer-footer-actions">
+      <app-form-button label="Cancelar" variant="secondary" [disabled]="isAdjusting()" (click)="isAdjustOpen.set(false)"></app-form-button>
+      <app-form-button label="Guardar Ajuste" loadingLabel="Guardando..." icon="lucideArrowUpDown" [loading]="isAdjusting()" [disabled]="isAdjusting() || !adjustWarehouseId() || adjustNewQty === null || adjustNewQty < 0 || adjustNewQty === level()?.quantity" (click)="confirmAdjust()"></app-form-button>
+    </div>
+  </app-drawer>
+
+  <!-- ═══ DRAWER: Transferir ═══ -->
+  <app-drawer [isOpen]="isTransferOpen()" title="Transferir Stock" (close)="isTransferOpen.set(false)" size="sm">
+    <div drawerBody>
+      <div class="drawer-hero">
+        <span class="drawer-hero__product">{{ lv.productName }} — {{ lv.variantName }}</span>
+        <span class="drawer-hero__current">Stock disponible: {{ lv.quantity }}</span>
+      </div>
+      <div class="drawer-form">
+        <div class="form-group"><label>Bodega origen *</label><app-custom-select [options]="transferSourceWarehouseOptions()" [value]="transferSourceWarehouseId()" (valueChange)="onTransferSourceWarehouseChange($event)"></app-custom-select></div>
+        @if (showTransferSourceLoc()) { <div class="form-group"><label>Ubicación origen</label><app-custom-select [options]="transferSourceLocationOptions()" [value]="transferSourceLocationId()" (valueChange)="transferSourceLocationId.set($event)"></app-custom-select></div> }
+        <div class="form-group"><label>Bodega destino *</label><app-custom-select [options]="transferDestWarehouseOptions()" [value]="transferDestWarehouseId()" (valueChange)="onTransferDestWarehouseChange($event)"></app-custom-select></div>
+        @if (showTransferDestLoc()) { <div class="form-group"><label>Ubicación destino</label><app-custom-select [options]="transferDestLocationOptions()" [value]="transferDestLocationId()" (valueChange)="transferDestLocationId.set($event)"></app-custom-select></div> }
+        <div class="form-group">
+          <label>Cantidad *</label>
+          <input type="number" class="form-control" min="1" [max]="lv.quantity" [(ngModel)]="transferQty" placeholder="0" />
+          @if (transferQty && transferQty > lv.quantity) { <span class="qty-diff diff-down">Excede el stock disponible</span> }
+        </div>
+      </div>
+    </div>
+    <div drawerFooter class="drawer-footer-actions">
+      <app-form-button label="Cancelar" variant="secondary" [disabled]="isTransferring()" (click)="isTransferOpen.set(false)"></app-form-button>
+      <app-form-button label="Transferir" loadingLabel="Transfiriendo..." icon="lucideArrowLeftRight" [loading]="isTransferring()" [disabled]="isTransferring() || !transferSourceWarehouseId() || !transferDestWarehouseId() || !transferQty || transferQty <= 0 || transferQty > lv.quantity" (click)="confirmTransfer()"></app-form-button>
+    </div>
+  </app-drawer>
+}

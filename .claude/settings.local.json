@@ -25,7 +25,8 @@
       "Bash(echo \"EXIT CODE: $?\")",
       "Bash(find 'C:\\\\Users\\\\usuario\\\\Documents\\\\proyects personal\\\\angular\\\\saas-pos\\\\src' -type f -name *.ts -path */layout/* -exec grep -l selector: {})",
       "Bash(2)",
-      "Skill(update-config)"
+      "Skill(update-config)",
+      "Bash(cd:*)"
     ]
   }
 }

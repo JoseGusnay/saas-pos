@@ -179,6 +179,8 @@ export interface PurchaseOrder {
   /** Joined */
   supplierName?: string;
   supplierRuc?: string;
+  supplierPhone?: string | null;
+  supplierEmail?: string | null;
   supplierTipoContribuyente?: string;
   supplierRegimenRimpe?: string;
   branchName?: string;

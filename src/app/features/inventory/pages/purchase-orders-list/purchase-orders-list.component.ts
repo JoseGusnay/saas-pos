@@ -1,21 +1,21 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, DestroyRef, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { switchMap, debounceTime, tap, map, Observable } from 'rxjs';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { PurchaseOrderService } from '../../../../core/services/purchase-order.service';
 import { BranchService } from '../../../../core/services/branch.service';
 import { ToastService } from '../../../../core/services/toast.service';
+import { WarehouseService } from '../../../../core/services/warehouse.service';
 import {
   PurchaseOrder, PurchaseOrderStatus, PaymentStatus, PaymentMethod,
   PurchaseOrderItem,
   STATUS_LABELS, PAYMENT_STATUS_LABELS, PAYMENT_CONDITION_LABELS, PAYMENT_METHOD_LABELS,
   RegisterReceiptPayload, RegisterRetentionPayload, RegisterPaymentPayload,
 } from '../../../../core/models/purchase-order.models';
-import { environment } from '../../../../../environments/environment';
 
 import { PageHeaderComponent } from '../../../../shared/components/list-ui/page-header/page-header.component';
 import { ListToolbarComponent } from '../../../../shared/components/list-ui/list-toolbar/list-toolbar.component';
@@ -173,7 +173,7 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
       <!-- Orders list/grid -->
       <div [ngClass]="viewMode() === 'grid' ? 'orders-grid' : 'orders-list'">
         @if (isLoading()) {
-          @for (n of (viewMode() === 'grid' ? [1,2,3,4,5,6] : [1,2,3,4,5,6,7,8]); track n) {
+          @for (n of skeletonArray(); track n) {
             @if (viewMode() === 'grid') {
               <div class="data-card skeleton-card">
                 <header style="display:flex;justify-content:space-between;margin-bottom:12px">
@@ -214,7 +214,7 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
                 [details]="[
                   { icon: 'lucideHash', text: order.orderNumber },
                   { icon: 'lucideBanknote', text: (order.total | currency:'USD':'symbol':'1.2-2') + '' },
-                  { icon: 'lucideCalendar', text: (order.createdAt | date:'dd/MM/yy') + '' }
+                  { icon: 'lucideCalendar', text: (order.createdAt | date:'dd/MM/yyyy') + '' }
                 ]"
                 [actions]="getActions(order)"
                 (actionClick)="handleAction($event, order)"
@@ -241,7 +241,7 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
                 <span class="badge-order" [class]="orderBadgeClass(order.status)">
                   {{ orderStatusLabel(order.status) }}
                 </span>
-                <span class="order-date">{{ order.createdAt | date:'dd/MM/yy' }}</span>
+                <span class="order-date">{{ order.createdAt | date:'dd/MM/yyyy' }}</span>
                 <div (click)="$event.stopPropagation()">
                   <app-actions-menu [actions]="getActions(order)" (actionClick)="handleAction($event, order)"></app-actions-menu>
                 </div>
@@ -454,7 +454,7 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
                                   <span class="receipt-item-lot">Lote: {{ ri.lotNumber }}</span>
                                 }
                                 @if (ri.expiryDate) {
-                                  <span class="receipt-item-expiry">Vence: {{ ri.expiryDate | date:'dd/MM/yy' }}</span>
+                                  <span class="receipt-item-expiry">Vence: {{ ri.expiryDate | date:'dd/MM/yyyy' }}</span>
                                 }
                               </div>
                             }
@@ -542,10 +542,10 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
               <app-form-button label="Aprobar" icon="lucideCheck" [loading]="isActioning()" (click)="openApproveModal()"></app-form-button>
             }
             @if ((s === 'APROBADA' || s === 'RECIBIDA_PARCIAL') && (detail()!.items ?? []).some(i => +i.quantityReceived < +i.quantityOrdered)) {
-              <app-form-button label="Reg. Recepción" variant="secondary" icon="lucidePackageCheck" (click)="openReceiptDrawer()"></app-form-button>
+              <app-form-button label="Registrar Recepción" variant="secondary" icon="lucidePackageCheck" (click)="openReceiptDrawer()"></app-form-button>
             }
             @if (s === 'RECIBIDA_PARCIAL' || s === 'RECIBIDA' || s === 'CERRADA') {
-              <app-form-button label="Retención" variant="secondary" icon="lucideShieldCheck" (click)="openRetentionModal()"></app-form-button>
+              <app-form-button label="Registrar Retención" variant="secondary" icon="lucideShieldCheck" (click)="openRetentionModal()"></app-form-button>
               <app-form-button label="Registrar Pago" icon="lucideCreditCard" (click)="openPaymentModal()"></app-form-button>
             }
           }
@@ -636,15 +636,21 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
               @if ((ri.trackLots || selectedWarehouseHasLocations) && ri.qtyToReceive > 0) {
                 <div class="ri-extra">
                   @if (ri.trackLots) {
-                    <div class="ri-extra-field">
+                    <div class="ri-extra-field" [class.ri-extra-field--error]="ri.qtyToReceive > 0 && !ri.lotNumber.trim()">
                       <label>N.o de Lote *</label>
                       <input type="text" class="form-control" [(ngModel)]="ri.lotNumber" placeholder="Ej: LOTE-2026-001" />
+                      @if (ri.qtyToReceive > 0 && !ri.lotNumber.trim()) {
+                        <span class="ri-extra-hint">Requerido para este producto</span>
+                      }
                     </div>
                   }
                   @if (ri.trackExpiry) {
-                    <div class="ri-extra-field">
+                    <div class="ri-extra-field" [class.ri-extra-field--error]="ri.qtyToReceive > 0 && !ri.expiryDate">
                       <label>Fecha de Vencimiento *</label>
                       <app-date-picker [(ngModel)]="ri.expiryDate" placeholder="Vencimiento..." [disablePast]="true"></app-date-picker>
+                      @if (ri.qtyToReceive > 0 && !ri.expiryDate) {
+                        <span class="ri-extra-hint">Requerido para este producto</span>
+                      }
                     </div>
                   }
                   @if (selectedWarehouseHasLocations && warehouseLocations().length > 0) {
@@ -957,7 +963,7 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
       .ri-row { grid-template-columns: 1fr; }
     }
 
-    .toolbar-extras { display: flex; gap: 0.75rem; padding: 0.25rem 0; flex-wrap: wrap; align-items: center; }
+    .toolbar-extras { display: flex; gap: 0.75rem; padding: 0.25rem 0; flex-wrap: wrap;  }
     .toolbar-filter {
       display: inline-flex; align-items: center; gap: 8px;
       font-size: var(--font-size-sm); color: var(--color-text-muted);
@@ -1097,6 +1103,9 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
     }
     .ri-extra-field { display: flex; flex-direction: column; gap: 4px; }
     .ri-extra-field label { font-size: var(--font-size-xs); font-weight: var(--font-weight-medium); color: var(--color-text-muted); }
+    .ri-extra-field--error .form-control { border-color: var(--color-danger-text); }
+    .ri-extra-field--error label { color: var(--color-danger-text); }
+    .ri-extra-hint { font-size: 10px; color: var(--color-danger-text); }
 
     .form-hint { font-size: var(--font-size-xs); color: var(--color-text-muted); margin-top: 2px; }
     .receipt-items-detail { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--color-border-subtle); }
@@ -1185,7 +1194,8 @@ export class PurchaseOrdersListComponent {
   private branchService = inject(BranchService);
   private toastService = inject(ToastService);
   private router = inject(Router);
-  private http = inject(HttpClient);
+  private warehouseService = inject(WarehouseService);
+  private destroyRef = inject(DestroyRef);
 
   readonly ivaRetentionCodes = IVA_RETENTION_CODES;
   readonly rentaRetentionCodes = RENTA_RETENTION_CODES;
@@ -1212,6 +1222,7 @@ export class PurchaseOrdersListComponent {
   filterBranch = signal('');
   currentPage = signal(1);
   pageSize = signal(20);
+  skeletonArray = computed(() => Array.from({ length: Math.min(this.pageSize(), this.viewMode() === 'grid' ? 12 : 10) }, (_, i) => i + 1));
   refreshTrigger = signal(0);
   isLoading = signal(true);
 
@@ -1223,12 +1234,31 @@ export class PurchaseOrdersListComponent {
 
   readonly filterConfig: FilterField[] = [
     { id: 'order_number', label: 'N° de Orden', type: 'text' },
+    { id: 'supplier_name', label: 'Proveedor', type: 'text' },
     { id: 'total', label: 'Total', type: 'number' },
     { id: 'subtotal', label: 'Subtotal', type: 'number' },
     { id: 'total_paid', label: 'Total Pagado', type: 'number' },
     { id: 'created_at', label: 'Fecha Creación', type: 'date' },
     { id: 'expected_delivery_date', label: 'Fecha Entrega Esperada', type: 'date' },
     { id: 'due_date', label: 'Fecha Vencimiento Pago', type: 'date' },
+    {
+      id: 'status', label: 'Estado', type: 'select', options: [
+        { label: 'Borrador', value: 'BORRADOR' },
+        { label: 'Aprobada', value: 'APROBADA' },
+        { label: 'Recibida Parcial', value: 'RECIBIDA_PARCIAL' },
+        { label: 'Recibida', value: 'RECIBIDA' },
+        { label: 'Cerrada', value: 'CERRADA' },
+        { label: 'Anulada', value: 'ANULADA' },
+      ]
+    },
+    {
+      id: 'payment_status', label: 'Estado de Pago', type: 'select', options: [
+        { label: 'Pendiente', value: 'PENDIENTE' },
+        { label: 'Pagado Parcial', value: 'PAGADO_PARCIAL' },
+        { label: 'Pagado', value: 'PAGADO' },
+        { label: 'Vencido', value: 'VENCIDO' },
+      ]
+    },
     {
       id: 'payment_condition', label: 'Condición de Pago', type: 'select', options: [
         { label: 'Contado', value: 'CONTADO' },
@@ -1394,11 +1424,11 @@ export class PurchaseOrdersListComponent {
   }
 
   orderBadgeClass(status: PurchaseOrderStatus): string {
-    return status.toLowerCase().replace('_', '_');
+    return 'badge-order ' + status.toLowerCase();
   }
 
   paymentBadgeClass(status: PaymentStatus): string {
-    return status.toLowerCase().replace('_', '_');
+    return 'badge-payment ' + status.toLowerCase();
   }
 
   // ─── Actions ──────────────────────────────────────────────────────────────
@@ -1414,11 +1444,11 @@ export class PurchaseOrdersListComponent {
       actions.push({ id: 'delete', label: 'Eliminar', icon: 'lucideTrash2', variant: 'danger' });
     }
     if (order.status === 'APROBADA' || order.status === 'RECIBIDA_PARCIAL') {
-      actions.push({ id: 'receipt', label: 'Reg. Recepción', icon: 'lucidePackageCheck' });
+      actions.push({ id: 'receipt', label: 'Registrar Recepción', icon: 'lucidePackageCheck' });
       actions.push({ id: 'cancel', label: 'Anular', icon: 'lucideX', variant: 'danger' });
     }
     if (order.status === 'RECIBIDA_PARCIAL' || order.status === 'RECIBIDA' || order.status === 'CERRADA') {
-      actions.push({ id: 'retention', label: 'Retención', icon: 'lucideShieldCheck' });
+      actions.push({ id: 'retention', label: 'Registrar Retención', icon: 'lucideShieldCheck' });
       actions.push({ id: 'payment', label: 'Registrar Pago', icon: 'lucideCreditCard' });
     }
     if (order.status !== 'ANULADA') {
@@ -1431,16 +1461,17 @@ export class PurchaseOrdersListComponent {
     if (action.id === 'view') { this.onViewDetail(order); return; }
     if (action.id === 'edit') { this.onEdit(order); return; }
     if (action.id === 'duplicate') { this.onDuplicate(order); return; }
-    // All detail-dependent actions now navigate to detail page
-    if (['cancel', 'delete', 'approve', 'receipt', 'retention', 'payment'].includes(action.id)) {
-      this.onViewDetail(order);
-      return;
-    }
+    if (action.id === 'approve') { this.loadDetailThen(order, () => this.openApproveModal()); return; }
+    if (action.id === 'receipt') { this.loadDetailThen(order, () => this.openReceiptDrawer()); return; }
+    if (action.id === 'retention') { this.loadDetailThen(order, () => this.openRetentionModal()); return; }
+    if (action.id === 'payment') { this.loadDetailThen(order, () => this.openPaymentModal()); return; }
+    if (action.id === 'cancel') { this.loadDetailThen(order, () => this.isCancelModalOpen.set(true)); return; }
+    if (action.id === 'delete') { this.loadDetailThen(order, () => this.isDeleteModalOpen.set(true)); return; }
   }
 
   /** Carga datos de la OC sin abrir el drawer de detalle, luego ejecuta callback */
   private loadDetailThen(order: PurchaseOrder, callback: () => void) {
-    this.orderService.findOne(order.id).subscribe({
+    this.orderService.findOne(order.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: d => { this.detail.set(d); callback(); },
       error: () => this.toastService.error('Error al cargar la orden')
     });
@@ -1470,12 +1501,14 @@ export class PurchaseOrdersListComponent {
 
   onWarehouseChange(warehouseId: string) {
     this.receiptForm.warehouseId = warehouseId;
+    this.receiptForm.defaultLocationId = '';
+    this.receiptForm.items.forEach(i => i.locationId = '');
     const wh = this.warehouses().find(w => w.id === warehouseId);
     if (wh?.hasLocations) {
-      this.http.get<any>(`${environment.apiUrl}/business/locations?warehouseId=${warehouseId}&limit=50`).subscribe({
+      this.warehouseService.findLocations({ warehouseId, limit: 50, isActive: true }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: (res: any) => {
-          const data = res?.data?.data ?? res?.data ?? res ?? [];
-          this.warehouseLocations.set(data.filter((l: any) => l.isActive));
+          const data = res?.data ?? res ?? [];
+          this.warehouseLocations.set(data);
         }
       });
     } else {
@@ -1518,10 +1551,10 @@ export class PurchaseOrdersListComponent {
     this.warehouseLocations.set([]);
 
     // Cargar bodegas activas
-    this.http.get<any>(`${environment.apiUrl}/business/warehouses?limit=50`).subscribe({
+    this.warehouseService.findAll({ limit: 50, isActive: true }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (res: any) => {
-        const data = res?.data?.data ?? res?.data ?? res ?? [];
-        this.warehouses.set(data.filter((w: any) => w.isActive));
+        const data = res?.data ?? res ?? [];
+        this.warehouses.set(data);
       }
     });
 
@@ -1682,6 +1715,11 @@ export class PurchaseOrdersListComponent {
       this.toastService.error('Completa el número y fecha de factura');
       return;
     }
+    const existingInvoices = (this.detail()?.receipts ?? []).map(r => r.supplierInvoiceNumber?.trim().toLowerCase());
+    if (existingInvoices.includes(supplierInvoiceNumber.trim().toLowerCase())) {
+      this.toastService.error(`Ya existe una recepción con el N° de factura "${supplierInvoiceNumber}"`);
+      return;
+    }
     if (!this.receiptForm.warehouseId) {
       this.toastService.error('Selecciona una bodega');
       return;
@@ -1706,9 +1744,14 @@ export class PurchaseOrdersListComponent {
       return;
     }
 
-    // Validar lotes y vencimientos requeridos
+    // Validar cantidades, lotes y vencimientos requeridos
     const itemsToReceive = items.filter(i => i.qtyToReceive > 0);
     for (const i of itemsToReceive) {
+      const maxAllowed = i.quantityOrdered - i.quantityReceived;
+      if (i.qtyToReceive > maxAllowed) {
+        this.toastService.error(`"${i.productName}": cantidad a recibir (${i.qtyToReceive}) excede el pendiente (${maxAllowed})`);
+        return;
+      }
       if (i.trackLots && !i.lotNumber?.trim()) {
         this.toastService.error(`Ingresa el número de lote para "${i.productName}"`);
         return;
@@ -1739,6 +1782,11 @@ export class PurchaseOrdersListComponent {
     const f = this.retentionForm;
     if (!f.retentionNumber || !f.retentionDate) {
       this.toastService.error('Completa el número y fecha de retención');
+      return;
+    }
+    const existingRetentions = (this.detail()?.retentions ?? []).map(r => r.retentionNumber?.trim().toLowerCase());
+    if (existingRetentions.includes(f.retentionNumber.trim().toLowerCase())) {
+      this.toastService.error(`Ya existe una retención con el N° "${f.retentionNumber}"`);
       return;
     }
     if (!f.lines.length) {
@@ -1786,6 +1834,12 @@ export class PurchaseOrdersListComponent {
     const f = this.paymentForm;
     if (!f.amount || f.amount <= 0) {
       this.toastService.error('Ingresa un monto válido');
+      return;
+    }
+    const d = this.detail();
+    const saldo = d ? +(+d.total - +d.totalPaid).toFixed(2) : 0;
+    if (f.amount > saldo) {
+      this.toastService.error(`El monto ($${f.amount}) excede el saldo pendiente ($${saldo})`);
       return;
     }
     const payload: RegisterPaymentPayload = {

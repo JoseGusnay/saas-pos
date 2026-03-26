@@ -443,13 +443,11 @@ export class VariantCardComponent implements OnInit {
     );
   }
 
-  searchTaxesFn(query: string) {
-    return this.taxService.findAllSimple().pipe(
-      map(items => ({
-        data: items
-          .filter(i => i.name.toLowerCase().includes(query.toLowerCase()))
-          .map(i => ({ value: i.id, label: `${i.name} (${i.percentage}%)` })),
-        hasMore: false
+  searchTaxesFn(query: string, page: number = 1) {
+    return this.taxService.findAll({ search: query || undefined, page, limit: 20, filterModel: { isActive: { filterType: 'boolean', type: 'equals', filter: true } } }).pipe(
+      map(res => ({
+        data: (res.data ?? []).map(i => ({ value: i.id, label: `${i.name} (${i.percentage}%)` })).reverse(),
+        hasMore: (res.data ?? []).length === 20
       }))
     );
   }

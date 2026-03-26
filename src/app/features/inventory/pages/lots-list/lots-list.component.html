@@ -1,0 +1,289 @@
+<div class="lots-page">
+  <app-page-header
+    title="Lotes"
+    [tabs]="lotTabs"
+    [activeTab]="activeTab()"
+    ctaText="Nuevo Lote"
+    ctaIcon="lucidePlus"
+    (tabChange)="onTabChange($event)"
+    (ctaClick)="openCreate()"
+  ></app-page-header>
+
+  <app-list-toolbar
+    searchPlaceholder="Buscar por lote, producto o SKU..."
+    [searchQuery]="searchQuery()"
+    [activeFiltersCount]="activeFiltersCount()"
+    [viewMode]="viewModePreference()"
+    [sortOptions]="sortOptions"
+    (searchChange)="onSearch($event)"
+    (openFilters)="openFiltersDrawer()"
+    (clearFilters)="clearAllFilters()"
+    (viewModeChange)="viewModePreference.set($event)"
+    (sortChange)="onSortChange($event)"
+  ></app-list-toolbar>
+
+  <!-- Grid / List -->
+  <div [ngClass]="viewMode() === 'grid' ? 'lots-page__grid' : 'lots-page__list'">
+    @if (isLoading()) {
+      @for (n of skeletonArray(); track n) {
+        @if (viewMode() === 'grid') {
+          <div class="skeleton-card">
+            <div class="skeleton-card__header">
+              <div style="display:flex;flex-direction:column;gap:6px">
+                <app-skeleton width="120px" height="1rem"></app-skeleton>
+                <app-skeleton width="80px" height="18px" radius="99px"></app-skeleton>
+              </div>
+              <app-skeleton width="32px" height="32px" shape="circle"></app-skeleton>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:4px;margin-top:12px">
+              <app-skeleton width="180px" height="0.875rem"></app-skeleton>
+              <app-skeleton width="130px" height="0.75rem"></app-skeleton>
+            </div>
+          </div>
+        } @else {
+          <div class="skeleton-row">
+            <app-skeleton width="44px" height="44px" radius="10px"></app-skeleton>
+            <div style="flex:1;display:flex;flex-direction:column;gap:4px">
+              <app-skeleton width="140px" height="1rem"></app-skeleton>
+              <app-skeleton width="200px" height="0.75rem"></app-skeleton>
+            </div>
+            <app-skeleton width="100px" height="0.75rem"></app-skeleton>
+            <app-skeleton width="80px" height="22px" radius="99px"></app-skeleton>
+            <app-skeleton width="32px" height="32px" shape="circle"></app-skeleton>
+          </div>
+        }
+      }
+    } @else if (lots().length > 0) {
+      @for (lot of lots(); track lot.id) {
+        @if (viewMode() === 'grid') {
+          <app-data-card
+            [title]="lot.lotNumber"
+            [status]="getLotStatusLabel(lot)"
+            [statusConfig]="getLotStatusConfig(lot)"
+            [details]="getLotDetails(lot)"
+            [actions]="lotActions"
+            (actionClick)="handleAction($event, lot)"
+            (click)="openDetail(lot)"
+          >
+            @if (lot.notes) {
+              <div cardBody class="lot-notes">
+                <span class="lot-notes__text">{{ lot.notes }}</span>
+              </div>
+            }
+          </app-data-card>
+        } @else {
+          <div class="lot-row" role="button" tabindex="0" (click)="openDetail(lot)" (keydown.enter)="openDetail(lot)" (keydown.space)="$event.preventDefault(); openDetail(lot)">
+            <div class="lot-row__icon">
+              <ng-icon name="lucideFlaskConical" size="18"></ng-icon>
+            </div>
+            <div class="lot-row__main">
+              <span class="lot-row__number">{{ lot.lotNumber }}</span>
+              <span class="lot-row__product">{{ lot.productName }} — {{ lot.variantName }}</span>
+            </div>
+            <div class="lot-row__expiry">
+              @if (lot.expiryDate) {
+                <span class="lot-row__label">Vence</span>
+                <span>{{ lot.expiryDate | date:'dd/MM/yyyy' }}</span>
+              } @else {
+                <span class="lot-row__na">Sin vencimiento</span>
+              }
+            </div>
+            <div class="lot-row__cost">
+              @if (lot.costPrice != null) {
+                <span class="lot-row__label">Costo</span>
+                <span>{{ lot.costPrice | currency:'USD':'symbol':'1.2-4' }}</span>
+              }
+            </div>
+            <div class="lot-row__status">
+              <span class="lot-badge" [class]="getLotStatusClass(lot)">{{ getLotStatusLabel(lot) }}</span>
+            </div>
+            <div class="lot-row__actions" (click)="$event.stopPropagation()">
+              <app-actions-menu [actions]="lotActions" (actionClick)="handleAction($event, lot)"></app-actions-menu>
+            </div>
+          </div>
+        }
+      }
+    } @else {
+      <div class="lots-page__empty">
+        <app-empty-state
+          icon="lucideFlaskConical"
+          [title]="searchQuery() ? 'Sin resultados' : activeTab() === 'Próximos a vencer' ? 'Sin lotes próximos a vencer' : 'Sin lotes'"
+          [description]="searchQuery() ? 'Intenta con otros términos de búsqueda.' : 'Los lotes se crean automáticamente al recibir mercancía o manualmente desde aquí.'"
+          [actionLabel]="searchQuery() ? 'Limpiar búsqueda' : 'Nuevo Lote'"
+          (action)="searchQuery() ? clearAllFilters() : openCreate()"
+        ></app-empty-state>
+      </div>
+    }
+  </div>
+
+  @if (lots().length > 0) {
+    <app-pagination
+      [totalItems]="totalItems()"
+      [pageSize]="pageSize()"
+      [currentPage]="currentPage()"
+      (pageChange)="currentPage.set($event)"
+    ></app-pagination>
+  }
+
+  <!-- FAB mobile -->
+  <div class="mobile-fab">
+    <button class="mobile-fab__btn" (click)="openCreate()">
+      <ng-icon name="lucidePlus" size="18"></ng-icon>
+      <span>Nuevo Lote</span>
+    </button>
+  </div>
+
+  <!-- ─── Drawer: Editar Notas ─────────────────────────────────── -->
+  <app-drawer [isOpen]="isEditOpen()" title="Editar Notas del Lote" (close)="isEditOpen.set(false)" size="sm">
+    <div drawerBody>
+      @if (editTarget()) {
+        <div class="drawer-info">
+          <div class="drawer-field">
+            <span class="drawer-label">Lote</span>
+            <span>{{ editTarget()!.lotNumber }}</span>
+          </div>
+          <div class="drawer-field">
+            <span class="drawer-label">Producto</span>
+            <span>{{ editTarget()!.productName }} — {{ editTarget()!.variantName }}</span>
+          </div>
+        </div>
+        <div class="drawer-form">
+          <div class="form-group">
+            <label>Notas</label>
+            <textarea class="form-control" rows="4" [(ngModel)]="editNotes" placeholder="Observaciones del lote..."></textarea>
+          </div>
+        </div>
+      }
+    </div>
+    <div drawerFooter class="drawer-footer-actions">
+      <app-form-button label="Cancelar" variant="secondary" [disabled]="isEditing()" (click)="isEditOpen.set(false)"></app-form-button>
+      <app-form-button label="Guardar" loadingLabel="Guardando..." icon="lucideCheckCircle2"
+        [loading]="isEditing()" [disabled]="isEditing()" (click)="confirmEdit()"></app-form-button>
+    </div>
+  </app-drawer>
+
+  <!-- ─── Drawer: Crear Lote ───────────────────────────────────── -->
+  <app-drawer [isOpen]="isCreateOpen()" title="Nuevo Lote" (close)="isCreateOpen.set(false)" size="sm">
+    <div drawerBody>
+      <div class="drawer-form">
+        <div class="form-group">
+          <label>Producto / Variante *</label>
+          <app-search-select
+            placeholder="Buscar producto..."
+            searchPlaceholder="Nombre o SKU..."
+            [searchFn]="variantSearchFn"
+            (selectionChange)="onCreateVariantChange($event)"
+          ></app-search-select>
+        </div>
+        <div class="form-group">
+          <label>N° de Lote *</label>
+          <input class="form-control" type="text" [(ngModel)]="createLotNumber" placeholder="Ej: LOTE-2026-001" />
+        </div>
+        <div class="form-group">
+          <label>Fecha de vencimiento</label>
+          <app-date-picker [(ngModel)]="createExpiryDate" placeholder="Opcional..." [disablePast]="true"></app-date-picker>
+        </div>
+        <div class="form-group">
+          <label>Precio de costo</label>
+          <input class="form-control" type="number" min="0" step="0.01" [(ngModel)]="createCostPrice" placeholder="0.00" />
+        </div>
+        <div class="form-group">
+          <label>Notas</label>
+          <textarea class="form-control" rows="3" [(ngModel)]="createNotes" placeholder="Observaciones..."></textarea>
+        </div>
+      </div>
+    </div>
+    <div drawerFooter class="drawer-footer-actions">
+      <app-form-button label="Cancelar" variant="secondary" [disabled]="isCreating()" (click)="isCreateOpen.set(false)"></app-form-button>
+      <app-form-button label="Crear Lote" loadingLabel="Creando..." icon="lucidePlus"
+        [loading]="isCreating()" [disabled]="isCreating() || !createVariantId || !createLotNumber.trim()" (click)="confirmCreate()"></app-form-button>
+    </div>
+  </app-drawer>
+
+  <!-- ─── Drawer: Detalle de Lote ──────────────────────────── -->
+  <app-drawer [isOpen]="isDetailOpen()" title="Detalle de Lote" (close)="isDetailOpen.set(false)" size="md">
+    <div drawerBody>
+      @if (detailTarget()) {
+        @let lot = detailTarget()!;
+        <div class="detail-header">
+          <div class="detail-header__icon">
+            <ng-icon name="lucideFlaskConical" size="24"></ng-icon>
+          </div>
+          <div class="detail-header__info">
+            <h3 class="detail-header__title">{{ lot.lotNumber }}</h3>
+            <span class="lot-badge" [class]="getLotStatusClass(lot)">{{ getLotStatusLabel(lot) }}</span>
+          </div>
+        </div>
+
+        <div class="detail-grid">
+          <div class="detail-item">
+            <ng-icon name="lucidePackage" size="16"></ng-icon>
+            <div>
+              <span class="detail-item__label">Producto</span>
+              <span class="detail-item__value">{{ lot.productName }} — {{ lot.variantName }}</span>
+            </div>
+          </div>
+          @if (lot.sku) {
+            <div class="detail-item">
+              <ng-icon name="lucideHash" size="16"></ng-icon>
+              <div>
+                <span class="detail-item__label">SKU</span>
+                <span class="detail-item__value detail-item__value--mono">{{ lot.sku }}</span>
+              </div>
+            </div>
+          }
+          <div class="detail-item">
+            <ng-icon name="lucideCalendar" size="16"></ng-icon>
+            <div>
+              <span class="detail-item__label">Fecha de vencimiento</span>
+              <span class="detail-item__value">{{ lot.expiryDate ? (lot.expiryDate | date:'dd/MM/yyyy') : 'Sin vencimiento' }}</span>
+            </div>
+          </div>
+          <div class="detail-item">
+            <ng-icon name="lucideDollarSign" size="16"></ng-icon>
+            <div>
+              <span class="detail-item__label">Precio de costo</span>
+              <span class="detail-item__value">{{ lot.costPrice != null ? (lot.costPrice | currency:'USD':'symbol':'1.2-4') : '—' }}</span>
+            </div>
+          </div>
+          <div class="detail-item">
+            <ng-icon name="lucideCalendar" size="16"></ng-icon>
+            <div>
+              <span class="detail-item__label">Creado</span>
+              <span class="detail-item__value">{{ lot.createdAt | date:'dd/MM/yyyy HH:mm' }}</span>
+            </div>
+          </div>
+          @if (lot.notes) {
+            <div class="detail-item detail-item--full">
+              <ng-icon name="lucideInfo" size="16"></ng-icon>
+              <div>
+                <span class="detail-item__label">Notas</span>
+                <span class="detail-item__value">{{ lot.notes }}</span>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+    <div drawerFooter class="drawer-footer-actions">
+      <app-form-button label="Editar Notas" icon="lucidePencil" variant="secondary" [fullWidth]="false"
+        (click)="isDetailOpen.set(false); openEdit(detailTarget()!)"></app-form-button>
+    </div>
+  </app-drawer>
+
+  <!-- ─── Drawer: Filtros Avanzados ────────────────────────── -->
+  <app-drawer [isOpen]="isFiltersOpen()" title="Filtros Avanzados" (close)="isFiltersOpen.set(false)" size="md">
+    <div drawerBody>
+      <app-query-node
+        [node]="$any(filterTreeDraft())"
+        [availableFields]="filterConfig"
+        [isRoot]="true"
+        (nodeChange)="filterTreeDraft.set($any($event))"
+      ></app-query-node>
+    </div>
+    <div drawerFooter class="drawer-footer-actions">
+      <app-form-button label="Limpiar" variant="secondary" (click)="clearAllFilters()"></app-form-button>
+      <app-form-button label="Aplicar" (click)="applyFilters()"></app-form-button>
+    </div>
+  </app-drawer>
+</div>

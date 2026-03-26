@@ -19,6 +19,7 @@ import { ToastService } from './toast.service';
 
 export interface AuthState {
     user: UserProfile | null;
+    activeBranchId: string | null;
     availableBranches: BranchInfo[];
     isAuthenticated: boolean;
     isLoading: boolean;
@@ -40,6 +41,7 @@ export class AuthService {
     // Estado reactivo (Signals)
     private state = signal<AuthState>({
         user: null,
+        activeBranchId: null,
         availableBranches: [],
         isAuthenticated: false,
         isLoading: false,
@@ -51,6 +53,7 @@ export class AuthService {
 
     // Selectores Computados (Signals)
     readonly user = computed(() => this.state().user);
+    readonly activeBranchId = computed(() => this.state().activeBranchId);
     readonly availableBranches = computed(() => this.state().availableBranches);
     readonly isAuthenticated = computed(() => this.state().isAuthenticated);
     readonly isLoading = computed(() => this.state().isLoading);
@@ -95,6 +98,7 @@ export class AuthService {
                     this.state.update((s) => ({
                         ...s,
                         user: ctx.user,
+                        activeBranchId: ctx.branchId ?? s.activeBranchId,
                         isAuthenticated: ctx.isAuthenticated,
                         isLoading: false,
                         error: null,
@@ -166,6 +170,18 @@ export class AuthService {
     /**
      * Obtiene el perfil del usuario actual (usado para persistencia de sesión al recargar)
      */
+    /**
+     * Devuelve las sucursales asignadas al usuario (query fresco a DB, no cache).
+     */
+    getMyBranches(): Observable<{ id: string; name: string; isMain: boolean; address: string | null; city: string | null }[]> {
+        return this.http
+            .get<ApiResponse<{ id: string; name: string; isMain: boolean; address: string | null; city: string | null }[]>>(
+                `${this.baseUrl}/my-branches`,
+                { withCredentials: true },
+            )
+            .pipe(map(res => res.data));
+    }
+
     getMe(): Observable<UserProfile> {
         return this.http
             .get<ApiResponse<UserProfile>>(`${this.baseUrl}/me`, {
@@ -262,6 +278,7 @@ export class AuthService {
                     // Reseteamos el estado SIEMPRE, incluso si falla el HTTP (ej. ya expiró)
                     this.state.set({
                         user: null,
+                        activeBranchId: null,
                         availableBranches: [],
                         isAuthenticated: false,
                         isLoading: false,

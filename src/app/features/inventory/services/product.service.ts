@@ -129,4 +129,17 @@ export class ProductService {
     return this.http.get<any>(`${this.apiUrl}/variants/search`, { params, withCredentials: true })
       .pipe(map(res => res.data ?? res));
   }
+
+  searchVariantsAdvanced(filters: { search: string; page?: number; limit?: number; isPurchasable?: boolean }): Observable<{ data: any[]; hasMore: boolean }> {
+    let params = new HttpParams().set('search', filters.search);
+    if (filters.page) params = params.set('page', String(filters.page));
+    if (filters.limit) params = params.set('limit', String(filters.limit));
+    if (filters.isPurchasable) params = params.set('isPurchasable', 'true');
+    return this.http.get<any>(`${this.apiUrl}/variants/search`, { params, withCredentials: true }).pipe(
+      map(res => {
+        const payload = res?.data ?? res;
+        return { data: payload?.data ?? payload ?? [], hasMore: payload?.hasMore ?? false };
+      })
+    );
+  }
 }

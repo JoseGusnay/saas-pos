@@ -70,6 +70,16 @@ export const INVENTORY_ROUTES: Routes = [
     data: { breadcrumb: 'Stock' }
   },
   {
+    path: 'stock/kardex/:variantId/:warehouseId',
+    loadComponent: () => import('./pages/stock-kardex-page/stock-kardex-page.component').then(m => m.StockKardexPageComponent),
+    data: { breadcrumb: 'Kardex' }
+  },
+  {
+    path: 'lotes',
+    loadComponent: () => import('./pages/lots-list/lots-list.component').then(m => m.LotsListComponent),
+    data: { breadcrumb: 'Lotes' }
+  },
+  {
     path: 'proveedores',
     loadComponent: () => import('./pages/suppliers-list/suppliers-list.component').then(m => m.SuppliersListComponent),
     data: { breadcrumb: 'Proveedores' }

@@ -1,19 +1,19 @@
-import { Component, ChangeDetectionStrategy, computed, inject, signal, OnInit } from '@angular/core';
+import { Component, ChangeDetectionStrategy, computed, DestroyRef, inject, signal, OnInit, Signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule, FormBuilder, FormArray, FormGroup, Validators } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
-import { HttpClient } from '@angular/common/http';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { PurchaseOrderService } from '../../../../core/services/purchase-order.service';
 import { BranchService } from '../../../../core/services/branch.service';
 import { ToastService } from '../../../../core/services/toast.service';
+import { WarehouseService } from '../../../../core/services/warehouse.service';
 import {
   PurchaseOrder, PurchaseOrderStatus, PaymentStatus, PaymentMethod,
   PurchaseOrderItem,
   STATUS_LABELS, PAYMENT_STATUS_LABELS, PAYMENT_CONDITION_LABELS, PAYMENT_METHOD_LABELS,
   RegisterReceiptPayload, RegisterRetentionPayload, RegisterPaymentPayload,
 } from '../../../../core/models/purchase-order.models';
-import { environment } from '../../../../../environments/environment';
 
 import { DrawerComponent } from '../../../../shared/components/ui/drawer/drawer';
 import { DatePickerComponent } from '../../../../shared/components/ui/date-picker/date-picker';
@@ -22,6 +22,7 @@ import { ModalComponent } from '../../../../shared/components/ui/modal/modal';
 import { FormButtonComponent } from '../../../../shared/components/ui/form-button/form-button';
 import { SpinnerComponent } from '../../../../shared/components/ui/spinner/spinner';
 import { BackButtonComponent } from '../../../../shared/components/ui/back-button/back-button';
+import { ActionsMenuComponent, ActionItem } from '../../../../shared/components/ui/actions-menu/actions-menu';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import {
   lucidePlus, lucideEye, lucidePencil, lucideTrash2, lucideCheck,
@@ -29,7 +30,7 @@ import {
   lucideWarehouse, lucideCalendar, lucideHash, lucideBanknote,
   lucideFileText, lucideShieldCheck, lucideChevronRight,
   lucideReceipt, lucideCreditCard, lucideCopy, lucideArrowLeft,
-  lucideAlertCircle,
+  lucideAlertCircle, lucideMoreVertical, lucideDownload, lucideMessageCircle,
 } from '@ng-icons/lucide';
 
 // ── Receipt form model ──────────────────────────────────────────────────────
@@ -109,10 +110,10 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    CommonModule, FormsModule,
+    CommonModule, FormsModule, ReactiveFormsModule,
     DrawerComponent, ModalComponent, FormButtonComponent,
     SpinnerComponent, BackButtonComponent, NgIconComponent,
-    DatePickerComponent, CustomSelectComponent,
+    DatePickerComponent, CustomSelectComponent, ActionsMenuComponent,
   ],
   providers: [
     provideIcons({
@@ -120,8 +121,8 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
       lucidePackageCheck, lucideX, lucideClipboardList, lucideBuilding2,
       lucideWarehouse, lucideCalendar, lucideHash, lucideBanknote,
       lucideFileText, lucideShieldCheck, lucideChevronRight,
-      lucideReceipt, lucideCreditCard, lucideCopy, lucideArrowLeft,
-      lucideAlertCircle,
+      lucideReceipt, lucideCreditCard, lucideCopy, lucideArrowLeft, lucideMoreVertical,
+      lucideAlertCircle, lucideDownload, lucideMessageCircle,
     })
   ],
   template: `
@@ -160,28 +161,48 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
               <span class="pod__breadcrumb-current">#{{ d.orderNumber }}</span>
             </nav>
 
-            <div class="pod__header-actions">
-              @if (d.status === 'BORRADOR') {
-                <app-form-button label="Editar" icon="lucidePencil" variant="secondary" type="button" [fullWidth]="false" (click)="onEdit()"></app-form-button>
-                <app-form-button label="Aprobar" icon="lucideCheck" type="button" [fullWidth]="false" [loading]="isActioning()" (click)="openApproveModal()"></app-form-button>
-              }
-              @if ((d.status === 'APROBADA' || d.status === 'RECIBIDA_PARCIAL') && (d.items ?? []).some(i => +i.quantityReceived < +i.quantityOrdered)) {
-                <app-form-button label="Reg. Recepción" icon="lucidePackageCheck" variant="secondary" type="button" [fullWidth]="false" (click)="openReceiptDrawer()"></app-form-button>
-              }
-              @if (d.status === 'RECIBIDA_PARCIAL' || d.status === 'RECIBIDA' || d.status === 'CERRADA') {
-                <app-form-button label="Retención" icon="lucideShieldCheck" variant="ghost" type="button" [fullWidth]="false" (click)="openRetentionModal()"></app-form-button>
-                <app-form-button label="Registrar Pago" icon="lucideCreditCard" variant="secondary" type="button" [fullWidth]="false" (click)="openPaymentModal()"></app-form-button>
-              }
-              @if (d.status !== 'ANULADA' && d.status !== 'CERRADA') {
-                <app-form-button label="Anular" icon="lucideX" variant="danger" type="button" [fullWidth]="false" (click)="isCancelModalOpen.set(true)"></app-form-button>
-              }
-              @if (d.status === 'BORRADOR') {
-                <app-form-button label="Eliminar" icon="lucideTrash2" variant="danger" type="button" [fullWidth]="false" (click)="isDeleteModalOpen.set(true)"></app-form-button>
-              }
-              @if (d.status !== 'ANULADA') {
-                <app-form-button label="Duplicar" icon="lucideCopy" variant="ghost" type="button" [fullWidth]="false" (click)="onDuplicate()"></app-form-button>
-              }
-            </div>
+            @if (d.status !== 'ANULADA') {
+              <div class="pod__header-actions">
+                @if (d.status !== 'BORRADOR') {
+                  <app-form-button label="PDF" icon="lucideDownload" variant="ghost" type="button" [fullWidth]="false" (click)="downloadPdf()"></app-form-button>
+                  @if (d.supplierPhone) {
+                    <app-form-button label="WhatsApp" icon="lucideMessageCircle" variant="ghost" type="button" [fullWidth]="false" [loading]="isSendingWhatsApp()" (click)="sendWhatsApp()"></app-form-button>
+                  }
+                }
+                <!-- Primary action button (context-dependent) -->
+                @if (d.status === 'BORRADOR') {
+                  <app-form-button label="Aprobar" icon="lucideCheck" type="button" [fullWidth]="false" [loading]="isActioning()" (click)="openApproveModal()"></app-form-button>
+                } @else if ((d.status === 'APROBADA' || d.status === 'RECIBIDA_PARCIAL') && (d.items ?? []).some(i => +i.quantityReceived < +i.quantityOrdered)) {
+                  <app-form-button label="Registrar Recepción" icon="lucidePackageCheck" type="button" [fullWidth]="false" (click)="openReceiptDrawer()"></app-form-button>
+                } @else if (d.status === 'RECIBIDA_PARCIAL' || d.status === 'RECIBIDA' || d.status === 'CERRADA') {
+                  <app-form-button label="Registrar Pago" icon="lucideCreditCard" type="button" [fullWidth]="false" (click)="openPaymentModal()"></app-form-button>
+                }
+                <!-- Desktop: dropdown -->
+                <span class="pod__desktop-only">
+                  <app-actions-menu [actions]="getDetailActions(d)" (actionClick)="handleDetailAction($event, d)"></app-actions-menu>
+                </span>
+                <!-- Mobile: open bottom sheet -->
+                <button class="pod__mobile-more" (click)="isActionsSheetOpen.set(true)">
+                  <ng-icon name="lucideMoreVertical" size="18"></ng-icon>
+                </button>
+              </div>
+            }
+
+            <!-- Mobile bottom sheet -->
+            @if (isActionsSheetOpen()) {
+              <div class="sheet-backdrop" (click)="isActionsSheetOpen.set(false)"></div>
+              <div class="sheet">
+                <div class="sheet__handle"></div>
+                <div class="sheet__title">Acciones</div>
+                @for (action of getDetailActions(d); track action.id) {
+                  <button class="sheet__item" [class.sheet__item--danger]="action.variant === 'danger'"
+                    (click)="handleDetailAction(action, d); isActionsSheetOpen.set(false)">
+                    @if (action.icon) { <ng-icon [name]="action.icon" size="18"></ng-icon> }
+                    <span>{{ action.label }}</span>
+                  </button>
+                }
+              </div>
+            }
           </div>
 
           <!-- Hero -->
@@ -200,6 +221,30 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
               <p class="pod__hero-desc">{{ d.supplierName }} · {{ d.branchName }}</p>
             </div>
           </div>
+
+          <!-- Progress bars -->
+          @if (d.status !== 'BORRADOR') {
+            <div class="pod__progress-bars">
+              <div class="progress-item">
+                <div class="progress-item__header">
+                  <span class="progress-item__label">Recepción</span>
+                  <span class="progress-item__value">{{ receiptProgress().received }}/{{ receiptProgress().ordered }} un. ({{ receiptProgress().pct }}%)</span>
+                </div>
+                <div class="progress-item__track">
+                  <div class="progress-item__fill progress-item__fill--receipt" [style.width.%]="receiptProgress().pct"></div>
+                </div>
+              </div>
+              <div class="progress-item">
+                <div class="progress-item__header">
+                  <span class="progress-item__label">Pago</span>
+                  <span class="progress-item__value">{{ paymentProgress().paid | currency:'USD':'symbol':'1.2-2' }} / {{ paymentProgress().total | currency:'USD':'symbol':'1.2-2' }} ({{ paymentProgress().pct }}%)</span>
+                </div>
+                <div class="progress-item__track">
+                  <div class="progress-item__fill progress-item__fill--payment" [style.width.%]="paymentProgress().pct"></div>
+                </div>
+              </div>
+            </div>
+          }
 
           <!-- Info cards -->
           <div class="pod__info-cards">
@@ -268,7 +313,8 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
 
           <!-- Items table -->
           @if ((d.items ?? []).length > 0) {
-            <div class="detail-items">
+            <!-- Desktop table -->
+            <div class="detail-items detail-items--desktop">
               <table class="items-tbl">
                 <thead>
                   <tr>
@@ -306,6 +352,44 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
                   }
                 </tbody>
               </table>
+            </div>
+
+            <!-- Mobile cards -->
+            <div class="detail-items detail-items--mobile">
+              @for (item of d.items; track item.id; let i = $index) {
+                <div class="dim-card">
+                  <div class="dim-card__head">
+                    <span class="dim-card__idx">{{ i + 1 }}</span>
+                    <div class="dim-card__name-wrap">
+                      <span class="dim-card__name">{{ item.productName }}</span>
+                      <div class="dim-card__meta">
+                        @if (item.variantName) { <span>{{ item.variantName }}</span> }
+                        @if (item.sku) { <span class="dim-card__sku">{{ item.sku }}</span> }
+                        <span class="dim-card__um">{{ item.unitAbbreviation ?? 'UN' }}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="dim-card__grid">
+                    <div class="dim-card__field">
+                      <span class="dim-card__label">Pedido</span>
+                      <span class="dim-card__val">{{ item.quantityOrdered }}</span>
+                    </div>
+                    <div class="dim-card__field">
+                      <span class="dim-card__label">Recibido</span>
+                      <span class="dim-card__val" [class.qty-partial]="item.quantityReceived > 0 && item.quantityReceived < item.quantityOrdered"
+                            [class.qty-full]="item.quantityReceived >= item.quantityOrdered">{{ item.quantityReceived }}</span>
+                    </div>
+                    <div class="dim-card__field">
+                      <span class="dim-card__label">Costo</span>
+                      <span class="dim-card__val">{{ +item.unitCost | currency:'USD':'symbol':'1.2-2' }}</span>
+                    </div>
+                    <div class="dim-card__field dim-card__field--total">
+                      <span class="dim-card__label">Total</span>
+                      <span class="dim-card__val dim-card__val--bold">{{ +item.lineTotal | currency:'USD':'symbol':'1.2-2' }}</span>
+                    </div>
+                  </div>
+                </div>
+              }
             </div>
           }
 
@@ -375,7 +459,7 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
                               <span class="receipt-item-lot">Lote: {{ ri.lotNumber }}</span>
                             }
                             @if (ri.expiryDate) {
-                              <span class="receipt-item-expiry">Vence: {{ ri.expiryDate | date:'dd/MM/yy' }}</span>
+                              <span class="receipt-item-expiry">Vence: {{ ri.expiryDate | date:'dd/MM/yyyy' }}</span>
                             }
                           </div>
                         }
@@ -457,113 +541,148 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
       ════════════════════════════════════════════════════════════════════ -->
       <app-drawer [isOpen]="isReceiptDrawerOpen()" title="Registrar Recepción" (close)="isReceiptDrawerOpen.set(false)" size="lg">
         <div drawerBody>
-          <div class="form-grid">
-            <div class="form-group">
-              <label class="form-label">Bodega de destino *</label>
-              <app-custom-select
-                [options]="warehouseOptions()"
-                [value]="receiptForm.warehouseId"
-                (valueChange)="receiptForm.warehouseId = $event; onWarehouseChange($event)"
-              ></app-custom-select>
-            </div>
-            @if (selectedWarehouseHasLocations && warehouseLocations().length > 0) {
+          <form [formGroup]="receiptFormGroup">
+            <div class="form-grid">
               <div class="form-group">
-                <label class="form-label">Ubicación <span class="optional">(por defecto para todos los items)</span></label>
+                <label class="form-label">Bodega de destino *</label>
                 <app-custom-select
-                  [options]="locationOptions()"
-                  [value]="receiptForm.defaultLocationId"
-                  (valueChange)="receiptForm.defaultLocationId = $event"
+                  [options]="warehouseOptions()"
+                  [value]="receiptFormGroup.get('warehouseId')!.value ?? ''"
+                  (valueChange)="onWarehouseChange($event)"
                 ></app-custom-select>
+                @if (receiptFormGroup.get('warehouseId')!.touched && receiptFormGroup.get('warehouseId')!.hasError('required')) {
+                  <span class="field-error-msg">Selecciona una bodega</span>
+                }
               </div>
-            }
-            <div class="form-group">
-              <label class="form-label">N° Factura del proveedor *</label>
-              <input class="form-control" type="text" [(ngModel)]="receiptForm.supplierInvoiceNumber" placeholder="001-001-000000123" />
-            </div>
-            <div class="form-group">
-              <label class="form-label">Fecha de factura *</label>
-              <app-date-picker [(ngModel)]="receiptForm.supplierInvoiceDate" placeholder="Seleccionar fecha..."></app-date-picker>
-            </div>
-            <div class="form-group form-group--full">
-              <label class="form-label">N° Autorización SRI <span class="optional">(opcional)</span></label>
-              <input class="form-control" type="text" [(ngModel)]="receiptForm.sriAuthorizationNumber" placeholder="Clave de acceso electrónica (49 dígitos)" maxlength="49" />
-            </div>
-            <div class="form-group form-group--full">
-              <label class="form-label">Notas <span class="optional">(opcional)</span></label>
-              <textarea class="form-control" rows="2" [(ngModel)]="receiptForm.notes"></textarea>
-            </div>
-          </div>
-
-          <!-- Items to receive -->
-          <h4 class="receipt-items-title">Cantidades a recibir</h4>
-          <div class="receipt-items">
-            <div class="ri-head">
-              <span>Producto</span>
-              <span class="r">Pedido</span>
-              <span class="r">Recibido</span>
-              <span class="r">A recibir</span>
-              <span class="r">Costo</span>
-            </div>
-            @for (ri of receiptForm.items; track ri.orderItemId) {
-              <div class="ri-row">
-                <div class="ri-prod">
-                  <span>{{ ri.productName }}{{ ri.variantName ? ' — ' + ri.variantName : '' }}</span>
-                  @if (ri.sku) { <span class="ri-sku">{{ ri.sku }}</span> }
-                </div>
-                <div class="ri-nums">
-                  <div class="ri-field">
-                    <span class="ri-field__label">Pedido</span>
-                    <span class="ri-field__value">{{ ri.quantityOrdered }} {{ ri.unitOfMeasure }}</span>
-                  </div>
-                  <div class="ri-field">
-                    <span class="ri-field__label">Recibido</span>
-                    <span class="ri-field__value">{{ ri.quantityReceived }}</span>
-                  </div>
-                  <div class="ri-field">
-                    <span class="ri-field__label">A recibir</span>
-                    <input type="number" class="cell-input num-input" min="0"
-                      [max]="ri.quantityOrdered - ri.quantityReceived"
-                      [(ngModel)]="ri.qtyToReceive" />
-                  </div>
-                  <div class="ri-field">
-                    <span class="ri-field__label">Costo</span>
-                    <input type="number" class="cell-input num-input" min="0" step="0.01"
-                      [(ngModel)]="ri.unitCost" />
-                  </div>
-                </div>
-              </div>
-              @if ((ri.trackLots || selectedWarehouseHasLocations) && ri.qtyToReceive > 0) {
-                <div class="ri-extra">
-                  @if (ri.trackLots) {
-                    <div class="ri-extra-field">
-                      <label>N.o de Lote *</label>
-                      <input type="text" class="form-control" [(ngModel)]="ri.lotNumber" placeholder="Ej: LOTE-2026-001" />
-                    </div>
-                  }
-                  @if (ri.trackExpiry) {
-                    <div class="ri-extra-field">
-                      <label>Fecha de Vencimiento *</label>
-                      <app-date-picker [(ngModel)]="ri.expiryDate" placeholder="Vencimiento..." [disablePast]="true"></app-date-picker>
-                    </div>
-                  }
-                  @if (selectedWarehouseHasLocations && warehouseLocations().length > 0) {
-                    <div class="ri-extra-field">
-                      <label>Ubicación</label>
-                      <app-custom-select
-                        [options]="locationOptions()"
-                        [value]="ri.locationId"
-                        (valueChange)="ri.locationId = $event"
-                      ></app-custom-select>
-                    </div>
+              @if (selectedWarehouseHasLocations && warehouseLocations().length > 0) {
+                <div class="form-group">
+                  <label class="form-label">Ubicación por defecto *</label>
+                  <app-custom-select
+                    [options]="locationOptions()"
+                    [value]="receiptFormGroup.get('defaultLocationId')!.value ?? ''"
+                    (valueChange)="receiptFormGroup.patchValue({ defaultLocationId: $event })"
+                  ></app-custom-select>
+                  @if (receiptFormGroup.get('defaultLocationId')!.touched && receiptFormGroup.get('defaultLocationId')!.hasError('required')) {
+                    <span class="field-error-msg">Selecciona una ubicación</span>
                   }
                 </div>
               }
-            }
-          </div>
+              <div class="form-group">
+                <label class="form-label">N° Factura del proveedor *</label>
+                <input class="form-control" type="text" formControlName="supplierInvoiceNumber" placeholder="001-001-000000123"
+                  [class.form-control--error]="receiptFormGroup.get('supplierInvoiceNumber')!.touched && receiptFormGroup.get('supplierInvoiceNumber')!.invalid" />
+                @if (receiptFormGroup.get('supplierInvoiceNumber')!.touched && receiptFormGroup.get('supplierInvoiceNumber')!.hasError('required')) {
+                  <span class="field-error-msg">El número de factura es requerido</span>
+                }
+                @if (receiptFormGroup.get('supplierInvoiceNumber')!.touched && receiptFormGroup.get('supplierInvoiceNumber')!.hasError('pattern')) {
+                  <span class="field-error-msg">Formato: 001-001-000000123</span>
+                }
+              </div>
+              <div class="form-group">
+                <label class="form-label">Fecha de factura *</label>
+                <app-date-picker formControlName="supplierInvoiceDate" placeholder="Seleccionar fecha..."></app-date-picker>
+                @if (receiptFormGroup.get('supplierInvoiceDate')!.touched && receiptFormGroup.get('supplierInvoiceDate')!.hasError('required')) {
+                  <span class="field-error-msg">La fecha de factura es requerida</span>
+                }
+              </div>
+              <div class="form-group form-group--full">
+                <label class="form-label">N° Autorización SRI <span class="optional">(opcional)</span></label>
+                <input class="form-control" type="text" formControlName="sriAuthorizationNumber" placeholder="Clave de acceso electrónica (49 dígitos)" maxlength="49"
+                  [class.form-control--error]="receiptFormGroup.get('sriAuthorizationNumber')!.touched && receiptFormGroup.get('sriAuthorizationNumber')!.invalid" />
+                @if (receiptFormGroup.get('sriAuthorizationNumber')!.touched && receiptFormGroup.get('sriAuthorizationNumber')!.hasError('pattern')) {
+                  <span class="field-error-msg">Debe ser exactamente 49 dígitos numéricos</span>
+                }
+              </div>
+              <div class="form-group form-group--full">
+                <label class="form-label">Notas <span class="optional">(opcional)</span></label>
+                <textarea class="form-control" rows="2" formControlName="notes"></textarea>
+              </div>
+            </div>
+
+            <!-- Items to receive -->
+            <h4 class="receipt-items-title">Cantidades a recibir</h4>
+            <div class="receipt-items" formArrayName="items">
+              <div class="ri-head">
+                <span>Producto</span>
+                <span class="r">Pedido</span>
+                <span class="r">Recibido</span>
+                <span class="r">A recibir</span>
+                <span class="r">Costo</span>
+              </div>
+              @for (itemCtrl of receiptItems.controls; track $index) {
+                @let meta = receiptItemsMeta()[$index];
+                <div class="ri-row" [formGroupName]="$index">
+                  <div class="ri-prod">
+                    <span>{{ meta.productName }}{{ meta.variantName ? ' — ' + meta.variantName : '' }}</span>
+                    @if (meta.sku) { <span class="ri-sku">{{ meta.sku }}</span> }
+                  </div>
+                  <div class="ri-nums">
+                    <div class="ri-field">
+                      <span class="ri-field__label">Pedido</span>
+                      <span class="ri-field__value">{{ meta.quantityOrdered }} {{ meta.unitOfMeasure }}</span>
+                    </div>
+                    <div class="ri-field">
+                      <span class="ri-field__label">Recibido</span>
+                      <span class="ri-field__value">{{ meta.quantityReceived }}</span>
+                    </div>
+                    <div class="ri-field">
+                      <span class="ri-field__label">A recibir</span>
+                      <input type="number" class="cell-input num-input" min="0"
+                        [max]="meta.quantityOrdered - meta.quantityReceived"
+                        formControlName="qtyToReceive"
+                        [class.cell-input--error]="itemCtrl.get('qtyToReceive')!.touched && itemCtrl.get('qtyToReceive')!.invalid" />
+                      @if (itemCtrl.get('qtyToReceive')!.touched && itemCtrl.get('qtyToReceive')!.hasError('max')) {
+                        <span class="field-error-msg field-error-msg--sm">Excede el pendiente</span>
+                      }
+                    </div>
+                    <div class="ri-field">
+                      <span class="ri-field__label">Costo</span>
+                      <input type="number" class="cell-input num-input" min="0" step="0.01"
+                        formControlName="unitCost"
+                        [class.cell-input--error]="itemCtrl.get('unitCost')!.touched && itemCtrl.get('unitCost')!.invalid" />
+                    </div>
+                  </div>
+                </div>
+                @if ((meta.trackLots || selectedWarehouseHasLocations) && itemCtrl.get('qtyToReceive')!.value > 0) {
+                  <div class="ri-extra" [formGroupName]="$index">
+                    @if (meta.trackLots) {
+                      <div class="ri-extra-field" [class.ri-extra-field--error]="itemCtrl.get('lotNumber')!.touched && itemCtrl.get('lotNumber')!.invalid">
+                        <label>N° de Lote *</label>
+                        <input type="text" class="form-control" formControlName="lotNumber" placeholder="Ej: LOTE-2026-001"
+                          [class.form-control--error]="itemCtrl.get('lotNumber')!.touched && itemCtrl.get('lotNumber')!.invalid" />
+                        @if (itemCtrl.get('lotNumber')!.touched && itemCtrl.get('lotNumber')!.hasError('required')) {
+                          <span class="field-error-msg">Requerido para este producto</span>
+                        }
+                      </div>
+                    }
+                    @if (meta.trackExpiry) {
+                      <div class="ri-extra-field" [class.ri-extra-field--error]="itemCtrl.get('expiryDate')!.touched && itemCtrl.get('expiryDate')!.invalid">
+                        <label>Fecha de Vencimiento *</label>
+                        <app-date-picker formControlName="expiryDate" placeholder="Vencimiento..." [disablePast]="true"></app-date-picker>
+                        @if (itemCtrl.get('expiryDate')!.touched && itemCtrl.get('expiryDate')!.hasError('required')) {
+                          <span class="field-error-msg">Requerido para este producto</span>
+                        }
+                      </div>
+                    }
+                    @if (selectedWarehouseHasLocations && warehouseLocations().length > 0) {
+                      <div class="ri-extra-field">
+                        <label>Ubicación</label>
+                        <app-custom-select
+                          [options]="locationOptions()"
+                          [value]="itemCtrl.get('locationId')!.value"
+                          (valueChange)="itemCtrl.patchValue({ locationId: $event })"
+                        ></app-custom-select>
+                      </div>
+                    }
+                  </div>
+                }
+              }
+            </div>
+          </form>
         </div>
         <div drawerFooter class="drawer-footer-actions">
           <app-form-button label="Cancelar" variant="secondary" (click)="isReceiptDrawerOpen.set(false)"></app-form-button>
-          <app-form-button label="Registrar Recepción" icon="lucideCheck" [loading]="isActioning()" (click)="submitReceipt()"></app-form-button>
+          <app-form-button label="Registrar Recepción" icon="lucideCheck" [loading]="isActioning()" [disabled]="receiptFormGroup.invalid" (click)="submitReceipt()"></app-form-button>
         </div>
       </app-drawer>
 
@@ -817,9 +936,15 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
     /* ── Page shell ──────────────────────────────────────────────────── */
     .pod {
       flex: 1; overflow-y: auto; display: flex; flex-direction: column;
-      background: var(--color-bg-canvas); padding: 24px 32px 32px;
+      background: var(--color-bg-canvas);
     }
-    @media (max-width: 768px) { .pod { padding: 20px 16px 24px; } }
+    .pod__header, .pod__content { max-width: 1120px; width: 100%; margin: 0 auto; padding: 0 32px; box-sizing: border-box; }
+    .pod__header { padding-top: 24px; }
+    .pod__content { padding-bottom: 32px; }
+    @media (max-width: 768px) {
+      .pod__header, .pod__content { padding-left: 16px; padding-right: 16px; }
+      .pod__header { padding-top: 16px; }
+    }
 
     /* ── Header ──────────────────────────────────────────────────────── */
     .pod__header { background: transparent; }
@@ -841,7 +966,59 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
       color: var(--color-text-main); font-weight: var(--font-weight-semibold);
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
-    .pod__header-actions { display: flex; gap: 8px; flex-shrink: 0; flex-wrap: wrap; }
+    .pod__header-actions { display: flex; gap: 8px; flex-shrink: 0; align-items: center; }
+    .pod__mobile-more {
+      display: none; width: 36px; height: 36px; border-radius: var(--radius-md);
+      border: 1px solid var(--color-border-light); background: var(--color-bg-surface);
+      color: var(--color-text-muted); cursor: pointer;
+      align-items: center; justify-content: center;
+      transition: all var(--transition-fast);
+    }
+    .pod__mobile-more:active { background: var(--color-bg-hover); }
+    @media (max-width: 768px) {
+      .pod__desktop-only { display: none; }
+      .pod__mobile-more { display: flex; }
+    }
+
+    /* ── Bottom sheet ──────────────────────────────────────────────── */
+    .sheet-backdrop {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 999;
+      animation: sheetFadeIn 0.2s ease;
+    }
+    .sheet {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 1000;
+      background: var(--color-bg-surface); border-radius: 16px 16px 0 0;
+      padding: 8px 0 calc(16px + env(safe-area-inset-bottom));
+      box-shadow: 0 -4px 24px rgba(0,0,0,0.15);
+      animation: sheetSlideUp 0.25s ease;
+    }
+    .sheet__handle {
+      width: 36px; height: 4px; border-radius: 99px;
+      background: var(--color-border-light); margin: 0 auto 12px;
+    }
+    .sheet__title {
+      padding: 0 20px 12px; font-size: 13px; font-weight: 700;
+      color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.04em;
+    }
+    .sheet__item {
+      display: flex; align-items: center; gap: 12px; width: 100%;
+      padding: 14px 20px; border: none; background: none;
+      color: var(--color-text-main); font-size: 15px; font-family: inherit;
+      cursor: pointer; transition: background var(--transition-fast);
+    }
+    .sheet__item:active { background: var(--color-bg-hover); }
+    .sheet__item--danger { color: var(--color-danger-text); }
+    .sheet__item ng-icon { color: var(--color-text-muted); }
+    .sheet__item--danger ng-icon { color: var(--color-danger-text); }
+    @keyframes sheetFadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes sheetSlideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+    /* Hide sheet on desktop */
+    .sheet-backdrop, .sheet { display: none; }
+    @media (max-width: 768px) {
+      .sheet-backdrop, .sheet { display: block; }
+      .sheet__item { display: flex; }
+    }
 
     /* ── Hero ─────────────────────────────────────────────────────────── */
     .pod__hero { display: flex; align-items: flex-start; gap: 20px; padding: 24px 0; }
@@ -859,6 +1036,23 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
     }
     .pod__hero-badges { display: flex; gap: 6px; }
     .pod__hero-desc { margin: 6px 0 0; font-size: var(--font-size-sm); color: var(--color-text-muted); line-height: 1.5; }
+    @media (max-width: 768px) {
+      .pod__hero { gap: 14px; padding: 16px 0; }
+      .pod__hero-icon { width: 44px; height: 44px; border-radius: 10px; font-size: 20px; }
+      .pod__hero-name { font-size: 18px; }
+      .pod__hero-badges { flex-wrap: wrap; }
+    }
+
+    /* ── Progress bars ────────────────────────────────────────────────── */
+    .pod__progress-bars { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 0 0 20px; }
+    .progress-item__header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .progress-item__label { font-size: var(--font-size-xs); font-weight: 600; color: var(--color-text-main); }
+    .progress-item__value { font-size: 11px; color: var(--color-text-muted); }
+    .progress-item__track { height: 6px; border-radius: 99px; background: var(--color-border-subtle); overflow: hidden; }
+    .progress-item__fill { height: 100%; border-radius: 99px; transition: width 0.4s ease; }
+    .progress-item__fill--receipt { background: var(--color-info-text); }
+    .progress-item__fill--payment { background: var(--color-success-text); }
+    @media (max-width: 480px) { .pod__progress-bars { grid-template-columns: 1fr; } }
 
     /* ── Info cards ───────────────────────────────────────────────────── */
     .pod__info-cards { display: flex; gap: 16px; padding: 0 0 24px; flex-wrap: wrap; }
@@ -870,12 +1064,21 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
     .pod__info-card-icon {
       width: 40px; height: 40px; border-radius: 10px;
       display: flex; align-items: center; justify-content: center;
-      font-size: 18px; background: rgba(59,130,246,0.1); color: #3b82f6; flex-shrink: 0;
+      font-size: 18px; background: var(--color-info-bg); color: var(--color-info-text); flex-shrink: 0;
     }
     .pod__info-card-content { display: flex; flex-direction: column; gap: 1px; }
     .pod__info-card-label { font-size: 11px; color: var(--color-text-muted); font-weight: 600; }
     .pod__info-card-value { font-size: 14px; font-weight: 700; color: var(--color-text-main); }
     .pod__info-card-sub { font-size: var(--font-size-xs); color: var(--color-text-muted); font-family: monospace; }
+    @media (max-width: 768px) {
+      .pod__info-cards { gap: 10px; }
+      .pod__info-card { min-width: calc(50% - 5px); padding: 12px; border-radius: 10px; }
+      .pod__info-card-icon { width: 34px; height: 34px; border-radius: 8px; font-size: 16px; }
+      .pod__info-card-value { font-size: 13px; }
+    }
+    @media (max-width: 480px) {
+      .pod__info-card { min-width: 100%; }
+    }
 
     /* Notes */
     .pod__notes {
@@ -913,13 +1116,61 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
       font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap;
     }
     .items-tbl td { padding: 0.5rem; border-bottom: 1px solid var(--color-border-subtle); vertical-align: top; }
-    .r { text-align: right; }
+    .r { text-align: right !important; }
     .fw { font-weight: var(--font-weight-semibold); }
     .itbl-name { display: block; font-weight: var(--font-weight-medium); color: var(--color-text-main); font-size: var(--font-size-sm); }
     .itbl-variant { display: block; color: var(--color-text-muted); }
     .itbl-sku { display: block; color: var(--color-text-muted); font-family: monospace; }
     .qty-partial { color: #ca8a04; font-weight: 600; }
     .qty-full    { color: var(--color-success-text); font-weight: 600; }
+
+    /* Mobile item cards */
+    .detail-items--mobile { display: none; }
+    @media (max-width: 768px) {
+      .detail-items--desktop { display: none; }
+      .detail-items--mobile { display: flex; flex-direction: column; gap: 10px; }
+      .dim-card {
+        border: 1px solid var(--color-border-light); border-radius: var(--radius-lg);
+        background: var(--color-bg-surface); overflow: hidden;
+      }
+      .dim-card__head {
+        display: flex; align-items: center; gap: 10px;
+        padding: 12px 14px; background: var(--color-bg-canvas);
+        border-bottom: 1px solid var(--color-border-subtle);
+      }
+      .dim-card__idx {
+        flex-shrink: 0; width: 24px; height: 24px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        background: var(--color-accent-interactive); color: #fff;
+        font-size: 11px; font-weight: 700;
+      }
+      .dim-card__name-wrap { min-width: 0; flex: 1; }
+      .dim-card__name {
+        font-weight: 600; font-size: 13px; color: var(--color-text-main);
+        display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      }
+      .dim-card__meta { display: flex; gap: 8px; margin-top: 2px; flex-wrap: wrap; }
+      .dim-card__meta span { font-size: 10px; color: var(--color-text-muted); }
+      .dim-card__sku { font-family: monospace; }
+      .dim-card__um {
+        font-weight: 600; color: var(--color-info-text);
+        background: var(--color-info-bg); padding: 1px 6px; border-radius: 99px;
+      }
+      .dim-card__grid {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 0;
+      }
+      .dim-card__field {
+        display: flex; flex-direction: column; gap: 2px;
+        padding: 10px 14px;
+        border-bottom: 1px solid var(--color-border-subtle);
+      }
+      .dim-card__field:nth-child(odd) { border-right: 1px solid var(--color-border-subtle); }
+      .dim-card__field:nth-last-child(-n+2) { border-bottom: none; }
+      .dim-card__field--total { background: var(--color-bg-hover); }
+      .dim-card__label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--color-text-muted); font-weight: 600; }
+      .dim-card__val { font-size: 15px; font-weight: 500; color: var(--color-text-main); }
+      .dim-card__val--bold { font-weight: 700; }
+    }
 
     /* ── Totals ──────────────────────────────────────────────────────── */
     .detail-totals {
@@ -934,6 +1185,9 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
     }
     .dt-paid { color: var(--color-success-text); }
     .dt-balance { font-weight: var(--font-weight-semibold); color: var(--color-text-main); }
+    @media (max-width: 768px) {
+      .detail-totals { align-self: stretch; min-width: unset; }
+    }
 
     /* ── Tabs ────────────────────────────────────────────────────────── */
     .dtabs-header {
@@ -949,6 +1203,11 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
     }
     .dtab-btn:hover { background: var(--color-bg-hover); }
     .dtab-btn.active { color: var(--color-accent-primary); border-bottom-color: var(--color-accent-primary); font-weight: var(--font-weight-semibold); }
+    @media (max-width: 768px) {
+      .dtabs-header { gap: 0; overflow: hidden; }
+      .dtab-btn { flex: 1; justify-content: center; white-space: nowrap; padding: 0.5rem 0.25rem; font-size: 12px; gap: 4px; }
+      .dtab-btn ng-icon { display: none; }
+    }
     .dtab-empty { font-size: var(--font-size-sm); color: var(--color-text-muted); padding: 1rem 0; margin: 0; }
     .dtab-card {
       padding: 0.75rem; border: 1px solid var(--color-border-light);
@@ -1053,6 +1312,13 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
     }
     .ri-extra-field { display: flex; flex-direction: column; gap: 4px; }
     .ri-extra-field label { font-size: var(--font-size-xs); font-weight: var(--font-weight-medium); color: var(--color-text-muted); }
+    .ri-extra-field--error .form-control { border-color: var(--color-danger-text); }
+    .ri-extra-field--error label { color: var(--color-danger-text); }
+    .ri-extra-hint { font-size: 10px; color: var(--color-danger-text); }
+    .form-control--error { border-color: var(--color-danger-text) !important; }
+    .cell-input--error { border-color: var(--color-danger-text) !important; }
+    .field-error-msg { font-size: var(--font-size-xs); color: var(--color-danger-text); margin-top: 2px; }
+    .field-error-msg--sm { font-size: 10px; }
 
     /* Retention lines */
     .ret-line {
@@ -1144,8 +1410,7 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] =
       .pod__info-card { padding: 12px 14px; border-radius: 12px; }
       .detail-totals { align-self: stretch; min-width: unset; }
       .items-tbl th, .items-tbl td { padding: 0.375rem 0.25rem; font-size: 11px; }
-      .dtabs-header { overflow-x: auto; -webkit-overflow-scrolling: touch; flex-wrap: nowrap; }
-      .dtab-btn { white-space: nowrap; flex-shrink: 0; padding: 0.5rem 0.625rem; font-size: var(--font-size-xs); }
+      .dtab-btn { font-size: 11px; padding: 0.5rem 0.125rem; }
       .ret-line { flex-wrap: wrap; gap: 0.375rem; }
       .ret-line__code { min-width: 100%; }
       .ret-line__base { width: 100%; }
@@ -1176,7 +1441,9 @@ export class PurchaseOrderDetailComponent implements OnInit {
   private toastService = inject(ToastService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
-  private http = inject(HttpClient);
+  private warehouseService = inject(WarehouseService);
+  private destroyRef = inject(DestroyRef);
+  private fb = inject(FormBuilder);
 
   readonly ivaRetentionOptions: SelectOption[] = IVA_RETENTION_CODES.map(c => ({ value: c.codigoRetencion, label: c.label }));
   readonly rentaRetentionOptions: SelectOption[] = RENTA_RETENTION_CODES.map(c => ({ value: c.codigoRetencion, label: c.label }));
@@ -1190,7 +1457,24 @@ export class PurchaseOrderDetailComponent implements OnInit {
   order = signal<PurchaseOrder | null>(null);
   detailTab = signal<'receipts' | 'retentions' | 'payments'>('receipts');
 
+  receiptProgress = computed(() => {
+    const d = this.order();
+    if (!d?.items?.length) return { ordered: 0, received: 0, pct: 0 };
+    const ordered = d.items.reduce((s, i) => s + (+i.quantityOrdered), 0);
+    const received = d.items.reduce((s, i) => s + (+i.quantityReceived), 0);
+    return { ordered, received, pct: ordered > 0 ? Math.round(received / ordered * 100) : 0 };
+  });
+
+  paymentProgress = computed(() => {
+    const d = this.order();
+    if (!d) return { total: 0, paid: 0, pct: 0 };
+    const total = +d.total;
+    const paid = +d.totalPaid;
+    return { total, paid, pct: total > 0 ? Math.round(paid / total * 100) : 0 };
+  });
+
   isActioning = signal(false);
+  isActionsSheetOpen = signal(false);
   isApproveModalOpen = signal(false);
   isCancelModalOpen = signal(false);
   isDeleteModalOpen = signal(false);
@@ -1203,6 +1487,7 @@ export class PurchaseOrderDetailComponent implements OnInit {
   isPaymentModalOpen = signal(false);
   isXmlPreviewOpen = signal(false);
   xmlPreviewContent = signal('');
+  isSendingWhatsApp = signal(false);
 
   receiptOptions = computed(() =>
     (this.order()?.receipts ?? []).map(r => ({
@@ -1223,23 +1508,22 @@ export class PurchaseOrderDetailComponent implements OnInit {
     ...this.warehouseLocations().map(l => ({ value: l.id, label: l.name + (l.code ? ` (${l.code})` : '') })),
   ]);
 
-  receiptForm: {
-    warehouseId: string;
-    defaultLocationId: string;
-    supplierInvoiceNumber: string;
-    supplierInvoiceDate: string;
-    sriAuthorizationNumber: string;
-    notes: string;
-    items: ReceiptFormItem[];
-  } = {
-    warehouseId: '',
-    defaultLocationId: '',
-    supplierInvoiceNumber: '',
-    supplierInvoiceDate: '',
-    sriAuthorizationNumber: '',
-    notes: '',
-    items: [],
-  };
+  // Receipt form
+  receiptFormGroup = this.fb.group({
+    warehouseId: ['', Validators.required],
+    defaultLocationId: [''],
+    supplierInvoiceNumber: ['', [Validators.required, Validators.pattern(/^\d{3}-\d{3}-\d{9}$/)]],
+    supplierInvoiceDate: ['', Validators.required],
+    sriAuthorizationNumber: ['', [Validators.pattern(/^\d{49}$/)]],
+    notes: [''],
+    items: this.fb.array<FormGroup>([]),
+  });
+
+  get receiptItems(): FormArray {
+    return this.receiptFormGroup.get('items') as FormArray;
+  }
+
+  receiptItemsMeta = signal<{ productName: string; variantName: string; sku: string; unitOfMeasure: string; quantityOrdered: number; quantityReceived: number; trackLots: boolean; trackExpiry: boolean }[]>([]);
 
   // ── Retention form ─────────────────────────────────────────────────────────
   retentionForm: {
@@ -1284,7 +1568,7 @@ export class PurchaseOrderDetailComponent implements OnInit {
   private loadOrder(id: string) {
     this.isLoading.set(true);
     this.error.set(null);
-    this.orderService.findOne(id).subscribe({
+    this.orderService.findOne(id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: d => {
         this.order.set(d);
         this.isLoading.set(false);
@@ -1299,7 +1583,7 @@ export class PurchaseOrderDetailComponent implements OnInit {
   private reloadOrder() {
     const id = this.order()?.id;
     if (!id) return;
-    this.orderService.findOne(id).subscribe({
+    this.orderService.findOne(id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: d => this.order.set(d),
       error: () => this.toastService.error('Error al recargar la orden')
     });
@@ -1307,8 +1591,67 @@ export class PurchaseOrderDetailComponent implements OnInit {
 
   // ── Navigation ─────────────────────────────────────────────────────────────
 
+  getDetailActions(d: PurchaseOrder): ActionItem[] {
+    const actions: ActionItem[] = [];
+    const hasItemsPending = (d.items ?? []).some(i => +i.quantityReceived < +i.quantityOrdered);
+    if (d.status === 'BORRADOR') {
+      actions.push({ id: 'edit', label: 'Editar', icon: 'lucidePencil' });
+      actions.push({ id: 'approve', label: 'Aprobar', icon: 'lucideCheck' });
+    }
+    if ((d.status === 'APROBADA' || d.status === 'RECIBIDA_PARCIAL') && hasItemsPending) {
+      actions.push({ id: 'receipt', label: 'Registrar Recepción', icon: 'lucidePackageCheck' });
+    }
+    if (d.status === 'RECIBIDA_PARCIAL' || d.status === 'RECIBIDA' || d.status === 'CERRADA') {
+      actions.push({ id: 'retention', label: 'Registrar Retención', icon: 'lucideShieldCheck' });
+      actions.push({ id: 'payment', label: 'Registrar Pago', icon: 'lucideCreditCard' });
+    }
+    actions.push({ id: 'duplicate', label: 'Duplicar', icon: 'lucideCopy' });
+    if (d.status !== 'CERRADA') {
+      actions.push({ id: 'cancel', label: 'Anular', icon: 'lucideX', variant: 'danger' });
+    }
+    if (d.status === 'BORRADOR') {
+      actions.push({ id: 'delete', label: 'Eliminar', icon: 'lucideTrash2', variant: 'danger' });
+    }
+    return actions;
+  }
+
+  handleDetailAction(action: ActionItem, d: PurchaseOrder) {
+    switch (action.id) {
+      case 'edit': this.onEdit(); break;
+      case 'approve': this.openApproveModal(); break;
+      case 'receipt': this.openReceiptDrawer(); break;
+      case 'retention': this.openRetentionModal(); break;
+      case 'payment': this.openPaymentModal(); break;
+      case 'duplicate': this.onDuplicate(); break;
+      case 'cancel': this.isCancelModalOpen.set(true); break;
+      case 'delete': this.isDeleteModalOpen.set(true); break;
+    }
+  }
+
   goBack() {
     this.router.navigate(['/inventario/ordenes-compra']);
+  }
+
+  downloadPdf() {
+    const id = this.order()?.id;
+    if (!id) return;
+    this.orderService.downloadPdf(id);
+  }
+
+  sendWhatsApp() {
+    const id = this.order()?.id;
+    if (!id) return;
+    this.isSendingWhatsApp.set(true);
+    this.orderService.sendWhatsApp(id).subscribe({
+      next: (res) => {
+        this.toastService.success(res.message || 'Orden enviada por WhatsApp');
+        this.isSendingWhatsApp.set(false);
+      },
+      error: (err: any) => {
+        this.toastService.error(err?.error?.message || 'Error al enviar por WhatsApp');
+        this.isSendingWhatsApp.set(false);
+      }
+    });
   }
 
   onEdit() {
@@ -1359,22 +1702,27 @@ export class PurchaseOrderDetailComponent implements OnInit {
   // ── Warehouse / location helpers ───────────────────────────────────────────
 
   onWarehouseChange(warehouseId: string) {
-    this.receiptForm.warehouseId = warehouseId;
+    this.receiptFormGroup.patchValue({ warehouseId, defaultLocationId: '' });
+    this.receiptItems.controls.forEach(g => g.patchValue({ locationId: '' }));
     const wh = this.warehouses().find(w => w.id === warehouseId);
+    const locCtrl = this.receiptFormGroup.get('defaultLocationId')!;
     if (wh?.hasLocations) {
-      this.http.get<any>(`${environment.apiUrl}/business/locations?warehouseId=${warehouseId}&limit=50`).subscribe({
+      locCtrl.setValidators([Validators.required]);
+      this.warehouseService.findLocations({ warehouseId, limit: 50, isActive: true }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: (res: any) => {
-          const data = res?.data?.data ?? res?.data ?? res ?? [];
-          this.warehouseLocations.set(data.filter((l: any) => l.isActive));
+          const data = res?.data ?? res ?? [];
+          this.warehouseLocations.set(data);
         }
       });
     } else {
+      locCtrl.clearValidators();
       this.warehouseLocations.set([]);
     }
+    locCtrl.updateValueAndValidity();
   }
 
   get selectedWarehouseHasLocations(): boolean {
-    const wh = this.warehouses().find(w => w.id === this.receiptForm.warehouseId);
+    const wh = this.warehouses().find(w => w.id === this.receiptFormGroup.get('warehouseId')!.value);
     return wh?.hasLocations ?? false;
   }
 
@@ -1387,44 +1735,81 @@ export class PurchaseOrderDetailComponent implements OnInit {
   openReceiptDrawer() {
     const d = this.order();
     if (!d) return;
-    this.receiptForm.warehouseId = '';
     this.warehouseLocations.set([]);
 
-    this.http.get<any>(`${environment.apiUrl}/business/warehouses?limit=50`).subscribe({
-      next: (res: any) => {
-        const data = res?.data?.data ?? res?.data ?? res ?? [];
-        this.warehouses.set(data.filter((w: any) => w.isActive));
-      }
+    this.receiptFormGroup.reset({
+      warehouseId: '',
+      defaultLocationId: '',
+      supplierInvoiceNumber: '',
+      supplierInvoiceDate: '',
+      sriAuthorizationNumber: '',
+      notes: '',
     });
 
-    this.receiptForm.supplierInvoiceNumber = '';
-    this.receiptForm.supplierInvoiceDate = '';
-    this.receiptForm.sriAuthorizationNumber = '';
-    this.receiptForm.notes = '';
-    this.receiptForm.items = (d.items ?? [])
-      .filter(item => (item.stockTrackable !== false) && (+item.quantityOrdered - +item.quantityReceived > 0))
-      .map(item => ({
-        orderItemId: item.id,
-        variantId: item.variantId,
+    // Clear and rebuild items FormArray
+    const itemsArray = this.receiptItems;
+    itemsArray.clear();
+
+    const meta: typeof this.receiptItemsMeta extends Signal<infer T> ? T : never = [];
+
+    const pendingItems = (d.items ?? [])
+      .filter(item => (item.stockTrackable !== false) && (+item.quantityOrdered - +item.quantityReceived > 0));
+
+    for (const item of pendingItems) {
+      const pending = item.quantityOrdered - item.quantityReceived;
+      const trackLots = item.trackLots ?? false;
+      const trackExpiry = item.trackExpiry ?? false;
+
+      const group = this.fb.group({
+        orderItemId: [item.id],
+        qtyToReceive: [pending, [Validators.required, Validators.min(0.0001), Validators.max(pending)]],
+        unitCost: [Number(item.unitCost ?? item.costPrice ?? 0), [Validators.required, Validators.min(0)]],
+        lotNumber: [''],
+        expiryDate: [''],
+        locationId: [''],
+      });
+
+      // Conditional validators for lots/expiry
+      if (trackLots) {
+        group.get('lotNumber')!.setValidators([Validators.required]);
+      }
+      if (trackExpiry) {
+        group.get('expiryDate')!.setValidators([Validators.required]);
+      }
+
+      itemsArray.push(group);
+      meta.push({
         productName: item.productName ?? '',
         variantName: item.variantName ?? '',
         sku: item.sku ?? '',
         unitOfMeasure: item.unitAbbreviation ?? 'UN',
         quantityOrdered: item.quantityOrdered,
         quantityReceived: item.quantityReceived,
-        qtyToReceive: item.quantityOrdered - item.quantityReceived,
-        unitCost: Number(item.unitCost ?? item.costPrice ?? 0),
-        trackLots: item.trackLots ?? false,
-        trackExpiry: item.trackExpiry ?? false,
-        lotNumber: '',
-        expiryDate: '',
-        locationId: '',
-      }));
+        trackLots,
+        trackExpiry,
+      });
+    }
 
-    if (this.receiptForm.items.length === 0) {
+    this.receiptItemsMeta.set(meta);
+
+    if (pendingItems.length === 0) {
       this.toastService.error('No hay items pendientes de recepción o ninguno maneja stock.');
       return;
     }
+
+    // Cargar bodegas filtradas por la sucursal de la OC, pre-seleccionar la bodega de la OC
+    this.warehouseService.findAll({ limit: 50, isActive: true, branchId: d.branchId || undefined }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (res: any) => {
+        const data = res?.data ?? res ?? [];
+        this.warehouses.set(data);
+        // Pre-seleccionar la bodega de la OC si existe en la lista
+        if (d.warehouseId && data.some((w: any) => w.id === d.warehouseId)) {
+          this.receiptFormGroup.patchValue({ warehouseId: d.warehouseId });
+          this.onWarehouseChange(d.warehouseId);
+        }
+      }
+    });
+
     this.isReceiptDrawerOpen.set(true);
   }
 
@@ -1546,47 +1931,48 @@ export class PurchaseOrderDetailComponent implements OnInit {
   }
 
   submitReceipt() {
-    const id = this.order()?.id; if (!id) return;
-    const { supplierInvoiceNumber, supplierInvoiceDate, sriAuthorizationNumber, notes, items } = this.receiptForm;
-    if (!supplierInvoiceNumber || !supplierInvoiceDate) {
-      this.toastService.error('Completa el número y fecha de factura');
+    const id = this.order()?.id;
+    if (!id) return;
+
+    // Mark all as touched to show errors
+    this.receiptFormGroup.markAllAsTouched();
+    if (this.receiptFormGroup.invalid) return;
+
+    const f = this.receiptFormGroup.value;
+    const meta = this.receiptItemsMeta();
+
+    // Check duplicate invoice
+    const existingInvoices = (this.order()?.receipts ?? []).map(r => r.supplierInvoiceNumber?.trim().toLowerCase());
+    if (existingInvoices.includes(f.supplierInvoiceNumber!.trim().toLowerCase())) {
+      this.toastService.error(`Ya existe una recepción con el N° de factura "${f.supplierInvoiceNumber}"`);
       return;
     }
-    if (!this.receiptForm.warehouseId) {
-      this.toastService.error('Selecciona una bodega');
-      return;
-    }
-    const payload: RegisterReceiptPayload = {
-      warehouseId: this.receiptForm.warehouseId,
-      supplierInvoiceNumber,
-      supplierInvoiceDate,
-      sriAuthorizationNumber: sriAuthorizationNumber || undefined,
-      notes: notes || undefined,
-      items: items.filter(i => i.qtyToReceive > 0).map(i => ({
+
+    const items = (f.items ?? [])
+      .filter((i: any) => i.qtyToReceive > 0)
+      .map((i: any, idx: number) => ({
         orderItemId: i.orderItemId,
         quantityReceived: i.qtyToReceive,
         unitCost: i.unitCost || undefined,
-        lotNumber: i.trackLots && i.lotNumber ? i.lotNumber : undefined,
-        expiryDate: i.trackExpiry && i.expiryDate ? i.expiryDate : undefined,
-        locationId: i.locationId || this.receiptForm.defaultLocationId || undefined,
-      })),
-    };
-    if (payload.items.length === 0) {
+        lotNumber: meta[idx]?.trackLots && i.lotNumber ? i.lotNumber : undefined,
+        expiryDate: meta[idx]?.trackExpiry && i.expiryDate ? i.expiryDate : undefined,
+        locationId: i.locationId || f.defaultLocationId || undefined,
+      }));
+
+    if (items.length === 0) {
       this.toastService.error('Ingresa al menos una cantidad a recibir');
       return;
     }
 
-    const itemsToReceive = items.filter(i => i.qtyToReceive > 0);
-    for (const i of itemsToReceive) {
-      if (i.trackLots && !i.lotNumber?.trim()) {
-        this.toastService.error(`Ingresa el número de lote para "${i.productName}"`);
-        return;
-      }
-      if (i.trackExpiry && !i.expiryDate) {
-        this.toastService.error(`Ingresa la fecha de vencimiento para "${i.productName}"`);
-        return;
-      }
-    }
+    const payload: RegisterReceiptPayload = {
+      warehouseId: f.warehouseId!,
+      supplierInvoiceNumber: f.supplierInvoiceNumber!,
+      supplierInvoiceDate: f.supplierInvoiceDate!,
+      sriAuthorizationNumber: f.sriAuthorizationNumber || undefined,
+      notes: f.notes || undefined,
+      items,
+    };
+
     this.isActioning.set(true);
     this.orderService.registerReceipt(id, payload).subscribe({
       next: d => {
@@ -1607,6 +1993,11 @@ export class PurchaseOrderDetailComponent implements OnInit {
     const f = this.retentionForm;
     if (!f.retentionNumber || !f.retentionDate) {
       this.toastService.error('Completa el número y fecha de retención');
+      return;
+    }
+    const existingRetentions = (this.order()?.retentions ?? []).map(r => r.retentionNumber?.trim().toLowerCase());
+    if (existingRetentions.includes(f.retentionNumber.trim().toLowerCase())) {
+      this.toastService.error(`Ya existe una retención con el N° "${f.retentionNumber}"`);
       return;
     }
     if (!f.lines.length) {
@@ -1653,6 +2044,12 @@ export class PurchaseOrderDetailComponent implements OnInit {
     const f = this.paymentForm;
     if (!f.amount || f.amount <= 0) {
       this.toastService.error('Ingresa un monto válido');
+      return;
+    }
+    const d = this.order();
+    const saldo = d ? +(+d.total - +d.totalPaid).toFixed(2) : 0;
+    if (f.amount > saldo) {
+      this.toastService.error(`El monto ($${f.amount}) excede el saldo pendiente ($${saldo})`);
       return;
     }
     const payload: RegisterPaymentPayload = {

@@ -9,6 +9,7 @@ export interface TenantValidationResponse {
 
 export interface AuthContextResponse {
     isAuthenticated: boolean;
+    branchId: string | null;
     tenant: TenantValidationResponse;
     user: UserProfile | null;
 }

@@ -565,15 +565,12 @@ export class ProductFormPageComponent implements OnInit, HasUnsavedChanges {
   }
 
   // ── COMBO tax (inline, no child component) ────────────────────────────────
-  searchComboTaxesFn = (query: string) =>
-    this.taxSvc.findAllSimple().pipe(
-      map((taxes: any[]) => {
-        const filtered = taxes.filter(t => t.name.toLowerCase().includes(query.toLowerCase()));
-        return {
-          data: filtered.map(t => ({ value: t.id, label: `${t.name} (${t.percentage}%)` } as SearchSelectOption)),
-          hasMore: false
-        };
-      })
+  searchComboTaxesFn = (query: string, page: number = 1) =>
+    this.taxSvc.findAll({ search: query || undefined, page, limit: 20, filterModel: { isActive: { filterType: 'boolean', type: 'equals', filter: true } } }).pipe(
+      map(res => ({
+        data: (res.data ?? []).map(t => ({ value: t.id, label: `${t.name} (${t.percentage}%)` } as SearchSelectOption)).reverse(),
+        hasMore: (res.data ?? []).length === 20
+      }))
     );
 
   onComboTaxChange(event: SearchSelectOption | SearchSelectOption[] | null) {

@@ -68,6 +68,7 @@ export class NavigationService {
         { label: 'Atributos',     route: '/inventario/atributos',      icon: 'lucideTags' },
         { label: 'Bodegas',        route: '/inventario/bodegas',        icon: 'lucideWarehouse' },
         { label: 'Stock',          route: '/inventario/stock',          icon: 'lucideBarChart2' },
+        { label: 'Lotes',          route: '/inventario/lotes',          icon: 'lucideFlaskConical' },
       ]
     },
     {

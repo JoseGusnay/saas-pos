@@ -1,0 +1,124 @@
+// ─── Shared drawer form styles ─────────────────────────────────────────────
+// Used by stock-list, lots-list, and other inventory drawers
+
+.drawer-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  label {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-main);
+  }
+}
+
+.form-control {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-canvas);
+  color: var(--color-text-main);
+  font-family: inherit;
+  font-size: var(--font-size-sm);
+  box-sizing: border-box;
+
+  &:focus {
+    outline: none;
+    border-color: var(--color-accent-interactive);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent-interactive) 15%, transparent);
+  }
+}
+
+.drawer-footer-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+// ─── Drawer hero (product info banner) ──────────────────────────────────────
+
+.drawer-hero {
+  padding: 12px 16px;
+  background: var(--color-bg-subtle);
+  border-radius: var(--radius-md);
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  &__product {
+    font-weight: 600;
+    color: var(--color-text-main);
+  }
+
+  &__current {
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+  }
+}
+
+// ─── Drawer info fields ─────────────────────────────────────────────────────
+
+.drawer-info {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.drawer-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.drawer-label {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+// ─── Progress track ─────────────────────────────────────────────────────────
+
+.progress-track {
+  height: 6px;
+  border-radius: 99px;
+  background: var(--color-border-subtle);
+  overflow: hidden;
+  width: 100%;
+
+  &--sm {
+    height: 4px;
+    width: 60px;
+  }
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 99px;
+  transition: width 0.4s ease;
+  min-width: 2px;
+
+  &--ok           { background: var(--color-success); }
+  &--low-stock    { background: var(--color-warning, #f59e0b); }
+  &--out-of-stock { background: var(--color-danger); }
+  &--over-stock   { background: var(--color-info-text); }
+}
+
+// ─── Qty diff indicator ─────────────────────────────────────────────────────
+
+.qty-diff {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+
+  &.diff-up   { color: var(--color-success-text); }
+  &.diff-down { color: var(--color-danger-text); }
+}

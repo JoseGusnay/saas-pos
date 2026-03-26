@@ -155,33 +155,35 @@ import { map } from 'rxjs';
           </div>
 
           <!-- Section: Base Unit -->
-          <div class="section-card">
-            <div class="section-kicker"><ng-icon name="lucideLayers"></ng-icon> Unidad de Medida <span class="section-optional">Opcional</span></div>
-            <div class="form-stack">
-              <div class="field">
-                <label>Unidad Base <span class="optional">Ej: kg, lt, und</span></label>
-                <app-search-select
-                  formControlName="baseUnitId"
-                  placeholder="Buscar unidad..."
-                  [searchFn]="searchUnitsFn.bind(this)"
-                  [initialOption]="initialUnitOption()"
-                  createNewLabel="Crear nueva unidad"
-                  (selectionChange)="onUnitChange($event)"
-                  (createNew)="unitCreateOpen.set(true)"
-                ></app-search-select>
+          @if (!isService) {
+            <div class="section-card">
+              <div class="section-kicker"><ng-icon name="lucideLayers"></ng-icon> Unidad de Medida <span class="section-optional">Opcional</span></div>
+              <div class="form-stack">
+                <div class="field">
+                  <label>Unidad Base <span class="optional">Ej: kg, lt, und</span></label>
+                  <app-search-select
+                    formControlName="baseUnitId"
+                    placeholder="Buscar unidad..."
+                    [searchFn]="searchUnitsFn.bind(this)"
+                    [initialOption]="initialUnitOption()"
+                    createNewLabel="Crear nueva unidad"
+                    (selectionChange)="onUnitChange($event)"
+                    (createNew)="unitCreateOpen.set(true)"
+                  ></app-search-select>
+                </div>
+                <app-field-input
+                  formControlName="conversionFactor"
+                  label="Factor de Conversión"
+                  type="number"
+                  placeholder="Ej: 1, 10, 0.5"
+                  [optional]="true"
+                  [min]="0.0001"
+                  [step]="0.001"
+                  hint="Entero para unidades contables (UNIT), decimal para peso o volumen."
+                ></app-field-input>
               </div>
-              <app-field-input
-                formControlName="conversionFactor"
-                label="Factor de Conversión"
-                type="number"
-                placeholder="Ej: 1, 10, 0.5"
-                [optional]="true"
-                [min]="0.0001"
-                [step]="0.001"
-                hint="Entero para unidades contables (UNIT), decimal para peso o volumen."
-              ></app-field-input>
             </div>
-          </div>
+          }
 
           <!-- Section: Dynamic Attributes -->
           @if (categoryAttributes.length > 0) {
@@ -784,13 +786,11 @@ export class VariantDrawerComponent implements OnInit, OnDestroy {
     );
   }
 
-  searchTaxesFn(query: string) {
-    return this.taxService.findAllSimple().pipe(
-      map(items => ({
-        data: items
-          .filter(i => i.name.toLowerCase().includes(query.toLowerCase()))
-          .map(i => ({ value: i.id, label: `${i.name} (${i.percentage}%)` })),
-        hasMore: false
+  searchTaxesFn(query: string, page: number = 1) {
+    return this.taxService.findAll({ search: query || undefined, page, limit: 20, filterModel: { isActive: { filterType: 'boolean', type: 'equals', filter: true } } }).pipe(
+      map(res => ({
+        data: (res.data ?? []).map(i => ({ value: i.id, label: `${i.name} (${i.percentage}%)` })).reverse(),
+        hasMore: (res.data ?? []).length === 20
       }))
     );
   }

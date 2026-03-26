@@ -13,8 +13,11 @@ import { BarcodeFieldComponent } from '../../../../shared/components/ui/barcode-
 import { FieldInputComponent } from '../../../../shared/components/ui/field-input/field-input';
 import { StockTrackingConfigComponent } from '../stock-tracking-config/stock-tracking-config';
 import { ToggleSwitchComponent } from '../../../../shared/components/ui/toggle-switch/toggle-switch';
+import { UnitDrawerComponent } from '../unit-drawer/unit-drawer.component';
 import { TaxService } from '../../../../core/services/tax.service';
 import { PresentationService } from '../../../../core/services/presentation.service';
+import { UnitsService } from '../../../../core/services/units.service';
+import { Unit } from '../../../../core/models/unit.models';
 import { SearchSelectOption } from '../../../../shared/models/search-select.models';
 import { CategoryAttributeType } from '../../models/product.model';
 
@@ -25,7 +28,7 @@ import { CategoryAttributeType } from '../../models/product.model';
   imports: [
     CommonModule, ReactiveFormsModule, NgIconComponent,
     SearchSelectComponent, BarcodeFieldComponent, FieldInputComponent, StockTrackingConfigComponent,
-    ToggleSwitchComponent
+    ToggleSwitchComponent, UnitDrawerComponent
   ],
   providers: [provideIcons({ lucideAlertCircle })],
   viewProviders: [{ provide: ControlContainer, useFactory: () => inject(ControlContainer, { skipSelf: true }) }],
@@ -35,6 +38,7 @@ import { CategoryAttributeType } from '../../models/product.model';
 export class PhysicalVariantFormComponent {
   private taxSvc          = inject(TaxService);
   private presentationSvc = inject(PresentationService);
+  private unitsSvc        = inject(UnitsService);
   private fg = inject(ControlContainer).control as FormGroup;
 
   // ── Signal inputs ────────────────────────────────────────────────────────
@@ -42,6 +46,7 @@ export class PhysicalVariantFormComponent {
   productName             = input('');
   initialTaxOptions       = input<SearchSelectOption[]>([]);
   initialPresentationOption = input<SearchSelectOption | undefined>(undefined);
+  initialUnitOption       = input<SearchSelectOption | undefined>(undefined);
 
   // ── Reactive form values ─────────────────────────────────────────────────
   private salePriceValue = toSignal(
@@ -62,14 +67,18 @@ export class PhysicalVariantFormComponent {
   // ── Signal outputs ──────────────────────────────────────────────────────
   taxOptionsChange = output<SearchSelectOption[]>();
   presentationOptionChange = output<SearchSelectOption | undefined>();
+  unitOptionChange = output<SearchSelectOption | undefined>();
 
   // ── Internal option tracking ─────────────────────────────────────────────
   _taxOptions         = signal<SearchSelectOption[]>([]);
   _presentationOption = signal<SearchSelectOption | undefined>(undefined);
+  _unitOption         = signal<SearchSelectOption | undefined>(undefined);
+  unitCreateOpen      = signal(false);
 
   constructor() {
     effect(() => { this._taxOptions.set(this.initialTaxOptions()); });
     effect(() => { const o = this.initialPresentationOption(); if (o) this._presentationOption.set(o); });
+    effect(() => { const o = this.initialUnitOption(); if (o) this._unitOption.set(o); });
   }
 
   // ── Getters ──────────────────────────────────────────────────────────────
@@ -88,16 +97,28 @@ export class PhysicalVariantFormComponent {
     }
   }
 
+  onUnitChange(event: SearchSelectOption | SearchSelectOption[] | null) {
+    if (!Array.isArray(event)) {
+      this._unitOption.set(event ?? undefined);
+      this.unitOptionChange.emit(event ?? undefined);
+    }
+  }
+
+  onUnitCreated(unit: Unit) {
+    const opt: SearchSelectOption = { value: unit.id, label: `${unit.name} (${unit.abbreviation})` };
+    this.fg.get('baseUnitId')!.setValue(unit.id);
+    this._unitOption.set(opt);
+    this.unitOptionChange.emit(opt);
+    this.unitCreateOpen.set(false);
+  }
+
   // ── Search functions ─────────────────────────────────────────────────────
-  searchTaxesFn = (query: string) =>
-    this.taxSvc.findAllSimple().pipe(
-      map((taxes: any[]) => {
-        const filtered = taxes.filter(t => t.name.toLowerCase().includes(query.toLowerCase()));
-        return {
-          data: filtered.map(t => ({ value: t.id, label: `${t.name} (${t.percentage}%)` } as SearchSelectOption)),
-          hasMore: false
-        };
-      })
+  searchTaxesFn = (query: string, page: number = 1) =>
+    this.taxSvc.findAll({ search: query || undefined, page, limit: 20, filterModel: { isActive: { filterType: 'boolean', type: 'equals', filter: true } } }).pipe(
+      map(res => ({
+        data: (res.data ?? []).map(t => ({ value: t.id, label: `${t.name} (${t.percentage}%)` } as SearchSelectOption)).reverse(),
+        hasMore: (res.data ?? []).length === 20
+      }))
     );
 
   searchPresentationsFn = (query: string, page: number) =>
@@ -109,5 +130,13 @@ export class PhysicalVariantFormComponent {
           hasMore: items.length === 15
         };
       })
+    );
+
+  searchUnitsFn = (query: string, page: number = 1) =>
+    this.unitsSvc.findAll({ search: query, page, limit: 8, onlyActive: true }).pipe(
+      map(res => ({
+        data: res.data.map((u: any) => ({ value: u.id, label: `${u.name} (${u.abbreviation})` } as SearchSelectOption)),
+        hasMore: res.data.length >= 8
+      }))
     );
 }

@@ -3,14 +3,16 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, FormArray, Validators, FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { map, Observable, of, Subject, debounceTime, distinctUntilChanged, switchMap, finalize, takeUntil } from 'rxjs';
-import { HttpClient, HttpParams } from '@angular/common/http';
 
 import { PurchaseOrderService } from '../../../../core/services/purchase-order.service';
+import { AuthService } from '../../../../core/services/auth.service';
 import { BranchService } from '../../../../core/services/branch.service';
 import { WarehouseService } from '../../../../core/services/warehouse.service';
 import { TaxService } from '../../../../core/services/tax.service';
 import { ToastService } from '../../../../core/services/toast.service';
 import { ConfirmService } from '../../../../core/services/confirm.service';
+import { SupplierService } from '../../../../core/services/supplier.service';
+import { ProductService } from '../../services/product.service';
 import {
   PaymentCondition,
   PAYMENT_CONDITION_LABELS,
@@ -18,7 +20,6 @@ import {
   UpdatePurchaseOrderPayload,
   PurchaseOrderItemPayload,
 } from '../../../../core/models/purchase-order.models';
-import { environment } from '../../../../../environments/environment';
 
 import { SearchSelectComponent } from '../../../../shared/components/ui/search-select/search-select';
 import { DatePickerComponent } from '../../../../shared/components/ui/date-picker/date-picker';
@@ -28,6 +29,7 @@ import { SearchSelectOption } from '../../../../shared/models/search-select.mode
 import { FormButtonComponent } from '../../../../shared/components/ui/form-button/form-button';
 import { SpinnerComponent } from '../../../../shared/components/ui/spinner/spinner';
 import { BackButtonComponent } from '../../../../shared/components/ui/back-button/back-button';
+import { SkeletonComponent } from '../../../../shared/components/ui/skeleton/skeleton';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import {
   lucidePlus, lucideTrash2, lucideSave, lucideArrowLeft,
@@ -46,6 +48,7 @@ interface TaxDetail {
 }
 
 interface ItemMeta {
+  variantId: string;
   variantLabel: string;
   productName: string;
   variantName: string;
@@ -104,12 +107,14 @@ const STEPPER_STEPS = [
   selector: 'app-purchase-order-form',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, SearchSelectComponent, DatePickerComponent, FormButtonComponent, SpinnerComponent, NgIconComponent, CustomSelectComponent, FieldInputComponent, BackButtonComponent],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, SearchSelectComponent, DatePickerComponent, FormButtonComponent, SpinnerComponent, NgIconComponent, CustomSelectComponent, FieldInputComponent, BackButtonComponent, SkeletonComponent],
   providers: [
     provideIcons({ lucidePlus, lucideTrash2, lucideSave, lucideArrowLeft, lucidePackagePlus, lucideCheck, lucideBuilding2, lucideTruck, lucideFileText, lucidePrinter, lucideCalendar, lucidePencil, lucideSearch, lucideWarehouse, lucideX, lucidePackage, lucideHash, lucideCircleDot, lucideChevronRight })
   ],
   template: `
     <div class="doc-page" [class.doc-page--saving]="isSaving()">
+      <div class="doc-scroll">
+        <div class="doc-inner">
 
       @if (isLoadingOrder()) {
         <div class="doc-loading"><app-spinner></app-spinner></div>
@@ -147,8 +152,8 @@ const STEPPER_STEPS = [
           </div>
         </div>
 
-        <!-- ══ SCROLLABLE CONTENT ════════════════════════════════════════ -->
-        <div class="doc-scroll">
+        <!-- ══ FORM SECTIONS ════════════════════════════════════════════ -->
+        <div class="doc-sections">
 
         <!-- ══ DOCUMENT HEADER ════════════════════════════════════════════ -->
         <div class="doc-header">
@@ -306,18 +311,19 @@ const STEPPER_STEPS = [
                   <ng-icon name="lucideWarehouse" size="12"></ng-icon>
                   Bodega destino <span class="required">*</span>
                 </span>
-                <app-search-select
-                  placeholder="Seleccionar bodega..."
-                  searchPlaceholder="Buscar bodega..."
-                  [searchFn]="warehouseSearchFn"
-                  [initialOption]="initialWarehouse()"
-                  (selectionChange)="onWarehouseChange($event)"
-                ></app-search-select>
-                @if (submitted() && !form.get('warehouseId')!.value) {
+                <div [class.field-disabled]="!form.get('branchId')!.value">
+                  @for (k of [warehouseSelectKey()]; track k) {
+                    <app-search-select
+                      [placeholder]="form.get('branchId')!.value ? 'Seleccionar bodega...' : 'Selecciona primero una sucursal'"
+                      searchPlaceholder="Buscar bodega..."
+                      [searchFn]="warehouseSearchFn"
+                      [initialOption]="initialWarehouse()"
+                      (selectionChange)="onWarehouseChange($event)"
+                    ></app-search-select>
+                  }
+                </div>
+                @if (submitted() && !form.get('warehouseId')!.value && form.get('branchId')!.value) {
                   <span class="field-error-msg">Selecciona una bodega</span>
-                }
-                @if (!form.get('branchId')!.value && !submitted()) {
-                  <span class="field-hint">Selecciona primero una sucursal</span>
                 }
               </div>
 
@@ -383,7 +389,17 @@ const STEPPER_STEPS = [
           <!-- Results dropdown -->
           @if (showProductResults()) {
             <div class="command-results" (mousedown)="$event.preventDefault()">
-              @if (productResults().length === 0 && !isSearchingProducts()) {
+              @if (isSearchingProducts()) {
+                @for (n of [1,2,3]; track n) {
+                  <div class="product-result-skeleton">
+                    <div class="prs__left">
+                      <app-skeleton width="65%" height="14px"></app-skeleton>
+                      <app-skeleton width="40%" height="10px"></app-skeleton>
+                    </div>
+                    <app-skeleton width="60px" height="14px"></app-skeleton>
+                  </div>
+                }
+              } @else if (productResults().length === 0) {
                 <div class="command-results__empty">
                   <ng-icon name="lucidePackagePlus" size="24"></ng-icon>
                   <span>{{ productSearchQuery().length < 2 ? 'Escribe al menos 2 caracteres...' : 'No se encontraron productos' }}</span>
@@ -474,7 +490,7 @@ const STEPPER_STEPS = [
                         <span class="item-name">{{ meta.variantLabel }}</span>
                       </td>
                       <td class="td-um">
-                        <input class="cell-in" type="text" [formControl]="$any(fg.get('unitOfMeasure'))" placeholder="UN" maxlength="10" />
+                        <span class="cell-readonly" [title]="fg.get('unitOfMeasure')!.value">{{ fg.get('unitOfMeasure')!.value || 'UN' }}</span>
                       </td>
                       <td class="td-num">
                         <input class="cell-in cell-right" type="number" [formControl]="$any(fg.get('quantityOrdered'))" min="1" step="1" />
@@ -512,34 +528,47 @@ const STEPPER_STEPS = [
               @for (fg of itemsArray.controls; track fg; let i = $index) {
                 @let meta = itemsMeta()[i];
                 @let c = lineCalc(i);
-                <div class="mobile-item-card">
-                  <div class="mobile-item-card__head">
-                    <div>
-                      <span class="mobile-item-card__name">{{ meta.variantLabel }}</span>
-                      @if (meta.sku) { <span class="mobile-item-card__sku">{{ meta.sku }}</span> }
+                <div class="mic" [class.mic--highlight]="highlightIndex() === i">
+                  <div class="mic__head">
+                    <div class="mic__head-info">
+                      <span class="mic__idx">{{ i + 1 }}</span>
+                      <div class="mic__name-wrap">
+                        <span class="mic__name">{{ meta.variantLabel }}</span>
+                        <div class="mic__meta">
+                          @if (meta.sku) { <span class="mic__sku">{{ meta.sku }}</span> }
+                          <span class="mic__um">{{ fg.get('unitOfMeasure')!.value || 'UN' }}</span>
+                        </div>
+                      </div>
                     </div>
-                    <button type="button" class="del-btn" (click)="removeItem(i)">
-                      <ng-icon name="lucideTrash2" size="14"></ng-icon>
+                    <button type="button" class="mic__del" (click)="removeItem(i)" title="Eliminar">
+                      <ng-icon name="lucideTrash2" size="15"></ng-icon>
                     </button>
                   </div>
-                  <div class="mobile-item-card__fields">
-                    <div class="mobile-item-card__field">
-                      <label>Cant.</label>
-                      <input class="cell-in cell-right" type="number" [formControl]="$any(fg.get('quantityOrdered'))" min="1" step="1" />
+                  <div class="mic__grid">
+                    <div class="mic__field">
+                      <label>Cantidad</label>
+                      <input class="mic__input" type="number" [formControl]="$any(fg.get('quantityOrdered'))" min="1" step="1" inputmode="numeric" />
                     </div>
-                    <div class="mobile-item-card__field">
-                      <label>Precio</label>
-                      <input class="cell-in cell-right" type="number" [formControl]="$any(fg.get('unitCost'))" min="0" step="0.01" />
+                    <div class="mic__field">
+                      <label>Costo unit.</label>
+                      <input class="mic__input" type="number" [formControl]="$any(fg.get('unitCost'))" min="0" step="0.01" inputmode="decimal" />
                     </div>
-                    <div class="mobile-item-card__field">
+                    <div class="mic__field">
                       <label>Desc. %</label>
-                      <input class="cell-in cell-right" type="number" [formControl]="$any(fg.get('discountPercent'))" min="0" max="100" step="0.1" />
+                      <input class="mic__input" type="number" [formControl]="$any(fg.get('discountPercent'))" min="0" max="100" step="0.1" inputmode="decimal" />
                     </div>
-                    <div class="mobile-item-card__field">
-                      <label>Total</label>
-                      <span class="mobile-item-card__total">{{ c.lineTotal | currency:'USD':'symbol':'1.2-2' }}</span>
+                    <div class="mic__field mic__field--total">
+                      <label>Total línea</label>
+                      <span class="mic__total">{{ c.lineTotal | currency:'USD':'symbol':'1.2-2' }}</span>
                     </div>
                   </div>
+                  @if (meta.taxDetails.length) {
+                    <div class="mic__taxes">
+                      @for (t of meta.taxDetails; track t.id) {
+                        <span class="mic__tax-pill">{{ t.name }} {{ t.percentage }}%</span>
+                      }
+                    </div>
+                  }
                 </div>
               }
             </div>
@@ -584,9 +613,12 @@ const STEPPER_STEPS = [
             placeholder="Observaciones, condiciones especiales, instrucciones de entrega..."></textarea>
         </div>
 
-      </div><!-- /doc-scroll -->
+      </div><!-- /doc-sections -->
 
       }
+
+        </div><!-- /doc-inner -->
+      </div><!-- /doc-scroll -->
 
       <!-- Mobile sticky footer -->
       <div class="doc-mobile-footer">
@@ -601,21 +633,28 @@ const STEPPER_STEPS = [
           </button>
         }
       </div>
-
     </div>
   `,
   styles: [`
     /* ── Page wrapper ──────────────────────────────────────────────────────── */
     .doc-page {
+      flex: 1;
+      display: flex; flex-direction: column;
+      width: 100%; box-sizing: border-box;
+      min-height: 0;
+    }
+    .doc-scroll {
       flex: 1; overflow-y: auto;
+    }
+    .doc-inner {
       display: flex; flex-direction: column; gap: 1.25rem;
       max-width: 1120px; margin: 0 auto;
       padding: 24px 32px 3rem; width: 100%; box-sizing: border-box;
     }
-    @media (max-width: 768px) { .doc-page { padding: 20px 16px 2rem; } }
+    @media (max-width: 768px) { .doc-inner { padding: 20px 16px 2rem; } }
     .doc-page--saving { pointer-events: none; opacity: 0.6; }
     .doc-loading { display: flex; justify-content: center; padding: 5rem; }
-    .doc-scroll { display: flex; flex-direction: column; gap: 1.25rem; }
+    .doc-sections { display: flex; flex-direction: column; gap: 1.25rem; }
 
     /* ── Top bar ───────────────────────────────────────────────────────────── */
     .doc-topbar {
@@ -670,7 +709,7 @@ const STEPPER_STEPS = [
     }
     .stepper-step {
       display: flex; flex-direction: column; align-items: center; gap: 4px;
-      min-width: 60px;
+      min-width: 60px; cursor: default; user-select: none;
     }
     .stepper-dot {
       width: 26px; height: 26px; border-radius: 50%;
@@ -768,7 +807,10 @@ const STEPPER_STEPS = [
       color: var(--color-text-soft); font-weight: 500; font-size: var(--font-size-sm);
     }
     .required { color: var(--color-danger-text); }
-    .field-locked { opacity: 0.7; pointer-events: none; }
+    .field-locked { pointer-events: none; position: relative; }
+    .field-disabled { pointer-events: none; opacity: 0.5; cursor: not-allowed; }
+    .field-locked .lf-value { color: var(--color-text-muted); }
+    .field-locked .lf-label::after { content: ' (no editable)'; font-size: 10px; color: var(--color-text-muted); font-weight: 400; }
     .field-hint {
       font-size: 11px; color: var(--color-text-muted); font-style: italic;
     }
@@ -844,6 +886,15 @@ const STEPPER_STEPS = [
       padding: 0.5rem 1rem; text-align: center;
       font-size: 11px; color: var(--color-text-muted); font-style: italic;
     }
+
+    .product-result-skeleton {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 14px; gap: 12px;
+    }
+    .product-result-skeleton + .product-result-skeleton {
+      border-top: 1px solid var(--color-border-subtle);
+    }
+    .prs__left { display: flex; flex-direction: column; gap: 6px; flex: 1; }
 
     .product-result {
       display: flex; align-items: center; gap: 0.75rem;
@@ -989,6 +1040,11 @@ const STEPPER_STEPS = [
       font-size: var(--font-size-sm);
       transition: border-color var(--transition-fast), background var(--transition-fast), box-shadow var(--transition-fast);
     }
+    .cell-readonly {
+      display: inline-block; padding: 0.375rem 0.5rem;
+      font-size: var(--font-size-sm); color: var(--color-text-muted);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
+    }
     .cell-in:hover { border-color: var(--color-border-light); background: var(--color-bg-hover); }
     .cell-in:focus {
       outline: none; border-color: var(--color-accent-interactive);
@@ -1011,39 +1067,97 @@ const STEPPER_STEPS = [
     @media (max-width: 768px) {
       .items-table-wrap { display: none; }
       .items-mobile {
-        display: flex; flex-direction: column; gap: 0.75rem; padding: 0.75rem;
+        display: flex; flex-direction: column; gap: 10px;
+        margin-top: 10px; margin-bottom: 4px;
       }
-      .mobile-item-card {
+
+      /* ── Mobile item card (mic) ─────────────────────────────────────── */
+      .mic {
         border: 1px solid var(--color-border-light);
-        border-radius: var(--radius-md); padding: 0.875rem;
+        border-radius: var(--radius-lg); padding: 0;
         background: var(--color-bg-surface);
+        overflow: hidden;
+        transition: box-shadow 0.3s ease, border-color 0.3s ease;
       }
-      .mobile-item-card__head {
-        display: flex; justify-content: space-between; align-items: flex-start;
-        margin-bottom: 0.75rem; gap: 0.5rem;
+      .mic--highlight {
+        border-color: var(--color-accent-interactive);
+        box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent-interactive) 20%, transparent);
       }
-      .mobile-item-card__name {
-        font-weight: var(--font-weight-semibold); font-size: var(--font-size-sm);
-        color: var(--color-text-main); display: block;
+      .mic__head {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 12px 14px; gap: 10px;
+        background: var(--color-bg-canvas);
+        border-bottom: 1px solid var(--color-border-subtle);
       }
-      .mobile-item-card__sku { font-family: monospace; font-size: 11px; color: var(--color-text-muted); }
-      .mobile-item-card__fields { display: grid; grid-template-columns: 1fr 1fr; gap: 0.625rem; }
-      .mobile-item-card__field {
-        display: flex; flex-direction: column; gap: 3px;
+      .mic__head-info { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; }
+      .mic__idx {
+        flex-shrink: 0; width: 24px; height: 24px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        background: var(--color-accent-interactive); color: #fff;
+        font-size: 11px; font-weight: 700;
+      }
+      .mic__name-wrap { min-width: 0; flex: 1; }
+      .mic__name {
+        font-weight: 600; font-size: 13px; color: var(--color-text-main);
+        display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      }
+      .mic__meta { display: flex; gap: 8px; margin-top: 2px; }
+      .mic__sku { font-family: monospace; font-size: 10px; color: var(--color-text-muted); }
+      .mic__um {
+        font-size: 10px; color: var(--color-info-text); font-weight: 600;
+        background: var(--color-info-bg); padding: 1px 6px; border-radius: 99px;
+      }
+      .mic__del {
+        flex-shrink: 0; width: 34px; height: 34px; border-radius: var(--radius-sm);
+        border: 1px solid var(--color-border-light); background: var(--color-bg-surface);
+        color: var(--color-text-muted); cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        transition: all var(--transition-fast);
+      }
+      .mic__del:active { background: var(--color-danger-bg); color: var(--color-danger-text); border-color: var(--color-danger-text); }
+
+      /* Fields grid */
+      .mic__grid {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+        padding: 12px 14px;
+      }
+      .mic__field {
+        display: flex; flex-direction: column; gap: 4px;
         label {
-          font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em;
-          color: var(--color-text-muted); font-weight: var(--font-weight-semibold);
-        }
-        .cell-in {
-          min-height: 40px; font-size: 15px;
-          border: 1px solid var(--color-border-light);
-          border-radius: var(--radius-sm); padding: 0.5rem;
+          font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em;
+          color: var(--color-text-muted); font-weight: 600;
         }
       }
-      .mobile-item-card .del-btn { opacity: 1; }
-      .mobile-item-card__total {
-        font-weight: var(--font-weight-bold); font-size: 15px;
-        color: var(--color-text-main); padding: 0.5rem 0;
+      .mic__input {
+        width: 100%; min-height: 42px; font-size: 16px; box-sizing: border-box;
+        border: 1px solid var(--color-border-light); border-radius: var(--radius-sm);
+        padding: 8px 10px; background: var(--color-bg-canvas); color: var(--color-text-main);
+        text-align: right; -moz-appearance: textfield;
+        transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+      }
+      .mic__input:focus {
+        outline: none; border-color: var(--color-accent-interactive);
+        box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent-interactive) 15%, transparent);
+      }
+      .mic__input::-webkit-inner-spin-button,
+      .mic__input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+      .mic__field--total {
+        background: var(--color-bg-hover); border-radius: var(--radius-sm);
+        padding: 8px 10px; justify-content: center;
+      }
+      .mic__total {
+        font-weight: 700; font-size: 16px; color: var(--color-text-main);
+        text-align: right;
+      }
+
+      /* Tax pills */
+      .mic__taxes {
+        display: flex; gap: 6px; flex-wrap: wrap;
+        padding: 0 14px 12px;
+      }
+      .mic__tax-pill {
+        font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 99px;
+        background: var(--color-warning-bg); color: var(--color-warning-text);
       }
     }
 
@@ -1100,14 +1214,12 @@ const STEPPER_STEPS = [
       }
 
       /* Topbar: simplified, scrolls with content */
-      .doc-topbar { padding: 12px 16px; }
+      .doc-topbar { padding: 0; }
       .doc-topbar__actions { display: none; }
 
-      /* Scrollable content area */
-      .doc-scroll {
-        flex: 1; overflow-y: auto;
+      /* Form sections in mobile */
+      .doc-sections {
         display: flex; flex-direction: column; gap: 1rem;
-        padding: 0 16px 24px;
       }
 
       /* Mobile sticky footer */
@@ -1141,7 +1253,7 @@ const STEPPER_STEPS = [
 
     /* Mobile flat: remove cards, content sits directly on canvas */
     @media (max-width: 600px) {
-      .doc-page { gap: 0.75rem; }
+      // .doc-page { gap: 0.75rem; }
 
       /* Document header → flat */
       .doc-header {
@@ -1184,11 +1296,9 @@ const STEPPER_STEPS = [
       .field-error-border { border: none; }
       .field-error-border .doc-section__head { border-bottom-color: var(--color-danger-text); }
 
-      /* Mobile item cards */
-      .mobile-item-card {
-        background: var(--color-bg-surface); border-radius: var(--radius-md);
-      }
-      .mobile-item-card .del-btn { opacity: 1; }
+      /* Mobile item cards - flat mode */
+      .mic { border-color: var(--color-border-subtle); }
+      .mic__head { background: transparent; }
 
       /* Totals → full width, flat bg */
       .totals-block {
@@ -1207,7 +1317,8 @@ const STEPPER_STEPS = [
     @media (max-width: 480px) {
       .doc-topbar__actions { grid-template-columns: 1fr; }
       .doc-header__number { font-size: 1.1rem; }
-      .mobile-item-card { padding: 0.75rem; }
+      .mic__grid { gap: 8px; }
+      .mic__input { min-height: 38px; font-size: 15px; padding: 6px 8px; }
       .t-row { gap: 1rem; }
       .t-grand { gap: 1rem; }
     }
@@ -1216,13 +1327,15 @@ const STEPPER_STEPS = [
 export class PurchaseOrderFormComponent implements OnInit {
   private fb = inject(FormBuilder);
   private orderService = inject(PurchaseOrderService);
+  private authService = inject(AuthService);
   private branchService = inject(BranchService);
   private warehouseSvc = inject(WarehouseService);
   private toastService = inject(ToastService);
   private confirmService = inject(ConfirmService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
-  private http = inject(HttpClient);
+  private supplierService = inject(SupplierService);
+  private productService = inject(ProductService);
   private taxSvc = inject(TaxService);
   private destroy$ = new Subject<void>();
 
@@ -1252,6 +1365,7 @@ export class PurchaseOrderFormComponent implements OnInit {
 
   // Branch / Warehouse display
   selectedBranchName = signal('');
+  warehouseSelectKey = signal(0);
   selectedWarehouseName = signal('');
 
   // Search select initial values
@@ -1277,7 +1391,7 @@ export class PurchaseOrderFormComponent implements OnInit {
   private productSearch$ = new Subject<string>();
 
   showProductResults = computed(() =>
-    this.productSearchFocused() && (this.productSearchQuery().length >= 1 || this.productResults().length > 0)
+    this.productSearchFocused() && (this.productSearchQuery().length >= 1 || this.productResults().length > 0 || this.isSearchingProducts())
   );
 
   // ─── Reactive Form ────────────────────────────────────────────────────────
@@ -1350,13 +1464,11 @@ export class PurchaseOrderFormComponent implements OnInit {
 
   // ─── Tax helpers ──────────────────────────────────────────────────────────
 
-  searchTaxesFn = (query: string) =>
-    this.taxSvc.findAllSimple().pipe(
-      map((taxes: any[]) => ({
-        data: taxes
-          .filter(t => t.name.toLowerCase().includes(query.toLowerCase()))
-          .map(t => ({ value: t.id, label: `${t.name} (${t.percentage}%)`, extra: t } as SearchSelectOption)),
-        hasMore: false
+  searchTaxesFn = (query: string, page: number = 1) =>
+    this.taxSvc.findAll({ search: query || undefined, page, limit: 20, filterModel: { isActive: { filterType: 'boolean', type: 'equals', filter: true } } }).pipe(
+      map(res => ({
+        data: (res.data ?? []).map(t => ({ value: t.id, label: `${t.name} (${t.percentage}%)`, extra: t } as SearchSelectOption)).reverse(),
+        hasMore: (res.data ?? []).length === 20
       }))
     );
 
@@ -1416,10 +1528,9 @@ export class PurchaseOrderFormComponent implements OnInit {
   };
 
   supplierSearchFn = (query: string, page: number): Observable<{ data: SearchSelectOption[]; hasMore: boolean }> => {
-    const params = new HttpParams().set('search', query).set('page', page).set('limit', 20);
-    return this.http.get<any>(`${environment.apiUrl}/business/suppliers`, { params }).pipe(
+    return this.supplierService.findAll({ search: query, page, limit: 20 }).pipe(
       map(res => {
-        const list: any[] = res?.data?.data ?? res?.data ?? [];
+        const list: any[] = res?.data ?? [];
         return {
           data: list.map(s => ({
             value: s.id,
@@ -1502,6 +1613,7 @@ export class PurchaseOrderFormComponent implements OnInit {
     });
     this.itemsArray.push(fg);
     this._itemsMeta.update(metas => [...metas, {
+      variantId: product.variantId,
       variantLabel: product.label,
       productName: product.productName,
       variantName: product.variantName,
@@ -1509,7 +1621,6 @@ export class PurchaseOrderFormComponent implements OnInit {
       unitId: product.baseUnitId,
       taxDetails: (product.taxes ?? []).map((t: any) => ({ id: t.taxId, name: t.name, percentage: Number(t.percentage) })),
     }]);
-    this._variantIds.update(ids => [...ids, product.variantId]);
 
     // Clear search
     this.productSearchQuery.set('');
@@ -1532,47 +1643,43 @@ export class PurchaseOrderFormComponent implements OnInit {
   // ─── Lifecycle ────────────────────────────────────────────────────────────
 
   ngOnInit() {
-    this.form.valueChanges.subscribe(() => this.calcTrigger.update(v => v + 1));
+    this.form.valueChanges.pipe(debounceTime(150), takeUntil(this.destroy$)).subscribe(() => this.calcTrigger.update(v => v + 1));
 
     // Product search debounced pipe
     this.productSearch$.pipe(
       debounceTime(300),
       distinctUntilChanged(),
+      switchMap(query => {
+        if (query.length < 2) {
+          this.productResults.set([]);
+          this.isSearchingProducts.set(false);
+          return of(null);
+        }
+        this.isSearchingProducts.set(true);
+        return this.productService.searchVariantsAdvanced({ search: query, page: 1, limit: 10, isPurchasable: true }).pipe(
+          finalize(() => this.isSearchingProducts.set(false))
+        );
+      }),
       takeUntil(this.destroy$),
-    ).subscribe(query => {
-      if (query.length < 2) {
-        this.productResults.set([]);
-        this.isSearchingProducts.set(false);
-        return;
-      }
-      this.isSearchingProducts.set(true);
-      const params = new HttpParams()
-        .set('search', query)
-        .set('page', '1')
-        .set('limit', '10')
-        .set('isPurchasable', 'true');
-      this.http.get<any>(`${environment.apiUrl}/business/products/variants/search`, { params }).pipe(
-        finalize(() => this.isSearchingProducts.set(false))
-      ).subscribe(res => {
-        const payload = res?.data ?? res;
-        const list: any[] = payload?.data ?? payload ?? [];
-        this.productResults.set(list.map(v => ({
-          variantId: v.variantId,
-          label: `${v.productName}${v.variantName ? ' — ' + v.variantName : ''}`,
-          productName: v.productName,
-          variantName: v.variantName ?? '',
-          sku: v.sku ?? '',
-          costPrice: v.costPrice ?? 0,
-          unitAbbreviation: v.unitAbbreviation ?? '',
-          baseUnitId: v.baseUnitId ?? null,
-          taxes: v.taxes ?? [],
-        })));
-        this.productResultsHasMore.set(payload?.hasMore ?? false);
-        this.highlightedResultIndex.set(0);
-      });
+    ).subscribe(res => {
+      if (!res) return;
+      const list: any[] = res.data ?? [];
+      this.productResults.set(list.map(v => ({
+        variantId: v.variantId,
+        label: `${v.productName}${v.variantName ? ' — ' + v.variantName : ''}`,
+        productName: v.productName,
+        variantName: v.variantName ?? '',
+        sku: v.sku ?? '',
+        costPrice: v.costPrice ?? 0,
+        unitAbbreviation: v.unitAbbreviation ?? '',
+        baseUnitId: v.baseUnitId ?? null,
+        taxes: v.taxes ?? [],
+      })));
+      this.productResultsHasMore.set(res?.hasMore ?? false);
+      this.highlightedResultIndex.set(0);
     });
 
-    this.branchService.findAll({ limit: 100 }).subscribe(res => this.branchesRaw.set(res as any));
+    this.authService.getMyBranches().pipe(takeUntil(this.destroy$)).subscribe(branches => this.branchesRaw.set({ data: branches }));
 
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
@@ -1658,6 +1765,7 @@ export class PurchaseOrderFormComponent implements OnInit {
     });
     this.itemsArray.push(fg);
     this._itemsMeta.update(metas => [...metas, {
+      variantId: item.variantId,
       variantLabel: item.variantName ? `${item.productName} — ${item.variantName}` : (item.productName ?? item.variantId),
       productName: item.productName ?? '',
       variantName: item.variantName ?? '',
@@ -1665,34 +1773,23 @@ export class PurchaseOrderFormComponent implements OnInit {
       unitId: item.unitId ?? null,
       taxDetails: (item.taxes ?? []).map((t: any) => ({ id: t.taxId, name: t.taxName?.split(' (')[0] ?? '', percentage: +t.taxRate })),
     }]);
-    this._variantIds.update(ids => [...ids, item.variantId]);
   }
 
-  // Keep legacy search-select fn for backward compat (used nowhere now but safe)
   variantSearchFn = (query: string, page: number): Observable<{ data: SearchSelectOption[]; hasMore: boolean }> => {
-    const params = new HttpParams()
-      .set('search', query)
-      .set('page', String(page))
-      .set('limit', '20')
-      .set('isPurchasable', 'true');
-    return this.http.get<any>(`${environment.apiUrl}/business/products/variants/search`, { params }).pipe(
-      map(res => {
-        const payload = res?.data ?? res;
-        const list: any[] = payload?.data ?? payload ?? [];
-        return {
-          data: list.map(v => ({
-            value: v.variantId,
-            label: `${v.productName}${v.variantName ? ' — ' + v.variantName : ''}`,
-            description: `SKU: ${v.sku ?? '—'}`,
-            meta: { sku: v.sku, productName: v.productName, variantName: v.variantName, costPrice: v.costPrice, baseUnitId: v.baseUnitId, unitAbbreviation: v.unitAbbreviation, taxes: v.taxes ?? [] }
-          })),
-          hasMore: payload?.hasMore ?? false
-        };
-      })
+    return this.productService.searchVariantsAdvanced({ search: query, page, limit: 20, isPurchasable: true }).pipe(
+      map(res => ({
+        data: (res.data ?? []).map((v: any) => ({
+          value: v.variantId,
+          label: `${v.productName}${v.variantName ? ' — ' + v.variantName : ''}`,
+          description: `SKU: ${v.sku ?? '—'}`,
+          meta: { sku: v.sku, productName: v.productName, variantName: v.variantName, costPrice: v.costPrice, baseUnitId: v.baseUnitId, unitAbbreviation: v.unitAbbreviation, taxes: v.taxes ?? [] }
+        })),
+        hasMore: res.hasMore ?? false
+      }))
     );
   };
 
-  private _variantIds = signal<string[]>([]);
+  private _variantIds = computed(() => this._itemsMeta().map(m => m.variantId));
   private _getVariantId(index: number): string { return this._variantIds()[index] ?? ''; }
 
   async removeItem(index: number) {
@@ -1710,7 +1807,6 @@ export class PurchaseOrderFormComponent implements OnInit {
     }
     this.itemsArray.removeAt(index);
     this._itemsMeta.update(m => m.filter((_, i) => i !== index));
-    this._variantIds.update(ids => ids.filter((_, i) => i !== index));
   }
 
   // ─── Handlers ─────────────────────────────────────────────────────────────
@@ -1722,11 +1818,28 @@ export class PurchaseOrderFormComponent implements OnInit {
     this.form.get('branchId')!.setValue(b?.value ?? '');
     this.selectedBranchName.set(b?.label ?? '');
 
-    // Reset warehouse when branch changes
+    // Reset warehouse when branch changes — force search-select recreation
     if (prevBranchId !== (b?.value ?? '')) {
       this.form.get('warehouseId')!.setValue('');
       this.initialWarehouse.set(undefined);
       this.selectedWarehouseName.set('');
+      this.warehouseSelectKey.update(k => k + 1);
+
+      // Auto-select warehouse if only one exists for this branch
+      if (b?.value) {
+        this.warehouseSvc.findAll({ branchId: b.value, limit: 2, isActive: true }).pipe(
+          takeUntil(this.destroy$),
+        ).subscribe(res => {
+          const warehouses = res.data ?? [];
+          if (warehouses.length === 1) {
+            const w = warehouses[0];
+            this.form.get('warehouseId')!.setValue(w.id);
+            this.initialWarehouse.set({ value: w.id, label: w.name });
+            this.selectedWarehouseName.set(w.name);
+            this.warehouseSelectKey.update(k => k + 1);
+          }
+        });
+      }
     }
   }
 

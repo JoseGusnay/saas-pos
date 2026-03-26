@@ -93,4 +93,14 @@ export class WarehouseService {
   removeLocation(id: string): Observable<void> {
     return this.http.delete<void>(`${this.locationsUrl}/${id}`, { withCredentials: true });
   }
+
+  findLocation(id: string): Observable<Location> {
+    return this.http.get<ApiResponse<Location>>(`${this.locationsUrl}/${id}`, { withCredentials: true })
+      .pipe(map(r => r.data));
+  }
+
+  getLocationLogs(id: string): Observable<any[]> {
+    return this.http.get<ApiResponse<any[]>>(`${this.locationsUrl}/${id}/logs`, { withCredentials: true })
+      .pipe(map(r => r.data));
+  }
 }

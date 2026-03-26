@@ -264,6 +264,26 @@
     </div>
   </app-drawer>
 
+  <!-- Location History -->
+  <app-drawer
+    [isOpen]="isLocationHistoryOpen()"
+    [title]="'Historial — ' + (locationHistoryTarget()?.name ?? 'Ubicación')"
+    (close)="isLocationHistoryOpen.set(false)"
+  >
+    <div drawerBody class="history-container">
+      @if (isLocationHistoryLoading()) {
+        <div class="history-loading">
+          <app-spinner></app-spinner>
+          <span>Cargando historial...</span>
+        </div>
+      } @else if (mappedLocationLogs().length > 0) {
+        <app-dateline [items]="mappedLocationLogs()"></app-dateline>
+      } @else {
+        <p style="text-align:center;color:var(--color-text-muted);padding:2rem">Sin historial de cambios.</p>
+      }
+    </div>
+  </app-drawer>
+
   <!-- Confirm close unsaved -->
   <app-modal
     [isOpen]="isConfirmCloseOpen()"
@@ -276,7 +296,7 @@
       <app-form-button label="Continuar editando" variant="ghost" type="button" [fullWidth]="false"
         (click)="isConfirmCloseOpen.set(false)"></app-form-button>
       <app-form-button label="Salir sin guardar" variant="danger" type="button" [fullWidth]="false"
-        (click)="forceCloseEditDrawer(); forceCloseLocationDrawer()"></app-form-button>
+        (click)="forceCloseActiveDrawer()"></app-form-button>
     </div>
   </app-modal>
 

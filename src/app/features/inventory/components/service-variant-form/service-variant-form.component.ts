@@ -67,14 +67,11 @@ export class ServiceVariantFormComponent {
     else if (!event)           { this._taxOptions.set([]); this.taxOptionsChange.emit([]); }
   }
 
-  searchTaxesFn = (query: string) =>
-    this.taxSvc.findAllSimple().pipe(
-      map((taxes: any[]) => {
-        const filtered = taxes.filter(t => t.name.toLowerCase().includes(query.toLowerCase()));
-        return {
-          data: filtered.map(t => ({ value: t.id, label: `${t.name} (${t.percentage}%)` } as SearchSelectOption)),
-          hasMore: false
-        };
-      })
+  searchTaxesFn = (query: string, page: number = 1) =>
+    this.taxSvc.findAll({ search: query || undefined, page, limit: 20, filterModel: { isActive: { filterType: 'boolean', type: 'equals', filter: true } } }).pipe(
+      map(res => ({
+        data: (res.data ?? []).map(t => ({ value: t.id, label: `${t.name} (${t.percentage}%)` } as SearchSelectOption)).reverse(),
+        hasMore: (res.data ?? []).length === 20
+      }))
     );
 }

@@ -83,4 +83,23 @@ export class PurchaseOrderService {
   remove(id: string): Observable<any> {
     return this.http.delete<any>(`${this.apiUrl}/${id}`).pipe(map(r => r?.data ?? r));
   }
+
+  downloadPdf(id: string): void {
+    this.http.get(`${this.apiUrl}/${id}/pdf`, {
+      responseType: 'blob', withCredentials: true,
+    }).subscribe(blob => {
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `orden-compra.pdf`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    });
+  }
+
+  sendWhatsApp(id: string): Observable<{ success: boolean; message: string }> {
+    return this.http.post<any>(`${this.apiUrl}/${id}/send-whatsapp`, {}, { withCredentials: true }).pipe(
+      map(res => res?.data ?? res)
+    );
+  }
 }

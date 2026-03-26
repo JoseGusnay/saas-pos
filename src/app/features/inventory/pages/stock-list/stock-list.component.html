@@ -1,0 +1,360 @@
+<div class="stock-page">
+  <app-page-header
+    title="Stock"
+    [tabs]="stockTabs"
+    [activeTab]="activeTab()"
+    (tabChange)="onTabChange($event)"
+  ></app-page-header>
+
+  <!-- ─── Branch selector ─────────────────────────────────────── -->
+  @if (showBranchSelector()) {
+    <div class="branch-selector">
+      <ng-icon name="lucideBuilding2" size="14"></ng-icon>
+      <span class="branch-selector__label">Sucursal</span>
+      <app-custom-select size="sm" [options]="branchOptions()" [value]="selectedBranchId()" (valueChange)="onBranchChange($event)"></app-custom-select>
+    </div>
+  }
+
+  <!-- ─── Dashboard Stats (solo en tab Niveles) ─────────────── -->
+  @if (activeTab() === 'Niveles') {
+    <div class="stats-bar">
+      <div class="stat-card">
+        <div class="stat-card__icon stat-card__icon--info"><ng-icon name="lucidePackage" size="18"></ng-icon></div>
+        <div class="stat-card__content">
+          <span class="stat-card__value">{{ totalItems() }}</span>
+          <span class="stat-card__label">Total registros</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__icon stat-card__icon--warning"><ng-icon name="lucideAlertTriangle" size="18"></ng-icon></div>
+        <div class="stat-card__content">
+          <span class="stat-card__value">{{ lowStockCount() }}</span>
+          <span class="stat-card__label">Stock bajo</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__icon stat-card__icon--danger"><ng-icon name="lucideXCircle" size="18"></ng-icon></div>
+        <div class="stat-card__content">
+          <span class="stat-card__value">{{ outOfStockCount() }}</span>
+          <span class="stat-card__label">Sin stock</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__icon stat-card__icon--success"><ng-icon name="lucideCheckCircle2" size="18"></ng-icon></div>
+        <div class="stat-card__content">
+          <span class="stat-card__value">{{ okCount() }}</span>
+          <span class="stat-card__label">Nivel normal</span>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ═══════ Tab: Niveles ═══════ -->
+  @if (activeTab() === 'Niveles') {
+    <app-list-toolbar
+      searchPlaceholder="Buscar producto o SKU..."
+      [searchQuery]="searchQuery()"
+      [activeFiltersCount]="activeFiltersCount()"
+      [viewMode]="viewModePreference()"
+      (searchChange)="onSearch($event)"
+      (clearFilters)="clearFilters()"
+      (viewModeChange)="viewModePreference.set($event)"
+    ></app-list-toolbar>
+    <div class="toolbar-extras">
+      <div class="toolbar-filter">
+        <ng-icon name="lucideWarehouse" size="14"></ng-icon>
+        <span class="toolbar-filter__label">Bodega</span>
+        <app-custom-select size="sm" [options]="warehouseOptions()" [value]="warehouseFilter()" (valueChange)="onWarehouseChange($event)"></app-custom-select>
+      </div>
+      <label class="low-stock-toggle">
+        <input type="checkbox" [ngModel]="showLowStock()" (ngModelChange)="showLowStock.set($event)" />
+        Solo bajo stock
+      </label>
+    </div>
+
+    <div [ngClass]="viewMode() === 'grid' ? 'stock-grid' : 'stock-list'">
+      @if (isLoading()) {
+        @for (n of [1,2,3,4,5,6]; track n) {
+          @if (viewMode() === 'grid') {
+            <div class="skel-card">
+              <div class="skel-card__top"><app-skeleton width="60%" height="14px"></app-skeleton><app-skeleton width="28px" height="28px" shape="circle"></app-skeleton></div>
+              <app-skeleton width="40%" height="10px"></app-skeleton>
+              <app-skeleton width="80px" height="32px"></app-skeleton>
+              <app-skeleton width="100%" height="6px" radius="99px"></app-skeleton>
+              <div class="skel-card__bot"><app-skeleton width="50%" height="10px"></app-skeleton><app-skeleton width="70px" height="18px" radius="99px"></app-skeleton></div>
+            </div>
+          } @else {
+            <div class="skel-row"><app-skeleton width="40px" height="40px" radius="10px"></app-skeleton><div style="flex:1;display:flex;flex-direction:column;gap:4px"><app-skeleton width="180px" height="14px"></app-skeleton><app-skeleton width="120px" height="10px"></app-skeleton></div><app-skeleton width="60px" height="24px"></app-skeleton><app-skeleton width="80px" height="18px" radius="99px"></app-skeleton><app-skeleton width="28px" height="28px" shape="circle"></app-skeleton></div>
+          }
+        }
+      } @else if (levels().length > 0) {
+        @for (level of levels(); track level.id) {
+          @if (viewMode() === 'grid') {
+            <!-- ── Grid Card ── -->
+            <div class="level-card" [class]="'level-card--' + getLevelStatus(level)" role="button" tabindex="0" (click)="openKardex(level)" (keydown.enter)="openKardex(level)" (keydown.space)="$event.preventDefault(); openKardex(level)">
+              <div class="level-card__top">
+                <div class="level-card__info">
+                  <span class="level-card__product">{{ level.productName }}</span>
+                  <span class="level-card__variant">{{ level.variantName }}</span>
+                  <span class="level-card__sku">{{ level.sku }}</span>
+                </div>
+                <div (click)="$event.stopPropagation()">
+                  <app-actions-menu [actions]="levelActions" (actionClick)="handleLevelAction($event, level)"></app-actions-menu>
+                </div>
+              </div>
+              <div class="level-card__qty-row">
+                <span class="level-card__qty" [class]="'qty--' + getLevelStatus(level)">{{ level.quantity }}</span>
+                <span class="level-card__unit">uds.</span>
+              </div>
+              @if (level.minimumStock != null || level.maximumStock != null) {
+                <div class="level-card__progress">
+                  <div class="progress-track">
+                    <div class="progress-fill" [class]="'fill--' + getLevelStatus(level)" [style.width.%]="getStockProgress(level)"></div>
+                  </div>
+                  <div class="level-card__minmax">
+                    @if (level.minimumStock != null) { <span>Mín: {{ level.minimumStock }}</span> }
+                    @if (level.maximumStock != null) { <span>Máx: {{ level.maximumStock }}</span> }
+                  </div>
+                </div>
+              }
+              <div class="level-card__footer">
+                <span class="level-card__wh"><ng-icon name="lucideWarehouse" size="12"></ng-icon> {{ level.warehouseName }}</span>
+                <span class="level-badge" [class]="getLevelStatus(level)">{{ getLevelStatusLabel(level) }}</span>
+              </div>
+            </div>
+          } @else {
+            <!-- ── List Row ── -->
+            <div class="level-row" role="button" tabindex="0" (click)="openKardex(level)" (keydown.enter)="openKardex(level)" (keydown.space)="$event.preventDefault(); openKardex(level)">
+              <div class="level-row__icon"><ng-icon name="lucidePackage" size="18"></ng-icon></div>
+              <div class="level-row__main">
+                <span class="level-row__product">{{ level.productName }} — {{ level.variantName }}</span>
+                <span class="level-row__sku">{{ level.sku }}</span>
+              </div>
+              <div class="level-row__qty-col">
+                <span class="level-row__qty" [class]="'qty--' + getLevelStatus(level)">{{ level.quantity }}</span>
+                @if (level.minimumStock != null || level.maximumStock != null) {
+                  <div class="progress-track progress-track--sm"><div class="progress-fill" [class]="'fill--' + getLevelStatus(level)" [style.width.%]="getStockProgress(level)"></div></div>
+                }
+              </div>
+              <span class="level-row__wh"><ng-icon name="lucideWarehouse" size="12"></ng-icon> {{ level.warehouseName }}</span>
+              <span class="level-badge" [class]="getLevelStatus(level)">{{ getLevelStatusLabel(level) }}</span>
+              <div class="level-row__actions" (click)="$event.stopPropagation()">
+                <app-actions-menu [actions]="levelActions" (actionClick)="handleLevelAction($event, level)"></app-actions-menu>
+              </div>
+            </div>
+          }
+        }
+      } @else {
+        <div class="stock-empty">
+          <app-empty-state
+            icon="lucidePackage"
+            [title]="searchQuery() ? 'Sin resultados' : 'Sin registros de stock'"
+            [description]="searchQuery() ? 'Intenta con otros términos.' : 'El stock se actualiza al recibir mercancía o ajustar manualmente.'"
+            [actionLabel]="searchQuery() ? 'Limpiar búsqueda' : 'Crear orden de compra'"
+            (action)="searchQuery() ? clearFilters() : goToPurchaseOrders()"
+          ></app-empty-state>
+        </div>
+      }
+    </div>
+
+    @if (levels().length > 0) {
+      <app-pagination [totalItems]="totalItems()" [pageSize]="pageSize()" [currentPage]="currentPage()" (pageChange)="currentPage.set($event)"></app-pagination>
+    }
+  }
+
+  <!-- ═══════ Tab: Movimientos ═══════ -->
+  @if (activeTab() === 'Movimientos') {
+    <app-list-toolbar searchPlaceholder="Buscar producto o SKU..." [searchQuery]="movSearchQuery()" (searchChange)="onMovSearch($event)"></app-list-toolbar>
+    <div class="toolbar-extras">
+      <div class="toolbar-filter">
+        <ng-icon name="lucideWarehouse" size="14"></ng-icon>
+        <span class="toolbar-filter__label">Bodega</span>
+        <app-custom-select size="sm" [options]="warehouseOptions()" [value]="warehouseFilter()" (valueChange)="onWarehouseChange($event); movPage.set(1)"></app-custom-select>
+      </div>
+      <div class="toolbar-filter">
+        <ng-icon name="lucideArrowUpDown" size="14"></ng-icon>
+        <span class="toolbar-filter__label">Tipo</span>
+        <app-custom-select size="sm" [options]="movTypeOptions" [value]="movTypeFilter()" (valueChange)="movTypeFilter.set($any($event)); movPage.set(1)"></app-custom-select>
+      </div>
+    </div>
+
+    <div class="movements-list">
+      @if (isMovLoading()) {
+        @for (n of [1,2,3,4,5]; track n) {
+          <div class="skel-row"><app-skeleton width="90px" height="22px" radius="99px"></app-skeleton><div style="flex:1;display:flex;flex-direction:column;gap:4px"><app-skeleton width="200px" height="14px"></app-skeleton><app-skeleton width="140px" height="10px"></app-skeleton></div><app-skeleton width="60px" height="20px"></app-skeleton></div>
+        }
+      } @else if (movements().length > 0) {
+        @for (mov of movements(); track mov.id) {
+          <div class="mov-row">
+            <span class="mov-badge" [class]="'type--' + mov.type">{{ getMovTypeLabel(mov.type) }}</span>
+            <div class="mov-row__main">
+              <span class="mov-row__product">{{ mov.productName }} — {{ mov.variantName }}</span>
+              <span class="mov-row__sub">{{ mov.warehouseName }} · {{ mov.sku }}</span>
+            </div>
+            <div class="mov-row__change" [class]="isOutType(mov.type) ? 'out' : 'in'">
+              <ng-icon [name]="isOutType(mov.type) ? 'lucideArrowDown' : 'lucideArrowUp'" size="14"></ng-icon>
+              {{ isOutType(mov.type) ? '-' : '+' }}{{ mov.quantity }}
+            </div>
+            <div class="mov-row__stock">
+              {{ mov.stockBefore }} <ng-icon name="lucideChevronRight" size="12"></ng-icon> <strong>{{ mov.stockAfter }}</strong>
+            </div>
+            <div class="mov-row__meta">
+              <span>{{ mov.userName || 'Sistema' }}</span>
+              <span>{{ mov.createdAt | date:'dd/MM/yyyy HH:mm' }}</span>
+            </div>
+            @if (mov.notes) { <span class="mov-row__notes">{{ mov.notes }}</span> }
+          </div>
+        }
+      } @else {
+        <div class="stock-empty">
+          <app-empty-state
+            icon="lucideClipboardList"
+            title="Sin movimientos"
+            [description]="movSearchQuery() ? 'Intenta con otros términos de búsqueda.' : 'No hay movimientos registrados con los filtros seleccionados.'"
+            [actionLabel]="movSearchQuery() ? 'Limpiar búsqueda' : undefined"
+            (action)="onMovSearch('')"
+          ></app-empty-state>
+        </div>
+      }
+    </div>
+    @if (movements().length > 0) {
+      <app-pagination [totalItems]="movTotalItems()" [pageSize]="movPageSize()" [currentPage]="movPage()" (pageChange)="movPage.set($event)"></app-pagination>
+    }
+  }
+
+  <!-- ═══════ Tab: Alertas ═══════ -->
+  @if (activeTab() === 'Alertas') {
+    <div class="toolbar-extras">
+      <div class="toolbar-filter">
+        <ng-icon name="lucideWarehouse" size="14"></ng-icon>
+        <span class="toolbar-filter__label">Bodega</span>
+        <app-custom-select size="sm" [options]="warehouseOptions()" [value]="warehouseFilter()" (valueChange)="onWarehouseChange($event)"></app-custom-select>
+      </div>
+      @if (alerts().length > 0) {
+        <span class="alert-counter">{{ alerts().length }} alerta{{ alerts().length > 1 ? 's' : '' }}</span>
+      }
+    </div>
+
+    @if (isAlertLoading()) {
+      <div class="stock-grid">
+        @for (n of [1,2,3]; track n) {
+          <div class="skel-card"><app-skeleton width="100%" height="140px" radius="12px"></app-skeleton></div>
+        }
+      </div>
+    } @else if (alerts().length > 0) {
+      <div class="stock-grid">
+        @for (alert of alerts(); track alert.variantId + alert.branchId) {
+          <div class="alert-card" [class]="'alert-card--' + alert.alertLevel">
+            <div class="alert-card__header">
+              <div class="alert-card__icon" [class]="'icon--' + alert.alertLevel">
+                <ng-icon [name]="alert.alertLevel === 'OUT_OF_STOCK' ? 'lucideXCircle' : alert.alertLevel === 'OVER_STOCK' ? 'lucideArrowUp' : 'lucideAlertTriangle'" size="20"></ng-icon>
+              </div>
+              <div class="alert-card__info">
+                <span class="alert-card__product">{{ alert.productName }}</span>
+                <span class="alert-card__variant">{{ alert.variantName }} · {{ alert.sku }}</span>
+              </div>
+            </div>
+            <div class="alert-card__body">
+              <div class="alert-card__metrics">
+                <div class="alert-metric">
+                  <span class="alert-metric__label">Stock actual</span>
+                  <span class="alert-metric__value" [class]="'qty--' + alert.alertLevel">{{ alert.quantity }}</span>
+                </div>
+                @if (alert.minimumStock != null) {
+                  <div class="alert-metric">
+                    <span class="alert-metric__label">Mínimo</span>
+                    <span class="alert-metric__value">{{ alert.minimumStock }}</span>
+                  </div>
+                }
+                @if (alert.maximumStock != null && alert.alertLevel === 'OVER_STOCK') {
+                  <div class="alert-metric">
+                    <span class="alert-metric__label">Máximo</span>
+                    <span class="alert-metric__value">{{ alert.maximumStock }}</span>
+                  </div>
+                }
+              </div>
+              @if (alert.minimumStock != null && alert.alertLevel !== 'OVER_STOCK') {
+                <div class="progress-track">
+                  <div class="progress-fill" [class]="alert.alertLevel === 'OUT_OF_STOCK' ? 'fill--out-of-stock' : 'fill--low-stock'"
+                    [style.width.%]="alert.minimumStock > 0 ? Math.min(100, (alert.quantity / alert.minimumStock) * 100) : 0"></div>
+                </div>
+              }
+            </div>
+            <div class="alert-card__footer">
+              <span class="alert-badge" [class]="alert.alertLevel === 'OUT_OF_STOCK' ? 'out-of-stock' : alert.alertLevel === 'OVER_STOCK' ? 'over-stock' : 'low-stock'">
+                {{ alertLevelLabel(alert.alertLevel) }}
+              </span>
+              <span class="alert-card__wh"><ng-icon name="lucideWarehouse" size="12"></ng-icon> {{ alert.warehouseName }}</span>
+            </div>
+            <div class="alert-card__actions">
+              <app-form-button label="Ajustar" icon="lucideArrowUpDown" variant="primary" type="button" [fullWidth]="false" (click)="openAdjustFromAlert(alert)"></app-form-button>
+              <app-form-button label="Kardex" icon="lucideClipboardList" variant="ghost" type="button" [fullWidth]="false" (click)="openKardexFromAlert(alert)"></app-form-button>
+            </div>
+          </div>
+        }
+      </div>
+    } @else {
+      <div class="stock-empty">
+        <app-empty-state icon="lucideCheckCircle2" title="Sin alertas activas" description="Todos los productos tienen niveles de stock aceptables."></app-empty-state>
+      </div>
+    }
+  }
+
+  <!-- ═══════ Drawer: Ajustar Stock ═══════ -->
+  <app-drawer [isOpen]="isAdjustOpen()" title="Ajustar Stock" (close)="isAdjustOpen.set(false)" size="sm">
+    <div drawerBody>
+      @if (adjustTarget()) {
+        <div class="drawer-hero">
+          <span class="drawer-hero__product">{{ adjustTarget()!.productName }} — {{ adjustTarget()!.variantName }}</span>
+          <span class="drawer-hero__current" [class]="'qty--' + getLevelStatus(adjustTarget()!)">Stock actual: {{ adjustTarget()!.quantity }}</span>
+        </div>
+        <div class="drawer-form">
+          <div class="form-group"><label>Bodega *</label><app-custom-select [options]="adjustWarehouseOptions()" [value]="adjustWarehouseId()" (valueChange)="onAdjustWarehouseChange($event)"></app-custom-select></div>
+          @if (showAdjustLocations()) { <div class="form-group"><label>Ubicación</label><app-custom-select [options]="adjustLocationOptions()" [value]="adjustLocationId()" (valueChange)="adjustLocationId.set($event)"></app-custom-select></div> }
+          @if (showAdjustLots()) { <div class="form-group"><label>Lote</label><app-custom-select [options]="adjustLotOptions()" [value]="adjustLotId()" (valueChange)="adjustLotId.set($event)"></app-custom-select></div> }
+          <div class="form-group">
+            <label>Nueva cantidad *</label>
+            <input type="number" class="form-control" min="0" [(ngModel)]="adjustNewQty" placeholder="0" />
+            @if (adjustNewQty !== null && adjustNewQty !== adjustTarget()!.quantity) {
+              <span class="qty-diff" [class]="adjustNewQty > adjustTarget()!.quantity ? 'diff-up' : 'diff-down'">
+                {{ adjustNewQty > adjustTarget()!.quantity ? '+' : '' }}{{ adjustNewQty - adjustTarget()!.quantity }} unidades
+              </span>
+            }
+          </div>
+          <div class="form-group"><label>Motivo / Notas</label><textarea class="form-control" rows="3" [(ngModel)]="adjustNotes" placeholder="Ej: Conteo físico, merma, reposición..."></textarea></div>
+        </div>
+      }
+    </div>
+    <div drawerFooter class="drawer-footer">
+      <app-form-button label="Cancelar" variant="secondary" [disabled]="isAdjusting()" (click)="isAdjustOpen.set(false)"></app-form-button>
+      <app-form-button label="Guardar Ajuste" loadingLabel="Guardando..." icon="lucideArrowUpDown" [loading]="isAdjusting()" [disabled]="isAdjusting() || !adjustWarehouseId() || adjustNewQty === null || adjustNewQty < 0 || adjustNewQty === adjustTarget()?.quantity" (click)="confirmAdjust()"></app-form-button>
+    </div>
+  </app-drawer>
+
+  <!-- ═══════ Drawer: Transferir ═══════ -->
+  <app-drawer [isOpen]="isTransferOpen()" title="Transferir Stock" (close)="isTransferOpen.set(false)" size="sm">
+    <div drawerBody>
+      @if (transferTarget()) {
+        <div class="drawer-hero">
+          <span class="drawer-hero__product">{{ transferTarget()!.productName }} — {{ transferTarget()!.variantName }}</span>
+          <span class="drawer-hero__current">Stock disponible: {{ transferTarget()!.quantity }}</span>
+        </div>
+        <div class="drawer-form">
+          <div class="form-group"><label>Bodega origen *</label><app-custom-select [options]="transferSourceWarehouseOptions()" [value]="transferSourceWarehouseId()" (valueChange)="onTransferSourceWarehouseChange($event)"></app-custom-select></div>
+          @if (showTransferSourceLoc()) { <div class="form-group"><label>Ubicación origen</label><app-custom-select [options]="transferSourceLocationOptions()" [value]="transferSourceLocationId()" (valueChange)="transferSourceLocationId.set($event)"></app-custom-select></div> }
+          <div class="form-group"><label>Bodega destino *</label><app-custom-select [options]="transferDestWarehouseOptions()" [value]="transferDestWarehouseId()" (valueChange)="onTransferDestWarehouseChange($event)"></app-custom-select></div>
+          @if (showTransferDestLoc()) { <div class="form-group"><label>Ubicación destino</label><app-custom-select [options]="transferDestLocationOptions()" [value]="transferDestLocationId()" (valueChange)="transferDestLocationId.set($event)"></app-custom-select></div> }
+          <div class="form-group">
+            <label>Cantidad a transferir *</label>
+            <input type="number" class="form-control" min="1" [max]="transferTarget()!.quantity" [(ngModel)]="transferQty" placeholder="0" />
+            @if (transferQty && transferQty > transferTarget()!.quantity) { <span class="qty-diff diff-down">Excede el stock disponible</span> }
+          </div>
+        </div>
+      }
+    </div>
+    <div drawerFooter class="drawer-footer">
+      <app-form-button label="Cancelar" variant="secondary" [disabled]="isTransferring()" (click)="isTransferOpen.set(false)"></app-form-button>
+      <app-form-button label="Transferir" loadingLabel="Transfiriendo..." icon="lucideArrowLeftRight" [loading]="isTransferring()" [disabled]="isTransferring() || !transferSourceWarehouseId() || !transferDestWarehouseId() || !transferQty || transferQty <= 0 || transferQty > transferTarget()!.quantity" (click)="confirmTransfer()"></app-form-button>
+    </div>
+  </app-drawer>
+</div>
