@@ -80,7 +80,7 @@
     --state-focus: #1A237E;
 
     /* ── Gradients ─────────────────────────────────────────────────────── */
-    --gradient-primary: linear-gradient(135deg, #000666 0%, #1A237E 100%);
+    --gradient-primary: linear-gradient(135deg, #1A237E 0%, #3949AB 100%);
 
     /* ═══════════════════════════════════════════════════════════════════════
        LEGACY MAPPINGS (consumed by all existing components)
@@ -246,7 +246,7 @@
     --color-primary-subtle: rgba(159, 168, 255, 0.1);
     --color-primary-lightest: #2A2F7A;
 
-    --gradient-primary: linear-gradient(135deg, #1A237E 0%, #3949AB 100%);
+    --gradient-primary: linear-gradient(135deg, #7986CB 0%, #9FA8FF 100%);
 
     /* ── Legacy Overrides ──────────────────────────────────────────────── */
     --color-border-main: rgba(255, 255, 255, 0.14);

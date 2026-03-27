@@ -33,6 +33,7 @@
   &.modal--sm { width: 380px; }
   &.modal--md { width: 480px; }
   &.modal--lg { width: 640px; }
+  &.modal--xl { width: 860px; }
 
   @media (max-width: 768px) {
     /* Mobile: Estilo Bottom Sheet (Desde Abajo) */

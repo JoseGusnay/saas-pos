@@ -1,8 +1,21 @@
 <div class="toast-wrapper">
-    <div class="toast-item" *ngFor="let toast of toastService.toasts()" [ngClass]="'toast-item--' + toast.type">
-
+    <div
+        class="toast-item"
+        *ngFor="let toast of toastService.toasts()"
+        [ngClass]="[
+            'toast-item--' + toast.type,
+            toast.undoFn ? 'toast-item--glass' : ''
+        ]"
+    >
+        <div class="toast-item__indicator" *ngIf="toast.undoFn"></div>
         <ng-icon [name]="getIconName(toast.type)" class="toast-item__icon"></ng-icon>
         <span class="toast-item__message">{{ toast.message }}</span>
-
+        <button
+            *ngIf="toast.undoFn"
+            class="toast-item__undo"
+            (click)="toastService.triggerUndo(toast.id)"
+        >
+            DESHACER
+        </button>
     </div>
 </div>

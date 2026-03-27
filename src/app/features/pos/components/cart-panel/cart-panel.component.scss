@@ -1,0 +1,662 @@
+/* =========================================================================
+   CartPanel — POS shopping cart sidebar
+   ========================================================================= */
+
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--surface-container-lowest);
+}
+
+/* ── Header (B1-B3, D2) ────────────────────────────────────────────────── */
+
+.cart-panel__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: var(--spacing-lg) var(--spacing-xl);
+  box-shadow: 0 1px 0 var(--color-border-light);
+  flex-shrink: 0;
+}
+
+.cart-panel__title {
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+  line-height: var(--line-height-tight);
+  letter-spacing: -0.01em;
+}
+
+.cart-panel__subtitle {
+  margin: var(--spacing-xs) 0 0;
+  font-size: 0.6875rem;
+  color: var(--text-muted);
+  font-weight: var(--font-weight-medium);
+}
+
+.cart-panel__customer-link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--color-primary);
+  font-size: inherit;
+  font-weight: var(--font-weight-semibold);
+  font-family: inherit;
+  cursor: pointer;
+  transition: color var(--transition-fast);
+
+  &:hover {
+    color: var(--color-primary-container);
+    text-decoration: underline;
+  }
+}
+
+.cart-panel__icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+
+  &:hover:not(:disabled) {
+    background: var(--state-hover);
+    color: var(--text-primary);
+  }
+
+  &:disabled {
+    opacity: 0.25;
+    cursor: not-allowed;
+    border-color: transparent;
+  }
+
+  &--danger:hover:not(:disabled) {
+    background: var(--color-error-container);
+    border-color: var(--color-error);
+    color: var(--color-error);
+  }
+}
+
+/* ── Empty state (A2, A3) ──────────────────────────────────────────────── */
+
+.cart-panel__empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-lg);
+  color: var(--text-muted);
+  padding: var(--spacing-3xl);
+  opacity: 0.9;
+
+  ng-icon {
+    opacity: 0.3;
+  }
+}
+
+.cart-panel__empty-title {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.cart-panel__empty-sub {
+  margin: 0;
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  text-align: center;
+  line-height: var(--line-height-relaxed, 1.5);
+}
+
+/* ── Items list ─────────────────────────────────────────────────────────── */
+
+.cart-panel__items {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--spacing-md) var(--spacing-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+
+  // Thin styled scrollbar (#1 — visible scroll indicator)
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-light) transparent;
+
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: var(--color-border-light);
+    border-radius: 100px;
+  }
+}
+
+/* ── Single item (card style) ──────────────────────────────────────────── */
+
+.cart-panel__item {
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: var(--surface-container-low);
+  border-radius: var(--radius-lg);
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+
+  &:hover {
+    background: var(--surface-container);
+  }
+
+  &--selected {
+    background: var(--color-primary-fixed);
+    border-color: var(--color-primary);
+
+    .cart-panel__item-name {
+      color: var(--color-primary);
+    }
+  }
+}
+
+/* ── Remove button (inline, part of the row) ─────────────────────────── */
+
+.cart-panel__remove-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--color-error-container);
+  color: var(--color-error);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  margin-left: var(--spacing-xs);
+
+  &:hover {
+    background: var(--color-error);
+    color: var(--color-on-error);
+  }
+
+  &:active {
+    transform: scale(0.9);
+  }
+}
+
+/* ── Item top row (qty badge + info + total) ───────────────────────────── */
+
+.cart-panel__item-top {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-md);
+}
+
+.cart-panel__qty-badge {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-container-lowest);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  color: var(--color-primary);
+  transition: all var(--transition-fast);
+
+  // #6 — bounce feedback on quantity change
+  &--bounce {
+    animation: qty-bounce 0.25s ease;
+  }
+}
+
+@keyframes qty-bounce {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.25); }
+  100% { transform: scale(1); }
+}
+
+.cart-panel__item-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.cart-panel__item-name {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+  line-height: var(--line-height-tight);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color var(--transition-fast);
+}
+
+.cart-panel__item-variant {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  line-height: var(--line-height-tight);
+}
+
+.cart-panel__item-sku {
+  font-size: 0.625rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-family: monospace;
+  margin-top: 2px;
+}
+
+.cart-panel__line-total {
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+/* ── Modifiers ──────────────────────────────────────────────────────────── */
+
+.cart-panel__item-modifiers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+  margin-top: var(--spacing-sm);
+  padding-left: calc(36px + var(--spacing-md));
+}
+
+.cart-panel__modifier-badge {
+  display: inline-block;
+  padding: 1px var(--spacing-sm);
+  font-size: 0.5625rem;
+  font-weight: var(--font-weight-bold);
+  text-transform: uppercase;
+  color: var(--color-primary);
+  background: var(--color-primary-subtle);
+  border-radius: 100px;
+  line-height: 1.6;
+  white-space: nowrap;
+}
+
+/* ── Expanded controls (selected item) ─────────────────────────────────── */
+
+.cart-panel__item-expanded {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-md);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--color-border-subtle);
+  animation: expand-in 0.2s ease;
+}
+
+@keyframes expand-in {
+  from { opacity: 0; max-height: 0; transform: translateY(-4px); }
+  to   { opacity: 1; max-height: 120px; transform: translateY(0); }
+}
+
+.cart-panel__item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+
+  &--end {
+    justify-content: flex-end;
+  }
+}
+
+// ── Stepper (larger for POS touch) ──────────────────────────────────────
+
+.cart-panel__qty {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  flex-shrink: 0;
+  background: var(--surface-container-lowest);
+}
+
+.cart-panel__qty-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+
+  &:hover {
+    background: var(--state-hover);
+    color: var(--color-primary);
+  }
+
+  &:active {
+    background: var(--state-active);
+    transform: scale(0.9);
+  }
+}
+
+.cart-panel__qty-input {
+  width: 40px;
+  min-width: 40px;
+  height: 36px;
+  text-align: center;
+  font-size: var(--font-size-base);
+  font-weight: 700;
+  color: var(--text-primary);
+  background: transparent;
+  border: none;
+  border-left: 1px solid var(--color-border-light);
+  border-right: 1px solid var(--color-border-light);
+  outline: none;
+  -moz-appearance: textfield;
+  font-family: var(--font-family-sans);
+
+  &::-webkit-inner-spin-button,
+  &::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  &:focus {
+    background: var(--color-bg-input-focus);
+    color: var(--color-primary);
+  }
+}
+
+.cart-panel__unit-price {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+// ── Discount chip toggle ────────────────────────────────────────────────
+
+.cart-panel__discount-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px dashed var(--color-border-light);
+  border-radius: 100px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.6875rem;
+  font-family: var(--font-family-sans);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+
+  &:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+    background: var(--color-primary-subtle);
+  }
+}
+
+.cart-panel__discount {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  color: var(--text-muted);
+  flex-shrink: 0;
+  animation: expand-in 0.15s ease;
+}
+
+.cart-panel__discount-suffix {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-muted);
+}
+
+.cart-panel__discount-input {
+  width: 44px;
+  padding: var(--spacing-xs) var(--spacing-xs);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  background: var(--surface-container-lowest);
+  color: var(--text-primary);
+  font-size: var(--font-size-xs);
+  text-align: center;
+  outline: none;
+  transition: border-color var(--transition-fast);
+  -moz-appearance: textfield;
+
+  &::-webkit-inner-spin-button,
+  &::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  &:focus {
+    border-color: var(--color-border-focus);
+    background: var(--color-bg-input-focus);
+  }
+}
+
+/* ── Footer (C5-C7, D3) ────────────────────────────────────────────────── */
+
+.cart-panel__footer {
+  flex-shrink: 0;
+  box-shadow: 0 -1px 0 var(--color-border-light);
+  background: var(--surface-container-lowest);
+  padding: var(--spacing-lg) var(--spacing-xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.cart-panel__totals {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.cart-panel__totals-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+
+  &--discount {
+    color: var(--color-success);
+  }
+
+  &--total {
+    padding-top: var(--spacing-md);
+    border-top: 1px solid var(--color-border-light);
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-xs);
+
+    .cart-panel__totals-label {
+      font-size: 0.625rem;
+      font-weight: var(--font-weight-bold);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+    }
+
+    .cart-panel__totals-value {
+      font-size: clamp(1.5rem, 4vw, 2.25rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1;
+      color: var(--text-primary);
+    }
+  }
+}
+
+/* ── Notes (#10 — popover, doesn't push pay button) ─────────────────────── */
+
+.cart-panel__notes {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.cart-panel__notes-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+  transition: color var(--transition-fast);
+  font-family: var(--font-family-sans);
+
+  &:hover {
+    color: var(--color-primary);
+  }
+
+  &--active {
+    color: var(--color-primary);
+  }
+}
+
+.cart-panel__notes-popover {
+  position: absolute;
+  bottom: calc(100% + var(--spacing-sm));
+  left: 0;
+  right: 0;
+  padding: var(--spacing-md);
+  background: var(--surface-container-lowest);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  z-index: 5;
+  animation: notes-slide-up 0.15s ease;
+}
+
+@keyframes notes-slide-up {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.cart-panel__notes-input {
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  background: var(--surface-container);
+  color: var(--text-primary);
+  font-size: var(--font-size-xs);
+  font-family: var(--font-family-sans);
+  resize: vertical;
+  outline: none;
+  transition: border-color var(--transition-fast);
+
+  &::placeholder {
+    color: var(--color-placeholder);
+  }
+
+  &:focus {
+    border-color: var(--color-border-focus);
+    box-shadow: var(--shadow-input-focus);
+  }
+}
+
+/* ── Expandable hint (#9 — show items are tappable) ────────────────────── */
+
+.cart-panel__expand-hint {
+  display: none;
+  font-size: 0.5625rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: var(--spacing-xs);
+  padding-left: calc(36px + var(--spacing-md));
+
+  @media (hover: none) {
+    display: block;
+  }
+}
+
+.cart-panel__item:first-child .cart-panel__expand-hint {
+  display: block;
+}
+
+/* ── Pay button ─────────────────────────────────────────────────────────── */
+
+.cart-panel__pay-btn {
+  width: 100%;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  border: none;
+  border-radius: var(--radius-lg);
+  background: var(--gradient-primary);
+  color: var(--color-on-primary);
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  font-family: var(--font-family-sans);
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  box-shadow: var(--shadow-md);
+
+  &:hover:not(:disabled) {
+    box-shadow: var(--shadow-lg);
+    filter: brightness(1.05);
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.98);
+    box-shadow: var(--shadow-sm);
+  }
+
+  &:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+}
+
+// #11 — pay button total amount
+.cart-panel__pay-amount {
+  font-size: var(--font-size-lg);
+  font-weight: 800;
+}
+
+// #12 — keyboard shortcut badge (inside gradient button, needs contrast with --color-on-primary)
+.cart-panel__kbd {
+  display: none;
+  padding: 1px var(--spacing-xs);
+  font-size: 0.5625rem;
+  font-weight: var(--font-weight-bold);
+  background: color-mix(in srgb, var(--color-on-primary) 20%, transparent);
+  border-radius: var(--radius-sm);
+  letter-spacing: 0.04em;
+
+  @media (hover: hover) {
+    display: inline-block;
+  }
+}

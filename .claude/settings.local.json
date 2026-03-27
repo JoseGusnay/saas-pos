@@ -26,7 +26,14 @@
       "Bash(find 'C:\\\\Users\\\\usuario\\\\Documents\\\\proyects personal\\\\angular\\\\saas-pos\\\\src' -type f -name *.ts -path */layout/* -exec grep -l selector: {})",
       "Bash(2)",
       "Skill(update-config)",
-      "Bash(cd:*)"
+      "Bash(cd:*)",
+      "Bash(pushd \"c:/Users/usuario/Documents/proyects personal/netsjs/multitenant-backend\")",
+      "Bash(popd)",
+      "Bash(find 'c:/Users/usuario/Documents/proyects personal/netsjs/multitenant-backend/src/modules/b2b/taxes' -type f -name *.ts)",
+      "Bash(grep -E \"\\\\.\\(ts\\)$\")",
+      "Bash(find '/c/Users/usuario/Documents/proyects personal/netsjs/multitenant-backend/src/migrations' -type f -name *.ts)",
+      "Bash(find '/c/Users/usuario/Documents/proyects personal/netsjs/multitenant-backend/src' -path */migrations/* -name *.ts -type f)",
+      "Bash(find '/c/Users/usuario/Documents/proyects personal/netsjs/multitenant-backend/src/database/migrations/tenant' -name *.ts -type f)"
     ]
   }
 }

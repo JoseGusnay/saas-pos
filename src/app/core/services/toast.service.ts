@@ -6,6 +6,7 @@ export interface ToastMessage {
     id: string;
     message: string;
     type: ToastType;
+    undoFn?: () => void;
 }
 
 @Injectable({
@@ -27,6 +28,18 @@ export class ToastService {
         }, durationMs);
     }
 
+    showWithUndo(message: string, undoFn: () => void, durationMs: number = 5000) {
+        const id = Math.random().toString(36).substring(2, 9);
+
+        this.toastsSignal.update((currentToasts) => {
+            return [...currentToasts, { id, message, type: 'success', undoFn }];
+        });
+
+        setTimeout(() => {
+            this.remove(id);
+        }, durationMs);
+    }
+
     success(message: string, duration?: number) {
         this.show(message, 'success', duration);
     }
@@ -37,6 +50,14 @@ export class ToastService {
 
     info(message: string, duration?: number) {
         this.show(message, 'info', duration);
+    }
+
+    triggerUndo(id: string) {
+        const toast = this.toastsSignal().find(t => t.id === id);
+        if (toast?.undoFn) {
+            toast.undoFn();
+            this.remove(id);
+        }
     }
 
     remove(id: string) {

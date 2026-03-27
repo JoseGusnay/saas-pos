@@ -35,7 +35,7 @@ import { lucideX } from '@ng-icons/lucide';
 export class ModalComponent {
   @Input() isOpen = false;
   @Input() title = '';
-  @Input() size: 'sm' | 'md' | 'lg' = 'md';
+  @Input() size: 'sm' | 'md' | 'lg' | 'xl' = 'md';
   @Input() allowClose = true;
   @Output() close = new EventEmitter<void>();
 

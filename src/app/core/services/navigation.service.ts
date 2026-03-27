@@ -54,6 +54,14 @@ export class NavigationService {
       route: '/cash-register'
     },
 
+    { type: 'section', label: 'Ventas' },
+    {
+      type: 'item',
+      label: 'Clientes',
+      icon: 'lucideUsers',
+      route: '/clientes'
+    },
+
     { type: 'section', label: 'Inventario' },
     {
       type: 'group',

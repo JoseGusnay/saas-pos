@@ -69,6 +69,11 @@ import {
   lucideRuler,
   lucideFlaskConical,
   lucideBarcode,
+  lucideTrash2,
+  lucideMessageSquare,
+  lucideLoader,
+  lucideReceipt,
+  lucidePrinter,
 } from '@ng-icons/lucide';
 
 registerLocaleData(localeEs);
@@ -155,6 +160,11 @@ export const appConfig: ApplicationConfig = {
       lucideRuler,
       lucideFlaskConical,
       lucideBarcode,
+      lucideTrash2,
+      lucideMessageSquare,
+      lucideLoader,
+      lucideReceipt,
+      lucidePrinter,
     })
   ],
 };

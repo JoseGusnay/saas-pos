@@ -8,6 +8,11 @@ export const routes: Routes = [
         loadChildren: () => import('./features/auth/auth.routes').then(m => m.AUTH_ROUTES)
     },
     {
+        path: 'pos',
+        canActivate: [authGuardFn],
+        loadChildren: () => import('./features/pos/pos.routes').then(m => m.POS_ROUTES),
+    },
+    {
         path: '',
         component: AppShellComponent,
         canActivate: [authGuardFn],
@@ -22,6 +27,11 @@ export const routes: Routes = [
                 path: 'inventario',
                 loadChildren: () => import('./features/inventory/inventory.routes').then(m => m.INVENTORY_ROUTES),
                 data: { breadcrumb: 'Inventario' }
+            },
+            {
+                path: 'clientes',
+                loadChildren: () => import('./features/customers/customers.routes').then(m => m.CUSTOMERS_ROUTES),
+                data: { breadcrumb: 'Clientes' }
             },
             {
                 path: 'configuracion',

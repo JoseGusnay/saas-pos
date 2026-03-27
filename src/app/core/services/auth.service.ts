@@ -157,11 +157,12 @@ export class AuthService {
                 tap(() => {
                     this.state.update((s) => ({
                         ...s,
+                        activeBranchId: branchId,
                         isAuthenticated: true,
                         isLoading: false,
                         error: null,
                     }));
-                    this.router.navigate(['/sucursales']); // Redirección a Shell Principal
+                    this.router.navigate(['/dashboard']);
                 }),
                 catchError((err) => this.handleError(err))
             );
