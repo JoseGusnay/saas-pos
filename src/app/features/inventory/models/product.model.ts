@@ -36,12 +36,35 @@ export interface VariantAttributeValue {
   valueNumber?: number | null;
 }
 
-export interface ComboItem {
-  id?: string;
+export interface ChoiceOption {
+  id: string;
   variantId: string;
   variantName: string;
+  name: string;
+  priceAdjustment: number;
+  isDefault: boolean;
+  sortOrder: number;
+  isActive: boolean;
+}
+
+export interface ChoiceGroup {
+  id: string;
+  name: string;
+  minSelections: number;
+  maxSelections: number;
+  required: boolean;
+  sortOrder: number;
+  options: ChoiceOption[];
+}
+
+export interface ComboItem {
+  id: string;
+  type: 'fixed' | 'choice';
+  variantId: string | null;
+  variantName: string | null;
   quantity: number;
-  sortOrder?: number;
+  sortOrder: number;
+  choiceGroup: ChoiceGroup | null;
   modifierGroups?: ModifierGroup[];
 }
 
@@ -190,7 +213,19 @@ export interface CreateProductPayload {
   imageUrl?: string;
   imagePublicId?: string;
   variants: CreateVariantPayload[];
-  comboItems?: { variantId: string; quantity: number; modifierGroups?: CreateModifierGroupPayload[] }[];
+  comboItems?: {
+    variantId?: string;
+    quantity: number;
+    modifierGroups?: CreateModifierGroupPayload[];
+    choiceGroup?: {
+      name: string;
+      minSelections?: number;
+      maxSelections?: number;
+      required?: boolean;
+      sortOrder?: number;
+      options: { variantId: string; name: string; priceAdjustment?: number; isDefault?: boolean; sortOrder?: number }[];
+    };
+  }[];
   modifierGroups?: CreateModifierGroupPayload[];
 }
 

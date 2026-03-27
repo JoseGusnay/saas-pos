@@ -156,6 +156,7 @@ export class ProductFormPageComponent implements OnInit, HasUnsavedChanges {
   get isCombo() { return this.typeCtrl.value === 'COMBO'; }
   get isRawMaterial() { return this.typeCtrl.value === 'RAW_MATERIAL'; }
   get isComboPriceFixed() { return this.comboPriceModeCtrl.value === 'FIXED'; }
+  get hasChoiceGroups() { return this.comboItems.controls.some(c => c.get('choiceGroup') !== null); }
   get showVariantStep() { return this.hasVariants.value === true; }
 
   // ── Copy contextual por tipo ────────────────────────────────────────────
@@ -351,7 +352,7 @@ export class ProductFormPageComponent implements OnInit, HasUnsavedChanges {
         barcode: v.barcode,
         presentationId: v.presentationId ?? '',
         baseUnitId: v.baseUnitId ?? '',
-        conversionFactor: v.conversionFactor ?? 1,
+        conversionFactor: this.round2(v.conversionFactor) ?? 1,
         costPrice: this.round2(v.costPrice),
         salePrice: this.round2(v.salePrice),
         taxIds: v.variantTaxes?.map((vt: any) => vt.taxId) || [],
@@ -379,15 +380,39 @@ export class ProductFormPageComponent implements OnInit, HasUnsavedChanges {
     if (p.type === 'COMBO' && p.comboItems?.length > 0) {
       this.comboItems.clear();
       p.comboItems.forEach((item: any) => {
-        this.comboItems.push(this.fb.group({
-          productVariantId: [item.variantId, Validators.required],
-          quantity: [item.quantity || 1, [Validators.required, Validators.min(1)]],
-          variantName: [item.variantName ?? ''],
-          productName: [item.productName ?? item.variantName ?? ''],
-          sku: [item.sku ?? ''],
-          salePrice: [item.salePrice ?? 0],
-          modifierGroups: this.fb.array((item.modifierGroups ?? []).map((g: any) => this.buildModGroupFG(g))),
-        }));
+        if (item.type === 'choice' && item.choiceGroup) {
+          // Choice group item
+          const cg = item.choiceGroup;
+          this.comboItems.push(this.fb.group({
+            quantity: [this.round2(item.quantity) || 1, [Validators.required, Validators.min(1)]],
+            choiceGroup: this.fb.group({
+              name: [cg.name ?? '', [Validators.required, Validators.maxLength(100)]],
+              minSelections: [cg.minSelections ?? 1],
+              maxSelections: [cg.maxSelections ?? 1],
+              required: [cg.required ?? true],
+              sortOrder: [cg.sortOrder ?? 0],
+              options: this.fb.array((cg.options ?? []).map((o: any) => this.fb.group({
+                variantId: [o.variantId, Validators.required],
+                name: [o.name ?? o.variantName ?? ''],
+                priceAdjustment: [this.round2(o.priceAdjustment) ?? 0],
+                isDefault: [o.isDefault ?? false],
+                sortOrder: [o.sortOrder ?? 0],
+                salePrice: [this.round2(o.salePrice) ?? 0],
+              }))),
+            }),
+          }));
+        } else {
+          // Fixed item
+          this.comboItems.push(this.fb.group({
+            productVariantId: [item.variantId, Validators.required],
+            quantity: [this.round2(item.quantity) || 1, [Validators.required, Validators.min(1)]],
+            variantName: [item.variantName ?? ''],
+            productName: [item.productName ?? item.variantName ?? ''],
+            sku: [item.sku ?? ''],
+            salePrice: [this.round2(item.salePrice) ?? 0],
+            modifierGroups: this.fb.array((item.modifierGroups ?? []).map((g: any) => this.buildModGroupFG(g))),
+          }));
+        }
       });
     }
   }
@@ -498,6 +523,13 @@ export class ProductFormPageComponent implements OnInit, HasUnsavedChanges {
     });
 
     this.comboPriceModeCtrl.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => this.syncValidators());
+
+    // Force FIXED mode when choice groups exist
+    this.comboItems.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      if (this.hasChoiceGroups && this.comboPriceModeCtrl.value !== 'FIXED') {
+        this.comboPriceModeCtrl.setValue('FIXED', { emitEvent: true });
+      }
+    });
 
     this.syncValidators();
   }
@@ -655,7 +687,7 @@ export class ProductFormPageComponent implements OnInit, HasUnsavedChanges {
       presentationId: [existingVariant?.presentationId ?? ''],
       baseUnitId: [existingVariant?.baseUnitId ?? '',
         this.typeCtrl.value === 'RAW_MATERIAL' ? [Validators.required] : []],
-      conversionFactor: [existingVariant?.conversionFactor ?? 1, [Validators.min(0.0001)]],
+      conversionFactor: [this.round2(existingVariant?.conversionFactor) ?? 1, [Validators.min(0.0001)]],
       costPrice: [this.round2(existingVariant?.costPrice ?? 0), [Validators.min(0)]],
       salePrice: [this.round2(existingVariant?.salePrice ?? null),
         this.typeCtrl.value === 'RAW_MATERIAL' ? [Validators.min(0)] : [Validators.required, Validators.min(0.01)]],
@@ -851,9 +883,27 @@ export class ProductFormPageComponent implements OnInit, HasUnsavedChanges {
       if ((val.type === 'PHYSICAL' || val.type === 'SERVICE') && this.modifierGroups.invalid) return;
     }
 
-    if (val.type === 'COMBO' && this.comboItems.length < 2) {
-      this.toastSvc.error('Un combo debe tener al menos 2 componentes');
-      return;
+    if (val.type === 'COMBO') {
+      if (this.comboItems.length < 2) {
+        this.toastSvc.error('Un combo debe tener al menos 2 componentes');
+        return;
+      }
+      // Validar choice groups: nombre requerido + mínimo 2 opciones
+      for (let i = 0; i < this.comboItems.length; i++) {
+        const ctrl = this.comboItems.at(i);
+        const cg = ctrl.get('choiceGroup');
+        if (cg) {
+          if (!cg.get('name')?.value?.trim()) {
+            this.toastSvc.error(`El grupo de elección #${i + 1} necesita un nombre`);
+            return;
+          }
+          const options = (cg.get('options') as FormArray);
+          if (options.length < 2) {
+            this.toastSvc.error(`El grupo "${cg.get('name')?.value}" necesita al menos 2 opciones`);
+            return;
+          }
+        }
+      }
     }
 
     this.isSubmitting.set(true);
@@ -880,11 +930,34 @@ export class ProductFormPageComponent implements OnInit, HasUnsavedChanges {
         ? this.variants.controls.map(ctrl => this.mapVariant(ctrl.value))
         : [this.mapSimpleVariant(val.simpleVariant, val.name, val.type)],
       comboItems: val.type === 'COMBO' && this.comboItems.length > 0
-        ? this.comboItems.controls.map(c => ({
-            variantId: c.get('productVariantId')?.value,
-            quantity: Number(c.get('quantity')?.value),
-            modifierGroups: this.mapItemModifiers(c.get('modifierGroups') as FormArray)
-          }))
+        ? this.comboItems.controls.map(c => {
+            const choiceGroupCtrl = c.get('choiceGroup');
+            if (choiceGroupCtrl) {
+              const cg = choiceGroupCtrl.value;
+              return {
+                quantity: Number(c.get('quantity')?.value),
+                choiceGroup: {
+                  name: cg.name,
+                  minSelections: cg.minSelections ?? 1,
+                  maxSelections: cg.maxSelections ?? 1,
+                  required: cg.required ?? true,
+                  sortOrder: cg.sortOrder ?? 0,
+                  options: (cg.options ?? []).map((o: any) => ({
+                    variantId: o.variantId,
+                    name: o.name,
+                    priceAdjustment: Number(o.priceAdjustment) || 0,
+                    isDefault: o.isDefault ?? false,
+                    sortOrder: o.sortOrder ?? 0,
+                  })),
+                },
+              };
+            }
+            return {
+              variantId: c.get('productVariantId')?.value,
+              quantity: Number(c.get('quantity')?.value),
+              modifierGroups: this.mapItemModifiers(c.get('modifierGroups') as FormArray),
+            };
+          })
         : undefined,
       modifierGroups: (val.type === 'PHYSICAL' || val.type === 'SERVICE')
         ? this.modifierGroups.controls.map(g => ({

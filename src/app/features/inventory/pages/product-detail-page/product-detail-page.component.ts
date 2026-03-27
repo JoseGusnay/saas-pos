@@ -41,6 +41,8 @@ import { Branch } from '../../../../core/models/branch.models';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { switchMap, catchError, of, tap, forkJoin, map } from 'rxjs';
 import { SpinnerComponent } from '../../../../shared/components/ui/spinner/spinner';
+import { SearchSelectComponent } from '../../../../shared/components/ui/search-select/search-select';
+import { SearchSelectOption } from '../../../../shared/models/search-select.models';
 import { DatelineComponent, DatelineItem } from '../../../../shared/components/ui/dateline/dateline.component';
 import { Product, VariantBranchPrice, ProductBranchSetting } from '../../models/product.model';
 
@@ -49,7 +51,7 @@ type TabId = 'summary' | 'variants' | 'combo' | 'modifiers' | 'prices' | 'visibi
 @Component({
   selector: 'app-product-detail-page',
   standalone: true,
-  imports: [CommonModule, RouterModule, NgIconComponent, SpinnerComponent, DatelineComponent, CurrencyPipe, DatePipe],
+  imports: [CommonModule, RouterModule, NgIconComponent, SpinnerComponent, DatelineComponent, SearchSelectComponent, CurrencyPipe, DatePipe],
   templateUrl: './product-detail-page.component.html',
   styleUrl: './product-detail-page.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -258,6 +260,18 @@ export class ProductDetailPageComponent {
   }
 
   cancelAdd() { this.addingVariantId.set(null); }
+
+  branchSearchFn = (variantId: string) => (query: string) => {
+    const available = this.availableBranches(variantId);
+    const q = query.toLowerCase();
+    const filtered = available.filter(b => !q || b.name.toLowerCase().includes(q));
+    return of({ data: filtered.map(b => ({ value: b.id, label: b.name } as SearchSelectOption)), hasMore: false });
+  };
+
+  onBranchSelect(event: SearchSelectOption | SearchSelectOption[] | null) {
+    const opt = event as SearchSelectOption | null;
+    this.newBranchId.set(opt?.value ?? '');
+  }
 
   confirmAdd(variantId: string) {
     const productId = this.product()?.id;

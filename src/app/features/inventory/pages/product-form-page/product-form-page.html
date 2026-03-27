@@ -186,27 +186,29 @@
                 ></app-combo-builder>
 
                 <div class="pfc__fields pfc__fields--combo-price">
-                  <div class="pff">
-                    <label class="pff__label">Modo de Precio <span class="pff__req">*</span></label>
-                    <div class="pff__radio-group">
-                      <label class="pff__radio-option" [class.pff__radio-option--active]="comboPriceModeCtrl.value === 'CALCULATED'">
-                        <input type="radio" formControlName="comboPriceMode" value="CALCULATED">
-                        <span class="pff__radio-label">
-                          <strong>Calculado</strong>
-                          <small>El precio se calcula en caja sumando los componentes</small>
-                        </span>
-                      </label>
-                      <label class="pff__radio-option" [class.pff__radio-option--active]="comboPriceModeCtrl.value === 'FIXED'">
-                        <input type="radio" formControlName="comboPriceMode" value="FIXED">
-                        <span class="pff__radio-label">
-                          <strong>Precio fijo</strong>
-                          <small>El combo tiene un precio de venta específico</small>
-                        </span>
-                      </label>
+                  @if (!hasChoiceGroups) {
+                    <div class="pff">
+                      <label class="pff__label">Modo de Precio <span class="pff__req">*</span></label>
+                      <div class="pff__radio-group">
+                        <label class="pff__radio-option" [class.pff__radio-option--active]="comboPriceModeCtrl.value === 'CALCULATED'">
+                          <input type="radio" formControlName="comboPriceMode" value="CALCULATED">
+                          <span class="pff__radio-label">
+                            <strong>Calculado</strong>
+                            <small>El precio se calcula en caja sumando los componentes</small>
+                          </span>
+                        </label>
+                        <label class="pff__radio-option" [class.pff__radio-option--active]="comboPriceModeCtrl.value === 'FIXED'">
+                          <input type="radio" formControlName="comboPriceMode" value="FIXED">
+                          <span class="pff__radio-label">
+                            <strong>Precio fijo</strong>
+                            <small>El combo tiene un precio de venta específico</small>
+                          </span>
+                        </label>
+                      </div>
                     </div>
-                  </div>
+                  }
 
-                  @if (isComboPriceFixed) {
+                  @if (isComboPriceFixed || hasChoiceGroups) {
                     <div class="pfc__pricing-row" [formGroup]="simpleVariant">
                       <app-field-input
                         formControlName="salePrice"
