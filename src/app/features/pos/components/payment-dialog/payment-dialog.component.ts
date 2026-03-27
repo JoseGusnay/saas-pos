@@ -20,6 +20,9 @@ import {
   lucidePlus,
   lucideLoader,
   lucideDelete,
+  lucideSmartphone,
+  lucideKeyboard,
+  lucideWalletCards,
 } from '@ng-icons/lucide';
 import { PosCartService } from '../../services/pos-cart.service';
 import { PosPaymentEntry } from '../../models/pos.models';
@@ -52,113 +55,164 @@ interface PaymentEntry {
       lucidePlus,
       lucideLoader,
       lucideDelete,
+      lucideSmartphone,
+      lucideKeyboard,
+      lucideWalletCards,
     }),
   ],
   styleUrls: ['./payment-dialog.component.scss'],
   template: `
-    <div class="pay">
-      <!-- ══════════════ LEFT: Keypad ══════════════ -->
-      <div class="pay__keypad-side">
-        <!-- Display -->
-        <div class="pay__display">
-          <span class="pay__display-label">Monto a ingresar</span>
-          <div class="pay__display-value">
-            {{ keypadBuffer() || '0.00' }}
+    <div class="pay" [class.pay--touch]="forceTouch()">
+      <!-- ── Header: total + mode toggle ────────────────────────── -->
+      <div class="pay__total-bar">
+        <span class="pay__total-label">Total de la venta</span>
+        <span class="pay__total-amount">{{ cart.totals().total | currency: 'USD' }}</span>
+        <button
+          class="pay__mode-toggle"
+          type="button"
+          [title]="forceTouch() ? 'Cambiar a modo teclado' : 'Cambiar a modo táctil'"
+          (click)="forceTouch.set(!forceTouch())"
+        >
+          @if (forceTouch()) {
+            <ng-icon name="lucideSmartphone" size="14" />
+          } @else {
+            <ng-icon name="lucideKeyboard" size="14" />
+          }
+        </button>
+      </div>
+
+      <!-- ── Body: two-column in touch, single in desktop ───────── -->
+      <div class="pay__body">
+        <!-- LEFT: keypad side (touch only) -->
+        <div class="pay__keypad-side">
+          <input
+            #amountInput
+            class="pay__amount-input"
+            type="text"
+            inputmode="decimal"
+            placeholder="0.00"
+            [ngModel]="keypadBuffer()"
+            (ngModelChange)="onAmountInput($event)"
+            (keydown.enter)="addPayment()"
+            autofocus
+          />
+
+          <div class="pay__bills">
+            @for (bill of bills; track bill) {
+              <button class="pay__bill" type="button" (click)="onBill(bill)">
+                {{ '$' + bill }}
+              </button>
+            }
+          </div>
+          <button class="pay__exact-btn" type="button" (click)="setExactAmount()">
+            Monto exacto
+          </button>
+
+          <div class="pay__grid">
+            @for (key of numKeys; track key) {
+              <button class="pay__key" type="button" (click)="onKey(key)">{{ key }}</button>
+            }
+          </div>
+          <div class="pay__grid pay__grid--bottom">
+            <button class="pay__key pay__key--clear" type="button" (click)="onClearKeypad()">C</button>
+            <button class="pay__key" type="button" (click)="onKey('0')">0</button>
+            <button class="pay__key pay__key--dot" type="button" (click)="onKey('.')">.</button>
+            <button class="pay__key pay__key--backspace" type="button" (click)="onBackspace()">
+              <ng-icon name="lucideDelete" size="18" />
+            </button>
           </div>
         </div>
 
-        <!-- Number grid -->
-        <div class="pay__grid">
-          @for (key of numKeys; track key) {
-            <button class="pay__key" (click)="onKey(key)">{{ key }}</button>
-          }
-          <button class="pay__key pay__key--dot" (click)="onKey('.')">.</button>
-          <button class="pay__key pay__key--backspace" (click)="onBackspace()">
-            <ng-icon name="lucideDelete" size="18" />
-          </button>
-        </div>
+        <!-- RIGHT: payment flow -->
+        <div class="pay__flow-side">
+          <!-- Amount input (desktop only, inline) -->
+          <div class="pay__amount-desktop">
+            <input
+              class="pay__amount-input"
+              type="text"
+              inputmode="decimal"
+              placeholder="0.00"
+              [ngModel]="keypadBuffer()"
+              (ngModelChange)="onAmountInput($event)"
+              (keydown.enter)="addPayment()"
+              autofocus
+            />
+            <div class="pay__bills">
+              @for (bill of bills; track bill) {
+                <button class="pay__bill" type="button" (click)="onBill(bill)">
+                  {{ '$' + bill }}
+                </button>
+              }
+              <button class="pay__bill pay__bill--exact" type="button" (click)="setExactAmount()">
+                Exacto
+              </button>
+            </div>
+          </div>
 
-        <!-- Quick actions under keypad -->
-        <div class="pay__quick-row">
-          <button class="pay__quick-btn pay__quick-btn--exact" (click)="setExactAmount()">
-            Monto exacto
+          <!-- Payment methods -->
+          <div class="pay__methods">
+            @for (method of paymentMethods; track method.value) {
+              <button
+                type="button"
+                class="pay__method"
+                [class.pay__method--active]="selectedMethod() === method.value"
+                (click)="selectMethod(method.value)"
+              >
+                <ng-icon [name]="method.icon" size="18" />
+                <span>{{ method.label }}</span>
+              </button>
+            }
+          </div>
+
+          @if (needsReference()) {
+            <div class="pay__ref-field">
+              <label class="pay__ref-label">{{ referenceLabel() }}</label>
+              <input
+                type="text"
+                class="pay__ref-input"
+                [ngModel]="currentReference()"
+                (ngModelChange)="currentReference.set($event)"
+                [placeholder]="referencePlaceholder()"
+              />
+            </div>
+          }
+
+          <button
+            type="button"
+            class="pay__add-btn"
+            [disabled]="!canAddPayment()"
+            (click)="addPayment()"
+          >
+            <ng-icon name="lucidePlus" size="16" />
+            Agregar pago
           </button>
-          <button class="pay__quick-btn" (click)="onClearKeypad()">Limpiar</button>
+
+          @if (payments().length > 0) {
+            <div class="pay__list">
+              <div class="pay__list-title">Pagos registrados</div>
+              @for (payment of payments(); track payment.id) {
+                <div class="pay__list-item">
+                  <div>
+                    <span class="pay__list-method">{{ payment.label }}</span>
+                    @if (payment.reference) {
+                      <span class="pay__list-ref">{{ payment.reference }}</span>
+                    }
+                  </div>
+                  <div class="pay__list-right">
+                    <span class="pay__list-amount">{{ payment.amount | currency: 'USD' }}</span>
+                    <button class="pay__list-remove" (click)="removePayment(payment.id)">
+                      <ng-icon name="lucideX" size="14" />
+                    </button>
+                  </div>
+                </div>
+              }
+            </div>
+          }
         </div>
       </div>
 
-      <!-- ══════════════ RIGHT: Payment flow ══════════════ -->
-      <div class="pay__flow-side">
-        <!-- Sale total header -->
-        <div class="pay__total-bar">
-          <span class="pay__total-label">Total de la venta</span>
-          <span class="pay__total-amount">{{ cart.totals().total | currency: 'USD' }}</span>
-        </div>
-
-        <!-- Payment methods -->
-        <div class="pay__methods">
-          @for (method of paymentMethods; track method.value) {
-            <button
-              type="button"
-              class="pay__method"
-              [class.pay__method--active]="selectedMethod() === method.value"
-              (click)="selectMethod(method.value)"
-            >
-              <ng-icon [name]="method.icon" size="18" />
-              <span>{{ method.label }}</span>
-            </button>
-          }
-        </div>
-
-        <!-- Reference input (non-cash) -->
-        @if (needsReference()) {
-          <div class="pay__ref-field">
-            <label class="pay__ref-label">{{ referenceLabel() }}</label>
-            <input
-              type="text"
-              class="pay__ref-input"
-              [ngModel]="currentReference()"
-              (ngModelChange)="currentReference.set($event)"
-              [placeholder]="referencePlaceholder()"
-            />
-          </div>
-        }
-
-        <!-- Add payment button -->
-        <button
-          type="button"
-          class="pay__add-btn"
-          [disabled]="!canAddPayment()"
-          (click)="addPayment()"
-        >
-          <ng-icon name="lucidePlus" size="16" />
-          Agregar pago
-        </button>
-
-        <!-- Payments list -->
-        @if (payments().length > 0) {
-          <div class="pay__list">
-            <div class="pay__list-title">Pagos registrados</div>
-            @for (payment of payments(); track payment.id) {
-              <div class="pay__list-item">
-                <div>
-                  <span class="pay__list-method">{{ payment.label }}</span>
-                  @if (payment.reference) {
-                    <span class="pay__list-ref">{{ payment.reference }}</span>
-                  }
-                </div>
-                <div class="pay__list-right">
-                  <span class="pay__list-amount">{{ payment.amount | currency: 'USD' }}</span>
-                  <button class="pay__list-remove" (click)="removePayment(payment.id)">
-                    <ng-icon name="lucideX" size="14" />
-                  </button>
-                </div>
-              </div>
-            }
-          </div>
-        }
-
-        <!-- Balance -->
+      <!-- ── Footer: balance + actions (always visible) ──────────── -->
+      <div class="pay__footer">
         <div
           class="pay__balance"
           [class.pay__balance--remaining]="remaining() > 0"
@@ -177,7 +231,6 @@ interface PaymentEntry {
           }
         </div>
 
-        <!-- Confirm / Cancel -->
         <div class="pay__actions">
           <button
             type="button"
@@ -214,13 +267,15 @@ export class PaymentDialogComponent {
   @Output() cancel = new EventEmitter<void>();
 
   readonly paymentMethods = PAYMENT_METHODS;
-  readonly numKeys = ['7', '8', '9', '4', '5', '6', '1', '2', '3', '0'];
+  readonly numKeys = ['7', '8', '9', '4', '5', '6', '1', '2', '3'];
+  readonly bills = [1, 5, 10, 20, 50, 100];
 
   // ── State ──────────────────────────────────────────────────────────────
   readonly payments = signal<PaymentEntry[]>([]);
   readonly selectedMethod = signal<PaymentMethod>('EFECTIVO');
   readonly currentReference = signal('');
   readonly keypadBuffer = signal('');
+  readonly forceTouch = signal(false);
 
   // ── Computed ────────────────────────────────────────────────────────────
   readonly keypadValue = computed(() => {
@@ -264,7 +319,26 @@ export class PaymentDialogComponent {
     return '';
   });
 
-  // ── Keypad actions ─────────────────────────────────────────────────────
+  private emitConfirm(): void {
+    const payloads: CreateSalePaymentPayload[] = this.payments().map((p) => ({
+      amount: p.amount,
+      paymentMethod: p.method,
+      ...(p.reference ? { reference: p.reference } : {}),
+    }));
+    this.confirm.emit(payloads);
+  }
+
+  // ── Amount input (keyboard) ──────────────────────────────────────────
+  onAmountInput(value: string): void {
+    // Allow only valid decimal input
+    const cleaned = value.replace(/[^0-9.]/g, '');
+    const parts = cleaned.split('.');
+    if (parts.length > 2) return;
+    if (parts[1]?.length > 2) return;
+    this.keypadBuffer.set(cleaned);
+  }
+
+  // ── Keypad actions (touch) ──────────────────────────────────────────
   onKey(key: string): void {
     const current = this.keypadBuffer();
     if (key === '.' && current.includes('.')) return;
@@ -291,6 +365,10 @@ export class PaymentDialogComponent {
   selectMethod(method: PaymentMethod): void {
     this.selectedMethod.set(method);
     this.currentReference.set('');
+  }
+
+  onBill(bill: number): void {
+    this.keypadBuffer.set(bill.toFixed(2));
   }
 
   setExactAmount(): void {
@@ -332,13 +410,7 @@ export class PaymentDialogComponent {
 
     if (this.totalPaid() < this.cart.totals().total) return;
 
-    const payloads: CreateSalePaymentPayload[] = this.payments().map((p) => ({
-      amount: p.amount,
-      paymentMethod: p.method,
-      ...(p.reference ? { reference: p.reference } : {}),
-    }));
-
-    this.confirm.emit(payloads);
+    this.emitConfirm();
   }
 
   private round2(n: number): number {

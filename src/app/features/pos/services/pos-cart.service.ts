@@ -98,6 +98,22 @@ export class PosCartService {
     );
   }
 
+  /** Replace modifiers/chosenVariants/prices on an existing cart item (edit flow) */
+  updateItemOptions(
+    uid: string,
+    update: {
+      selectedModifiers: SaleModifierSnapshot[];
+      chosenVariants: { comboItemId: string; variantId: string }[];
+      basePrice: number;
+      modifierTotal: number;
+      unitPrice: number;
+    },
+  ): void {
+    this._items.update(items =>
+      items.map(i => i.uid === uid ? { ...i, ...update } : i)
+    );
+  }
+
   updateDiscount(uid: string, discountPercent: number): void {
     this._items.update(items =>
       items.map(i => i.uid === uid ? { ...i, discountPercent: Math.min(100, Math.max(0, discountPercent)) } : i)

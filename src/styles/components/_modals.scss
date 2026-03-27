@@ -95,6 +95,29 @@
   font-size: var(--font-size-sm);
   color: var(--color-text-muted);
   line-height: 1.5;
+  min-height: 0; // Allow flex children to shrink
+}
+
+// Full-screen bottom sheet variant for mobile (e.g., payment dialog)
+@media (max-width: 768px) {
+  .modal-container.modal--xl {
+    height: 100dvh;
+    max-height: 100dvh;
+    border-radius: 0;
+    border-top: none;
+
+    .modal-body {
+      flex: 1;
+      padding: 0;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .modal-footer {
+      display: none; // Footer actions handled by the component itself
+    }
+  }
 }
 
 .modal-footer {

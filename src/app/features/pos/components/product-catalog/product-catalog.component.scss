@@ -14,8 +14,8 @@
 .pos-catalog__sidebar {
   display: flex;
   flex-direction: column;
-  width: 88px;
-  min-width: 88px;
+  width: 96px;
+  min-width: 96px;
   gap: var(--spacing-xs);
   padding: var(--spacing-sm);
   overflow-y: auto;
@@ -75,7 +75,7 @@
 }
 
 .pos-catalog__cat-label {
-  font-size: 0.625rem;
+  font-size: 0.6875rem;
   font-weight: var(--font-weight-bold);
   text-transform: uppercase;
   letter-spacing: 0.02em;
@@ -239,21 +239,32 @@
 // ── Product grid ─────────────────────────────────────────────────────────────
 .pos-catalog__grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   align-content: start;
-  gap: 24px;
+  gap: 16px;
   overflow-y: auto;
   flex: 1;
   padding: var(--spacing-xs);
 
-  // Hide scrollbar
-  scrollbar-width: none;
+  // Thin styled scrollbar
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-light) transparent;
+
   &::-webkit-scrollbar {
-    display: none;
+    width: 4px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: var(--color-border-light);
+    border-radius: 100px;
   }
 
   @media (min-width: 1280px) {
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
   }
 }
 
@@ -271,6 +282,9 @@
   transition: all 0.3s ease;
   font-family: inherit;
   text-align: left;
+  padding: 0;
+  width: 100%;
+  color: inherit;
 
   &:hover {
     box-shadow: 0 20px 40px rgba(20, 27, 44, 0.04);
@@ -304,7 +318,7 @@
 .pos-catalog__card-image {
   position: relative;
   width: 100%;
-  height: 256px;
+  height: 140px;
   background: var(--surface-container);
   display: flex;
   align-items: center;
@@ -377,15 +391,8 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 20px;
+  padding: 12px 16px;
   flex: 1;
-}
-
-.pos-catalog__card-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 4px;
 }
 
 .pos-catalog__card-sku {
@@ -397,19 +404,8 @@
   font-family: var(--font-family-sans);
 }
 
-.pos-catalog__card-info {
-  color: var(--color-primary);
-  cursor: pointer;
-  transition: transform 0.2s ease;
-  flex-shrink: 0;
-
-  &:hover {
-    transform: scale(1.1);
-  }
-}
-
 .pos-catalog__card-name {
-  font-size: 1.125rem;
+  font-size: var(--font-size-sm);
   font-weight: 700;
   color: var(--text-primary);
   line-height: 1.375;
@@ -418,7 +414,7 @@
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  margin-bottom: 16px;
+  margin-bottom: 8px;
 }
 
 // ── Price + add button row ───────────────────────────────────────────────────
@@ -426,21 +422,12 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 16px;
+  margin-top: 8px;
 }
 
 .pos-catalog__card-price-block {
   display: flex;
   flex-direction: column;
-}
-
-.pos-catalog__card-price-label {
-  display: block;
-  font-size: 10px;
-  font-weight: 700;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: -0.05em;
 }
 
 .pos-catalog__card-price {
@@ -456,7 +443,7 @@
 }
 
 .pos-catalog__card-amount {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   font-weight: 900;
   color: var(--color-primary);
   letter-spacing: -0.05em;
@@ -472,9 +459,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
-  min-width: 44px;
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
   border: none;
   border-radius: var(--radius-md);
   background: var(--surface-container-high);
@@ -530,13 +517,13 @@
   justify-content: space-between;
   background: var(--surface-container-low);
   border-radius: 12px;
-  padding: 20px;
+  padding: 12px 16px;
   border: 2px dashed rgba(69, 70, 82, 0.3);
   animation: pos-skeleton-pulse 2s ease-in-out infinite;
 }
 
 .pos-catalog__skeleton-image {
-  height: 192px;
+  height: 120px;
   border-radius: 8px;
   background: var(--surface-container-high);
   display: flex;
@@ -649,18 +636,172 @@
   }
 }
 
-// ── Responsive ───────────────────────────────────────────────────────────────
-@media (max-width: 768px) {
+// ── Tablet (768px – 1024px) ─────────────────────────────────────────────────
+
+@media (min-width: 768px) and (max-width: 1024px) {
   .pos-catalog__sidebar {
-    width: 64px;
-    min-width: 64px;
+    width: 72px;
+    min-width: 72px;
+  }
+
+  .pos-catalog__grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: var(--spacing-md);
+  }
+
+  .pos-catalog__card-image {
+    height: 120px;
+  }
+
+  .pos-catalog__card-body {
+    padding: 10px 12px;
+  }
+
+  .pos-catalog__card-name {
+    font-size: var(--font-size-sm);
+    margin-bottom: var(--spacing-xs);
+  }
+}
+
+// ── Mobile (< 768px) ────────────────────────────────────────────────────────
+
+@media (max-width: 767px) {
+  // Flip layout from row to column
+  .pos-catalog {
+    flex-direction: column;
+  }
+
+  // Horizontal scrollable category strip
+  .pos-catalog__sidebar {
+    flex-direction: row;
+    width: 100%;
+    min-width: auto;
+    height: auto;
+    overflow-x: auto;
+    overflow-y: hidden;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--radius-md);
+    flex-shrink: 0;
+  }
+
+  .pos-catalog__cat-btn {
+    flex-direction: row;
+    min-height: 36px;
+    padding: var(--spacing-xs) var(--spacing-md);
+    gap: var(--spacing-xs);
+    white-space: nowrap;
+    flex-shrink: 0;
   }
 
   .pos-catalog__cat-label {
-    font-size: 0.5625rem;
+    font-size: 0.625rem;
+    -webkit-line-clamp: 1;
+    max-width: none;
+    text-align: left;
   }
 
+  .pos-catalog__cat-icon {
+    font-size: 1rem;
+  }
+
+  // Category skeletons — horizontal
+  .pos-catalog__cat-skeleton {
+    flex-direction: row;
+    min-height: 36px;
+    padding: var(--spacing-xs) var(--spacing-md);
+    gap: var(--spacing-sm);
+    flex-shrink: 0;
+  }
+
+  .pos-catalog__cat-skeleton-label {
+    width: 40px;
+  }
+
+  // Main content — no left padding
   .pos-catalog__main {
-    padding-left: var(--spacing-sm);
+    padding-left: 0;
+    gap: var(--spacing-sm);
+  }
+
+  // Search bar — compact
+  .pos-catalog__search-input {
+    font-size: 1rem;
+  }
+
+  .pos-catalog__kbd {
+    display: none;
+  }
+
+  .pos-catalog__search-hints {
+    padding-right: var(--spacing-sm);
+  }
+
+  // Product grid — 2 columns, compact
+  .pos-catalog__grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-sm);
+  }
+
+  // Compact product cards
+  .pos-catalog__card-image {
+    height: 100px;
+  }
+
+  .pos-catalog__card-body {
+    padding: var(--spacing-xs) var(--spacing-sm);
+  }
+
+  .pos-catalog__card-sku {
+    display: none;
+  }
+
+  .pos-catalog__card-name {
+    font-size: var(--font-size-sm);
+    -webkit-line-clamp: 1;
+    margin-bottom: var(--spacing-sm);
+  }
+
+  .pos-catalog__card-bottom {
+    margin-top: var(--spacing-sm);
+  }
+
+  .pos-catalog__card-amount {
+    font-size: 1.125rem;
+  }
+
+  .pos-catalog__card-currency {
+    font-size: 10px;
+  }
+
+  .pos-catalog__card-add {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+  }
+
+  .pos-catalog__card-stock-badge {
+    padding: 2px 8px;
+    font-size: 8px;
+  }
+
+  .pos-catalog__card-stock {
+    top: 8px;
+    left: 8px;
+  }
+
+  .pos-catalog__card-overlay-label {
+    font-size: 10px;
+    padding: 4px 10px;
+  }
+
+  .pos-catalog__card-variants {
+    font-size: 8px;
+    margin-top: 4px;
+  }
+
+  // Empty & error states — compact
+  .pos-catalog__empty {
+    padding: var(--spacing-xl);
   }
 }

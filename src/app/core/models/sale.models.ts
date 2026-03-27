@@ -97,7 +97,7 @@ export type PaymentMethod = 'EFECTIVO' | 'TARJETA_DEBITO' | 'TARJETA_CREDITO' | 
 
 export const PAYMENT_METHODS: { value: PaymentMethod; label: string; icon: string }[] = [
   { value: 'EFECTIVO', label: 'Efectivo', icon: 'lucideBanknote' },
-  { value: 'TARJETA_DEBITO', label: 'Tarjeta Débito', icon: 'lucideCreditCard' },
+  { value: 'TARJETA_DEBITO', label: 'Tarjeta Débito', icon: 'lucideWalletCards' },
   { value: 'TARJETA_CREDITO', label: 'Tarjeta Crédito', icon: 'lucideCreditCard' },
   { value: 'TRANSFERENCIA', label: 'Transferencia', icon: 'lucideRefreshCw' },
 ];

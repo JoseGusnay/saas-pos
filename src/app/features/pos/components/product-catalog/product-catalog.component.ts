@@ -14,7 +14,7 @@ import {
   HostListener,
   AfterViewInit,
 } from '@angular/core';
-import { CommonModule, CurrencyPipe } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import {
@@ -28,7 +28,6 @@ import {
   lucideScanBarcode,
   lucidePlus,
   lucideBan,
-  lucideInfo,
 } from '@ng-icons/lucide';
 import { Subject, debounceTime, takeUntil, finalize } from 'rxjs';
 
@@ -44,8 +43,8 @@ import {
 @Component({
   selector: 'app-product-catalog',
   standalone: true,
-  imports: [CommonModule, FormsModule, NgIconComponent, CurrencyPipe],
-  providers: [provideIcons({ lucideSearch, lucideX, lucideLoader, lucidePackage, lucideAlertTriangle, lucideLayoutGrid, lucideTag, lucideScanBarcode, lucidePlus, lucideBan, lucideInfo })],
+  imports: [CommonModule, FormsModule, NgIconComponent],
+  providers: [provideIcons({ lucideSearch, lucideX, lucideLoader, lucidePackage, lucideAlertTriangle, lucideLayoutGrid, lucideTag, lucideScanBarcode, lucidePlus, lucideBan })],
   styleUrls: ['./product-catalog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -146,9 +145,11 @@ import {
         @if (!loading() && catalogProducts().length > 0) {
           <div class="pos-catalog__grid">
             @for (product of catalogProducts(); track product.id) {
-              <div
+              <button
+                type="button"
                 class="pos-catalog__card"
-                [class.pos-catalog__card--out-of-stock]="isOutOfStock(product)"
+                [class.pos-catalog__card--out-of-stock]="product.outOfStock"
+                [disabled]="product.outOfStock"
                 (click)="onProductClick(product)"
               >
                 <!-- Image zone -->
@@ -160,17 +161,17 @@ import {
                   }
 
                   <!-- Stock badge OR out-of-stock overlay -->
-                  @if (isOutOfStock(product)) {
+                  @if (product.outOfStock) {
                     <div class="pos-catalog__card-overlay">
                       <span class="pos-catalog__card-overlay-label">SIN STOCK</span>
                     </div>
-                  } @else if (isStockTrackable(product)) {
+                  } @else if (product.stockTrackable) {
                     <div class="pos-catalog__card-stock">
                       <span
                         class="pos-catalog__card-stock-badge"
-                        [class.pos-catalog__card-stock-badge--low]="isLowStock(product)"
+                        [class.pos-catalog__card-stock-badge--low]="product.lowStock"
                       >
-                        <ng-icon [name]="isLowStock(product) ? 'lucideAlertTriangle' : 'lucidePackage'" size="12" />
+                        <ng-icon [name]="product.lowStock ? 'lucideAlertTriangle' : 'lucidePackage'" size="12" />
                         {{ product.variant.availableStock }} EN STOCK
                       </span>
                     </div>
@@ -180,46 +181,37 @@ import {
                 <!-- Body -->
                 <div class="pos-catalog__card-body">
                   <div>
-                    <div class="pos-catalog__card-top">
-                      <span class="pos-catalog__card-sku">
-                        SKU: {{ product.variant.sku || '—' }}
-                      </span>
-                      @if (!isOutOfStock(product)) {
-                        <ng-icon name="lucideInfo" class="pos-catalog__card-info" size="18" />
-                      }
-                    </div>
+                    <span class="pos-catalog__card-sku">
+                      SKU: {{ product.variant.sku || '—' }}
+                    </span>
                     <h3 class="pos-catalog__card-name">{{ product.name }}</h3>
                   </div>
 
                   <!-- Price + action row -->
                   <div class="pos-catalog__card-bottom">
                     <div class="pos-catalog__card-price-block">
-                      @if (!isOutOfStock(product)) {
-                        <span class="pos-catalog__card-price-label">Precio Total</span>
-                      }
                       <div class="pos-catalog__card-price">
                         <span class="pos-catalog__card-currency">$</span>
                         <span
                           class="pos-catalog__card-amount"
-                          [class.pos-catalog__card-amount--muted]="isOutOfStock(product)"
+                          [class.pos-catalog__card-amount--muted]="product.outOfStock"
                         >
                           {{ product.variant.salePrice | number: '1.2-2' }}
                         </span>
                       </div>
                     </div>
 
-                    @if (isOutOfStock(product)) {
-                      <button class="pos-catalog__card-add pos-catalog__card-add--disabled" type="button" disabled>
+                    @if (product.outOfStock) {
+                      <span class="pos-catalog__card-add pos-catalog__card-add--disabled">
                         <ng-icon name="lucideBan" size="20" />
-                      </button>
+                      </span>
                     } @else {
-                      <button
+                      <span
                         class="pos-catalog__card-add"
-                        [class.pos-catalog__card-add--primary]="!isLowStock(product)"
-                        type="button"
+                        [class.pos-catalog__card-add--primary]="!product.lowStock"
                       >
                         <ng-icon name="lucidePlus" size="20" />
-                      </button>
+                      </span>
                     }
                   </div>
 
@@ -229,7 +221,7 @@ import {
                     </span>
                   }
                 </div>
-              </div>
+              </button>
             }
           </div>
         }
@@ -381,7 +373,6 @@ export class ProductCatalogComponent implements OnDestroy, AfterViewInit {
   }
 
   onProductClick(product: PosCatalogProduct): void {
-    if (this.isOutOfStock(product)) return;
     this.productSelected.emit(product);
   }
 
@@ -502,6 +493,8 @@ export class ProductCatalogComponent implements OnDestroy, AfterViewInit {
 
   private mapApiProduct(p: PosCatalogApiProduct): PosCatalogProduct {
     const variants: PosCatalogVariant[] = p.variants.map((v) => this.mapApiVariant(v));
+    const v0 = variants[0];
+    const trackable = v0.stockTrackable && p.productType !== 'COMBO';
 
     return {
       id: p.productId,
@@ -513,10 +506,13 @@ export class ProductCatalogComponent implements OnDestroy, AfterViewInit {
       categoryName: p.categoryName ?? undefined,
       hasModifiers: !!(p.modifierGroups && p.modifierGroups.length > 0),
       isCombo: p.productType === 'COMBO',
-      variant: variants[0],
+      variant: v0,
       variants,
       comboItems: p.comboItems,
       modifierGroups: p.modifierGroups,
+      stockTrackable: trackable,
+      outOfStock: trackable && v0.availableStock <= 0,
+      lowStock: trackable && v0.availableStock > 0 && v0.availableStock <= 5,
     };
   }
 

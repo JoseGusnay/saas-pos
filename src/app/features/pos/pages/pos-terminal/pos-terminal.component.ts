@@ -8,6 +8,7 @@ import {
   ViewChild,
 } from '@angular/core';
 import { CommonModule, CurrencyPipe } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import {
@@ -16,8 +17,11 @@ import {
   lucideArrowLeft,
   lucideMaximize,
   lucideTrash2,
+  lucideLayoutGrid,
+  lucideShoppingCart,
+  lucideUserPlus,
 } from '@ng-icons/lucide';
-import { Subject, finalize, takeUntil } from 'rxjs';
+import { Subject, debounceTime, distinctUntilChanged, filter, finalize, switchMap, takeUntil } from 'rxjs';
 
 import { ProductCatalogComponent } from '../../components/product-catalog/product-catalog.component';
 import { CartPanelComponent } from '../../components/cart-panel/cart-panel.component';
@@ -42,7 +46,8 @@ import {
   SaleModifierSnapshot,
 } from '../../../../core/models/sale.models';
 import { ModifierGroup, ComboItem } from '../../../inventory/models/product.model';
-import { Customer } from '../../../../core/models/customer.models';
+import { ComboDialogResult } from '../../components/combo-dialog/combo-dialog.component';
+import { Customer, CUSTOMER_ID_TYPES } from '../../../../core/models/customer.models';
 import { Warehouse } from '../../../../core/models/warehouse.models';
 
 @Component({
@@ -51,6 +56,7 @@ import { Warehouse } from '../../../../core/models/warehouse.models';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     CommonModule,
+    FormsModule,
     NgIconComponent,
     CurrencyPipe,
     ProductCatalogComponent,
@@ -61,7 +67,7 @@ import { Warehouse } from '../../../../core/models/warehouse.models';
     SaleCompleteDialogComponent,
     ModalComponent,
   ],
-  providers: [provideIcons({ lucideReceipt, lucideCheck, lucideArrowLeft, lucideMaximize, lucideTrash2 })],
+  providers: [provideIcons({ lucideReceipt, lucideCheck, lucideArrowLeft, lucideMaximize, lucideTrash2, lucideLayoutGrid, lucideShoppingCart, lucideUserPlus })],
   styleUrl: './pos-terminal.component.scss',
   template: `
     <!-- ── Top Bar ────────────────────────────────────────────────────── -->
@@ -80,14 +86,6 @@ import { Warehouse } from '../../../../core/models/warehouse.models';
       </div>
 
       <div class="pos-header__right">
-        <button
-          class="pos-header__action pos-header__action--danger"
-          (click)="onVoidAll()"
-          [disabled]="cart.isEmpty()"
-          title="Anular venta"
-        >
-          <ng-icon name="lucideTrash2" size="16" />
-        </button>
         <button class="pos-header__action" (click)="toggleFullscreen()" title="Pantalla completa">
           <ng-icon name="lucideMaximize" size="16" />
         </button>
@@ -96,20 +94,46 @@ import { Warehouse } from '../../../../core/models/warehouse.models';
 
     <!-- ── Main POS ───────────────────────────────────────────────────── -->
     <div class="pos-terminal">
-      <section class="pos-terminal__catalog">
+      <section class="pos-terminal__catalog" [class.pos-terminal__panel--hidden]="mobileView() === 'cart'">
         <app-product-catalog
           [branchId]="activeBranchId()"
           [warehouseId]="defaultWarehouseId()"
           (productSelected)="onProductSelected($event)"
         />
       </section>
-      <section class="pos-terminal__cart">
+      <section class="pos-terminal__cart" [class.pos-terminal__panel--hidden]="mobileView() === 'catalog'">
         <app-cart-panel
           (pay)="openPaymentDialog()"
           (selectCustomer)="openCustomerSearch()"
+          (editItem)="onEditItem($event)"
         />
       </section>
     </div>
+
+    <!-- ── Mobile Bottom Nav ─────────────────────────────────────────── -->
+    <nav class="pos-bottom-nav">
+      <button
+        class="pos-bottom-nav__tab"
+        [class.pos-bottom-nav__tab--active]="mobileView() === 'catalog'"
+        (click)="mobileView.set('catalog')"
+      >
+        <ng-icon name="lucideLayoutGrid" size="20" />
+        <span>Catálogo</span>
+      </button>
+      <button
+        class="pos-bottom-nav__tab"
+        [class.pos-bottom-nav__tab--active]="mobileView() === 'cart'"
+        (click)="mobileView.set('cart')"
+      >
+        <ng-icon name="lucideShoppingCart" size="20" />
+        @if (cart.totals().itemCount > 0) {
+          <span class="pos-bottom-nav__total">{{ cart.totals().total | currency: 'USD':'symbol':'1.2-2' }}</span>
+          <span class="pos-bottom-nav__badge">{{ cart.totals().itemCount }}</span>
+        } @else {
+          <span>Carrito</span>
+        }
+      </button>
+    </nav>
 
     <!-- ── Variant Selector Dialog ──────────────────────────────────────── -->
     <app-modal
@@ -122,11 +146,32 @@ import { Warehouse } from '../../../../core/models/warehouse.models';
       @if (showVariantDialog()) {
         <div class="variant-selector">
           @for (v of pendingVariantOptions(); track v.id) {
-            <button class="variant-selector__option" (click)="onVariantChosen(v)">
+            <button
+              class="variant-selector__option"
+              [class.variant-selector__option--out]="v.stockTrackable && v.availableStock <= 0"
+              [disabled]="v.stockTrackable && v.availableStock <= 0"
+              (click)="onVariantChosen(v)"
+            >
+              @if (v.imageUrl) {
+                <img class="variant-selector__image" [src]="v.imageUrl" [alt]="v.name" />
+              }
               <div class="variant-selector__info">
                 <span class="variant-selector__name">{{ v.name }}</span>
                 @if (v.sku) {
                   <span class="variant-selector__sku">{{ v.sku }}</span>
+                }
+                @if (v.stockTrackable) {
+                  <span
+                    class="variant-selector__stock"
+                    [class.variant-selector__stock--low]="v.availableStock > 0 && v.availableStock <= 5"
+                    [class.variant-selector__stock--out]="v.availableStock <= 0"
+                  >
+                    @if (v.availableStock <= 0) {
+                      Sin stock
+                    } @else {
+                      {{ v.availableStock }} en stock
+                    }
+                  </span>
                 }
               </div>
               <span class="variant-selector__price">
@@ -151,8 +196,9 @@ import { Warehouse } from '../../../../core/models/warehouse.models';
         <app-modifier-dialog
           [modifierGroups]="pendingModifierGroups()"
           [productName]="pendingProductName()"
+          [preselected]="pendingPreselectedModifiers()"
           (confirm)="onModifiersConfirmed($event)"
-          (cancel)="showModifierDialog.set(false)"
+          (cancel)="cancelEdit()"
         />
       }
       </div>
@@ -172,8 +218,10 @@ import { Warehouse } from '../../../../core/models/warehouse.models';
           [productName]="pendingProductName()"
           [comboPriceMode]="pendingComboPriceMode()"
           [basePrice]="pendingComboBasePrice()"
+          [preselectedChoices]="pendingPreselectedChoices()"
+          [preselectedModifiers]="pendingPreselectedComboModifiers()"
           (confirm)="onComboConfirmed($event)"
-          (cancel)="showComboDialog.set(false)"
+          (cancel)="cancelEdit()"
         />
       }
       </div>
@@ -203,7 +251,6 @@ import { Warehouse } from '../../../../core/models/warehouse.models';
       [isOpen]="showSaleCompleteDialog()"
       title="Venta completada"
       size="md"
-      [allowClose]="false"
       (close)="onNewSale()"
     >
       <div modalBody>
@@ -249,6 +296,63 @@ import { Warehouse } from '../../../../core/models/warehouse.models';
               <div class="customer-search__empty">Sin resultados</div>
             }
           </div>
+
+          <!-- Quick create toggle -->
+          @if (!showCreateCustomer()) {
+            <button class="customer-search__create-toggle" (click)="showCreateCustomer.set(true)">
+              <ng-icon name="lucideUserPlus" size="14" />
+              Crear cliente nuevo
+            </button>
+          } @else {
+            <div class="customer-search__create-form">
+              <span class="customer-search__create-title">Nuevo cliente</span>
+              <input
+                class="customer-search__input"
+                type="text"
+                placeholder="Nombre completo"
+                [ngModel]="newCustomerName()"
+                (ngModelChange)="newCustomerName.set($event)"
+              />
+              <div class="customer-search__create-row">
+                <select
+                  class="customer-search__select"
+                  [ngModel]="newCustomerIdType()"
+                  (ngModelChange)="newCustomerIdType.set($event)"
+                >
+                  @for (type of customerIdTypes; track type.value) {
+                    <option [value]="type.value">{{ type.label }}</option>
+                  }
+                </select>
+                <input
+                  class="customer-search__input"
+                  type="text"
+                  placeholder="Número de identificación"
+                  [ngModel]="newCustomerIdNumber()"
+                  (ngModelChange)="newCustomerIdNumber.set($event)"
+                />
+              </div>
+              <div class="customer-search__create-actions">
+                <button
+                  class="customer-search__create-cancel"
+                  (click)="showCreateCustomer.set(false)"
+                >
+                  Cancelar
+                </button>
+                <button
+                  class="customer-search__create-save"
+                  [disabled]="!newCustomerName() || !newCustomerIdNumber() || creatingCustomer()"
+                  (click)="createAndSelectCustomer()"
+                >
+                  @if (creatingCustomer()) {
+                    Creando...
+                  } @else {
+                    Crear y seleccionar
+                  }
+                </button>
+              </div>
+            </div>
+          }
+
           @if (cart.customer()) {
             <button class="customer-search__clear" (click)="clearCustomer()">
               Usar Consumidor Final
@@ -272,6 +376,9 @@ export class PosTerminalComponent implements OnDestroy {
   private readonly router = inject(Router);
   private readonly destroy$ = new Subject<void>();
 
+  // ── Mobile view toggle ───────────────────────────────────────────────────
+  readonly mobileView = signal<'catalog' | 'cart'>('catalog');
+
   // ── Header info ──────────────────────────────────────────────────────────
   readonly activeBranchName = signal('');
   readonly activeBranchId = signal<string | null>(null);
@@ -294,12 +401,19 @@ export class PosTerminalComponent implements OnDestroy {
   readonly pendingComboPriceMode = signal<'FIXED' | 'CALCULATED' | null>('FIXED');
   readonly pendingComboBasePrice = signal(0);
   readonly pendingVariantOptions = signal<PosCatalogVariant[]>([]);
+  readonly pendingPreselectedModifiers = signal<SaleModifierSnapshot[]>([]);
+  readonly pendingPreselectedChoices = signal<{ comboItemId: string; variantId: string }[]>([]);
+  readonly pendingPreselectedComboModifiers = signal<SaleModifierSnapshot[]>([]);
 
   private pendingProduct: PosCatalogProduct | null = null;
   /** Accumulated chosen variants from combo dialog (kept for combo+modifier flow) */
   private pendingChosenVariants: { comboItemId: string; variantId: string }[] = [];
+  /** Accumulated modifiers from combo item-level selections */
+  private pendingComboModifiers: SaleModifierSnapshot[] = [];
   /** For CALCULATED combos, the computed price from the combo dialog */
   private pendingComboComputedPrice: number | null = null;
+  /** UID of cart item being edited (null = adding new) */
+  private editingItemUid: string | null = null;
 
   // ── Sale processing ────────────────────────────────────────────────────
 
@@ -311,7 +425,15 @@ export class PosTerminalComponent implements OnDestroy {
   readonly customerSearchQuery = signal('');
   readonly customerSearchResults = signal<Customer[]>([]);
   readonly customerSearchLoading = signal(false);
-  private customerSearchTimeout: any = null;
+  private readonly customerSearch$ = new Subject<string>();
+
+  // ── Quick customer create ────────────────────────────────────────────
+  readonly showCreateCustomer = signal(false);
+  readonly newCustomerName = signal('');
+  readonly newCustomerIdType = signal('05'); // Cédula by default
+  readonly newCustomerIdNumber = signal('');
+  readonly creatingCustomer = signal(false);
+  readonly customerIdTypes = CUSTOMER_ID_TYPES.filter(t => t.value !== '07'); // Exclude "Consumidor Final"
 
   // ── Warehouse ──────────────────────────────────────────────────────────
 
@@ -320,6 +442,28 @@ export class PosTerminalComponent implements OnDestroy {
   constructor() {
     this.loadDefaultWarehouse();
     this.loadBranchInfo();
+    this.setupCustomerSearch();
+  }
+
+  private setupCustomerSearch(): void {
+    this.customerSearch$
+      .pipe(
+        debounceTime(300),
+        distinctUntilChanged(),
+        filter(q => q.length >= 2),
+        switchMap(q => {
+          this.customerSearchLoading.set(true);
+          return this.customerService.search(q, 10);
+        }),
+        takeUntil(this.destroy$),
+      )
+      .subscribe({
+        next: (results) => {
+          this.customerSearchResults.set(results);
+          this.customerSearchLoading.set(false);
+        },
+        error: () => this.customerSearchLoading.set(false),
+      });
   }
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -329,6 +473,7 @@ export class PosTerminalComponent implements OnDestroy {
   onProductSelected(product: PosCatalogProduct): void {
     this.pendingProduct = product;
     this.pendingChosenVariants = [];
+    this.pendingComboModifiers = [];
     this.pendingComboComputedPrice = null;
 
     this.routeProductFlow(product);
@@ -399,37 +544,43 @@ export class PosTerminalComponent implements OnDestroy {
   // COMBO DIALOG — for COMBO products
   // ═══════════════════════════════════════════════════════════════════════
 
-  onComboConfirmed(chosenVariants: { comboItemId: string; variantId: string }[]): void {
+  onComboConfirmed(result: ComboDialogResult): void {
     this.showComboDialog.set(false);
     const product = this.pendingProduct;
     if (!product) return;
 
-    this.pendingChosenVariants = chosenVariants;
+    this.pendingChosenVariants = result.chosenVariants;
 
     // Calculate the actual price for CALCULATED combos
     if (product.comboPriceMode === 'CALCULATED') {
       this.pendingComboComputedPrice = this.calculateComboPrice(
         product.variant.salePrice,
-        chosenVariants,
+        result.chosenVariants,
         this.pendingComboItems(),
       );
     }
+
+    // Compute modifier total from combo item modifiers
+    const comboModifierTotal = result.selectedModifiers.reduce(
+      (sum, m) => sum + m.priceAdjustment, 0
+    );
 
     // After combo, check if product has top-level modifiers
     if (product.hasModifiers && product.modifierGroups?.length) {
       this.pendingProductName.set(product.name);
       this.pendingModifierGroups.set(product.modifierGroups);
+      this.pendingComboModifiers = result.selectedModifiers;
       this.showModifierDialog.set(true);
       return;
     }
 
-    // No modifiers → add directly
+    // No top-level modifiers → add directly with combo modifiers
     const price = this.pendingComboComputedPrice ?? product.variant.salePrice;
     this.addToCart(
       product,
-      { ...product.variant, salePrice: price },
-      [],
-      chosenVariants,
+      { ...product.variant, salePrice: price + comboModifierTotal },
+      result.selectedModifiers,
+      result.chosenVariants,
     );
   }
 
@@ -460,10 +611,16 @@ export class PosTerminalComponent implements OnDestroy {
     const product = this.pendingProduct;
     if (!product) return;
 
-    const basePrice = this.pendingComboComputedPrice ?? product.variant.salePrice;
+    // Merge combo item-level modifiers with product-level modifiers
+    const allModifiers = [...this.pendingComboModifiers, ...modifiers];
+
+    const comboModifierTotal = this.pendingComboModifiers.reduce(
+      (sum, m) => sum + m.priceAdjustment, 0
+    );
+    const basePrice = (this.pendingComboComputedPrice ?? product.variant.salePrice) + comboModifierTotal;
     const variant = { ...product.variant, salePrice: basePrice };
 
-    this.addToCart(product, variant, modifiers, this.pendingChosenVariants);
+    this.addToCart(product, variant, allModifiers, this.pendingChosenVariants);
   }
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -479,7 +636,21 @@ export class PosTerminalComponent implements OnDestroy {
     const modifierTotal = modifiers.reduce((sum, m) => sum + m.priceAdjustment, 0);
     const unitPrice = Math.round((variant.salePrice + modifierTotal) * 100) / 100;
 
-    const addedUid = this.cart.addItem({
+    // Edit mode: update existing cart item
+    if (this.editingItemUid) {
+      this.cart.updateItemOptions(this.editingItemUid, {
+        selectedModifiers: modifiers,
+        chosenVariants,
+        basePrice: variant.salePrice,
+        modifierTotal,
+        unitPrice,
+      });
+      this.clearPending();
+      return;
+    }
+
+    // New item mode
+    this.cart.addItem({
       variantId: variant.id,
       productId: product.id,
       productName: product.name,
@@ -496,6 +667,9 @@ export class PosTerminalComponent implements OnDestroy {
       selectedModifiers: modifiers,
       chosenVariants,
       stockTrackable: variant.stockTrackable,
+      modifierGroups: product.modifierGroups,
+      comboItems: product.comboItems,
+      comboPriceMode: product.comboPriceMode,
     });
 
     this.clearPending();
@@ -504,7 +678,77 @@ export class PosTerminalComponent implements OnDestroy {
   private clearPending(): void {
     this.pendingProduct = null;
     this.pendingChosenVariants = [];
+    this.pendingComboModifiers = [];
     this.pendingComboComputedPrice = null;
+    this.editingItemUid = null;
+    this.pendingPreselectedModifiers.set([]);
+    this.pendingPreselectedChoices.set([]);
+    this.pendingPreselectedComboModifiers.set([]);
+  }
+
+  cancelEdit(): void {
+    this.showModifierDialog.set(false);
+    this.showComboDialog.set(false);
+    this.clearPending();
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // EDIT ITEM — re-open dialogs with existing selections
+  // ═══════════════════════════════════════════════════════════════════════
+
+  onEditItem(uid: string): void {
+    const item = this.cart.items().find(i => i.uid === uid);
+    if (!item) return;
+
+    this.editingItemUid = uid;
+    this.pendingProductName.set(item.productName);
+
+    // Build a lightweight product proxy for the edit flow
+    this.pendingProduct = {
+      id: item.productId,
+      name: item.productName,
+      type: item.productType,
+      comboPriceMode: item.comboPriceMode,
+      hasModifiers: !!item.modifierGroups?.length,
+      isCombo: item.productType === 'COMBO',
+      variant: {
+        id: item.variantId,
+        name: item.variantName,
+        sku: item.sku,
+        salePrice: item.basePrice,
+        stock: 0,
+        availableStock: 0,
+        stockTrackable: item.stockTrackable,
+        trackLots: false,
+        taxes: item.taxes,
+      },
+      variants: [],
+      comboItems: item.comboItems,
+      modifierGroups: item.modifierGroups,
+      categoryId: '',
+      stockTrackable: item.stockTrackable,
+      outOfStock: false,
+      lowStock: false,
+    } as PosCatalogProduct;
+
+    // COMBO with choices → open combo dialog
+    if (item.productType === 'COMBO' && item.comboItems?.length) {
+      this.pendingComboItems.set(item.comboItems);
+      this.pendingComboPriceMode.set(item.comboPriceMode ?? 'FIXED');
+      this.pendingComboBasePrice.set(item.basePrice);
+      this.pendingPreselectedChoices.set(item.chosenVariants);
+      this.pendingPreselectedComboModifiers.set(item.selectedModifiers);
+      this.showComboDialog.set(true);
+      return;
+    }
+
+    // Product with modifiers → open modifier dialog
+    if (item.modifierGroups?.length) {
+      this.pendingModifierGroups.set(item.modifierGroups);
+      this.pendingPreselectedModifiers.set(item.selectedModifiers);
+      this.showModifierDialog.set(true);
+      return;
+    }
   }
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -587,6 +831,10 @@ export class PosTerminalComponent implements OnDestroy {
   openCustomerSearch(): void {
     this.customerSearchQuery.set('');
     this.customerSearchResults.set([]);
+    this.showCreateCustomer.set(false);
+    this.newCustomerName.set('');
+    this.newCustomerIdType.set('05');
+    this.newCustomerIdNumber.set('');
     this.showCustomerDialog.set(true);
   }
 
@@ -594,23 +842,13 @@ export class PosTerminalComponent implements OnDestroy {
     const query = (event.target as HTMLInputElement).value;
     this.customerSearchQuery.set(query);
 
-    if (this.customerSearchTimeout) clearTimeout(this.customerSearchTimeout);
-
     if (query.length < 2) {
       this.customerSearchResults.set([]);
+      this.customerSearchLoading.set(false);
       return;
     }
 
-    this.customerSearchLoading.set(true);
-    this.customerSearchTimeout = setTimeout(() => {
-      this.customerService.search(query, 10).pipe(takeUntil(this.destroy$)).subscribe({
-        next: (results) => {
-          this.customerSearchResults.set(results);
-          this.customerSearchLoading.set(false);
-        },
-        error: () => this.customerSearchLoading.set(false),
-      });
-    }, 300);
+    this.customerSearch$.next(query);
   }
 
   selectCustomer(customer: Customer): void {
@@ -622,6 +860,34 @@ export class PosTerminalComponent implements OnDestroy {
   clearCustomer(): void {
     this.cart.setCustomer(null);
     this.showCustomerDialog.set(false);
+  }
+
+  createAndSelectCustomer(): void {
+    const name = this.newCustomerName().trim();
+    const identificacion = this.newCustomerIdNumber().trim();
+    if (!name || !identificacion) return;
+
+    this.creatingCustomer.set(true);
+
+    this.customerService
+      .create({
+        name,
+        tipoIdentificacion: this.newCustomerIdType(),
+        identificacion,
+      })
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => this.creatingCustomer.set(false)),
+      )
+      .subscribe({
+        next: (customer) => {
+          this.selectCustomer(customer);
+        },
+        error: (err) => {
+          const msg = err?.error?.message || 'Error al crear el cliente';
+          this.toast.error(msg);
+        },
+      });
   }
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -714,7 +980,6 @@ export class PosTerminalComponent implements OnDestroy {
   }
 
   ngOnDestroy(): void {
-    if (this.customerSearchTimeout) clearTimeout(this.customerSearchTimeout);
     this.destroy$.next();
     this.destroy$.complete();
   }

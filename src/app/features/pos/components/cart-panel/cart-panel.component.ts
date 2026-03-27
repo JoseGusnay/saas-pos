@@ -22,6 +22,7 @@ import {
   lucideShoppingCart,
   lucideX,
   lucideChevronRight,
+  lucidePencil,
 } from '@ng-icons/lucide';
 import { PosCartService } from '../../services/pos-cart.service';
 import { PosCartItem } from '../../models/pos.models';
@@ -43,6 +44,7 @@ import { ToastService } from '../../../../core/services/toast.service';
       lucideShoppingCart,
       lucideX,
       lucideChevronRight,
+      lucidePencil,
     }),
   ],
   styleUrls: ['./cart-panel.component.scss'],
@@ -50,7 +52,12 @@ import { ToastService } from '../../../../core/services/toast.service';
     <!-- ── Header ──────────────────────────────────────────────────────── -->
     <div class="cart-panel__header">
       <div>
-        <h2 class="cart-panel__title">Venta actual</h2>
+        <h2 class="cart-panel__title">
+          Venta actual
+          @if (cart.totals().itemCount > 0) {
+            <span class="cart-panel__item-count">{{ cart.totals().itemCount }}</span>
+          }
+        </h2>
         <p class="cart-panel__subtitle">
           Cliente:
           <button class="cart-panel__customer-link" (click)="selectCustomer.emit()">
@@ -130,14 +137,26 @@ import { ToastService } from '../../../../core/services/toast.service';
               </div>
             }
 
-            <!-- Hint (only first item, collapsed) -->
-            @if (idx === 0 && cart.selectedItemUid() !== item.uid) {
-              <span class="cart-panel__expand-hint">Toca para editar</span>
+            <!-- Hint (collapsed items, touch devices only via CSS) -->
+            @if (cart.selectedItemUid() !== item.uid) {
+              <span class="cart-panel__expand-hint">Pulsa para editar</span>
             }
 
             <!-- Expanded controls (selected) -->
             @if (cart.selectedItemUid() === item.uid) {
               <div class="cart-panel__item-expanded">
+                <!-- Edit button (only for items with modifiers or combos) -->
+                @if (item.selectedModifiers.length > 0 || item.chosenVariants.length > 0) {
+                  <button
+                    class="cart-panel__edit-btn"
+                    type="button"
+                    (click)="editItem.emit(item.uid); $event.stopPropagation()"
+                  >
+                    <ng-icon name="lucidePencil" size="14" />
+                    <span>Editar opciones</span>
+                  </button>
+                }
+
                 <!-- Row 1: Stepper + unit price -->
                 <div class="cart-panel__item-row">
                   <div class="cart-panel__qty" (click)="$event.stopPropagation()">
@@ -191,6 +210,7 @@ import { ToastService } from '../../../../core/services/toast.service';
                         aria-label="Porcentaje de descuento"
                         [ngModel]="item.discountPercent"
                         (ngModelChange)="onDiscountChange(item.uid, $event)"
+                        (keydown)="blockInvalidDiscount($event)"
                         placeholder="0"
                       />
                       <span class="cart-panel__discount-suffix">%</span>
@@ -286,6 +306,7 @@ export class CartPanelComponent {
 
   @Output() pay = new EventEmitter<void>();
   @Output() selectCustomer = new EventEmitter<void>();
+  @Output() editItem = new EventEmitter<string>();
 
   constructor() {
     // Autofocus quantity input when an item is selected
@@ -334,9 +355,17 @@ export class CartPanelComponent {
     this.cart.updateQuantity(uid, qty);
   }
 
-  // #3 — Clamped discount input
+  // Block minus sign, decimal, and 'e' in discount input
+  blockInvalidDiscount(e: KeyboardEvent): void {
+    if (e.key === '-' || e.key === '.' || e.key === 'e' || e.key === 'E') {
+      e.preventDefault();
+    }
+  }
+
+  // #3 — Clamped discount input (real-time)
   onDiscountChange(uid: string, value: number): void {
-    const clamped = Math.min(100, Math.max(0, value ?? 0));
+    const num = value ?? 0;
+    const clamped = Math.min(100, Math.max(0, Math.round(num)));
     this.cart.updateDiscount(uid, clamped);
   }
 

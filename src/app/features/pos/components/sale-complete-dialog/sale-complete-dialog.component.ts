@@ -9,7 +9,6 @@ import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import {
   lucideCheckCircle2,
-  lucidePrinter,
   lucideReceipt,
 } from '@ng-icons/lucide';
 import { Sale, PAYMENT_METHODS } from '../../../../core/models/sale.models';
@@ -22,7 +21,6 @@ import { Sale, PAYMENT_METHODS } from '../../../../core/models/sale.models';
   providers: [
     provideIcons({
       lucideCheckCircle2,
-      lucidePrinter,
       lucideReceipt,
     }),
   ],
@@ -100,15 +98,6 @@ import { Sale, PAYMENT_METHODS } from '../../../../core/models/sale.models';
         }
 
         <div class="sale-complete__actions">
-          <button
-            class="btn btn-secondary"
-            (click)="printReceipt.emit()"
-            disabled
-            title="Disponible pronto"
-          >
-            <ng-icon name="lucidePrinter" size="18" />
-            Imprimir Recibo
-          </button>
           <button class="btn btn-primary btn-lg" (click)="newSale.emit()">
             <ng-icon name="lucideReceipt" size="18" />
             Nueva Venta

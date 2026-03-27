@@ -110,6 +110,13 @@
   &__choice-header {
     display: flex;
     align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-sm);
+  }
+
+  &__choice-header-left {
+    display: flex;
+    align-items: center;
     gap: var(--spacing-sm);
   }
 
@@ -119,6 +126,21 @@
     color: var(--color-text-main);
     text-transform: uppercase;
     letter-spacing: 0.04em;
+  }
+
+  &__choice-count {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+
+    &--full {
+      color: var(--color-success-text);
+      font-weight: var(--font-weight-semibold);
+    }
+  }
+
+  &__choice-selected {
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-main);
   }
 
   // ── Options ───────────────────────────────────────────────────────────
@@ -160,6 +182,10 @@
         border-color: var(--color-accent-primary);
       }
     }
+
+    &--at-limit {
+      opacity: 0.6;
+    }
   }
 
   &__option-info {
@@ -191,6 +217,162 @@
     height: 24px;
     flex-shrink: 0;
     color: var(--color-accent-primary);
+  }
+
+  // ── Item block (wraps item + its modifiers) ──────────────────────────
+
+  &__item-block {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+
+  // ── Modifier section (inline per combo item) ────────────────────────
+
+  &__modifiers {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    padding-left: var(--spacing-lg);
+    border-left: 2px solid var(--color-border-light);
+    margin-left: var(--spacing-md);
+  }
+
+  &__mod-group {
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md);
+    background: var(--surface-container-low);
+    transition: border-color 0.15s ease;
+
+    &--error {
+      border-color: var(--color-error, #ef4444);
+    }
+  }
+
+  &__mod-group-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--spacing-sm);
+  }
+
+  &__mod-group-info {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+  }
+
+  &__mod-group-name {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-main);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  &__mod-group-count {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+
+    &--full {
+      color: var(--color-success-text);
+      font-weight: var(--font-weight-semibold);
+    }
+  }
+
+  &__mod-group-selected {
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-main);
+  }
+
+  &__mod-options {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  &__mod-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-main);
+    text-align: left;
+    transition: all 0.15s ease;
+
+    &:hover {
+      background: var(--color-bg-hover);
+    }
+
+    &--selected {
+      background: var(--color-primary-subtle);
+      border-color: var(--color-accent-primary);
+
+      &:hover {
+        background: var(--color-primary-subtle);
+      }
+    }
+
+    &--at-limit {
+      opacity: 0.6;
+    }
+  }
+
+  &__mod-option-left {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+  }
+
+  &__mod-check {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid var(--color-border-hover);
+    border-radius: var(--radius-xs);
+    background: var(--color-bg-surface);
+    color: var(--color-on-primary, #fff);
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+
+    &--radio {
+      border-radius: 50%;
+    }
+
+    &--active {
+      background: var(--color-accent-primary);
+      border-color: var(--color-accent-primary);
+    }
+  }
+
+  &__mod-option-name {
+    font-weight: var(--font-weight-regular);
+    line-height: 1.3;
+  }
+
+  &__mod-option-price {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-muted);
+    white-space: nowrap;
+    margin-left: var(--spacing-sm);
+  }
+
+  // ── Badge optional (reuse from modifier-dialog pattern) ─────────────
+
+  &__badge--optional {
+    background: var(--color-info-subtle, rgba(59, 130, 246, 0.1));
+    color: var(--color-info, #3b82f6);
   }
 
   // ── Footer ────────────────────────────────────────────────────────────

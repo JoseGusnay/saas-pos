@@ -1,174 +1,30 @@
 /* =========================================================================
-   Payment Dialog — Two-panel layout: Keypad | Payment flow
+   Payment Dialog
+   Desktop:  single-column (no keypad)
+   Touch:    two-column  (keypad left | flow right)
+   Mobile:   single-column, native keyboard, fixed footer
    ========================================================================= */
 
 .pay {
   display: flex;
-  gap: var(--spacing-2xl);
-  padding: var(--spacing-2xl);
+  flex-direction: column;
+  gap: var(--spacing-lg);
+  padding: var(--spacing-xl);
   max-height: 85vh;
-  overflow-y: auto;
-}
-
-/* ══════════════════════════════════════════════════════════════════════════
-   LEFT SIDE — Keypad
-   ══════════════════════════════════════════════════════════════════════════ */
-
-.pay__keypad-side {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-lg);
-  width: 300px;
-  min-width: 300px;
-}
-
-/* ── Display ──────────────────────────────────────────────────────────── */
-
-.pay__display {
-  background: var(--surface-container-lowest);
-  padding: var(--spacing-lg) var(--spacing-xl);
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--color-border-light);
-}
-
-.pay__display-label {
-  display: block;
-  font-size: 0.625rem;
-  font-weight: var(--font-weight-bold);
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--text-muted);
-  margin-bottom: var(--spacing-xs);
-}
-
-.pay__display-value {
-  font-size: 2.5rem;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  line-height: 1;
-  color: var(--text-primary);
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
-/* ── Number Grid ──────────────────────────────────────────────────────── */
-
-.pay__grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--spacing-sm);
-}
-
-.pay__key {
-  aspect-ratio: 1.4;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  border-radius: var(--radius-md);
-  background: var(--surface-container-high);
-  color: var(--text-primary);
-  font-size: 1.25rem;
-  font-weight: 700;
-  font-family: var(--font-family-sans);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-  user-select: none;
-
-  &:hover {
-    background: var(--surface-container-highest);
-  }
-
-  &:active {
-    background: var(--color-primary-fixed);
-    transform: scale(0.95);
-  }
-
-  &--dot {
-    font-size: 1.5rem;
-  }
-
-  &--backspace {
-    color: var(--color-error);
-
-    &:hover {
-      background: var(--color-error-container);
-    }
-
-    &:active {
-      background: var(--color-error);
-      color: var(--color-on-error);
-      transform: scale(0.95);
-    }
-  }
-}
-
-/* ── Quick row ────────────────────────────────────────────────────────── */
-
-.pay__quick-row {
-  display: flex;
-  gap: var(--spacing-sm);
-}
-
-.pay__quick-btn {
-  flex: 1;
-  padding: var(--spacing-md);
-  border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-md);
-  background: var(--surface-container-lowest);
-  color: var(--text-secondary);
-  font-size: 0.6875rem;
-  font-weight: 800;
-  font-family: var(--font-family-sans);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  cursor: pointer;
-  transition: all var(--transition-fast);
-
-  &:hover {
-    background: var(--state-hover);
-    color: var(--text-primary);
-  }
-
-  &:active {
-    transform: scale(0.97);
-  }
-
-  &--exact {
-    background: var(--color-primary-subtle);
-    color: var(--color-primary);
-    border-color: var(--color-primary);
-
-    &:hover {
-      background: var(--color-primary);
-      color: var(--color-on-primary);
-    }
-  }
-}
-
-/* ══════════════════════════════════════════════════════════════════════════
-   RIGHT SIDE — Payment flow
-   ══════════════════════════════════════════════════════════════════════════ */
-
-.pay__flow-side {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-lg);
-  min-width: 0;
-}
-
-/* ── Total bar ────────────────────────────────────────────────────────── */
+/* ── Total bar + mode toggle ──────────────────────────────────────────── */
 
 .pay__total-bar {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  padding: var(--spacing-lg) var(--spacing-xl);
+  padding: var(--spacing-md) var(--spacing-lg);
   background: var(--surface-container-low);
   border-radius: var(--radius-lg);
   border: 1px solid var(--color-border-light);
+  flex-shrink: 0;
 }
 
 .pay__total-label {
@@ -186,12 +42,251 @@
   letter-spacing: -0.02em;
 }
 
+.pay__mode-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  margin-left: var(--spacing-sm);
+
+  &:hover {
+    background: var(--state-hover);
+    color: var(--text-primary);
+    border-color: var(--color-border-hover);
+  }
+}
+
+
+/* ── Body: layout container (scrollable on mobile) ───────────────────── */
+
+.pay__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+
+  // Thin scrollbar
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-light) transparent;
+
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: var(--color-border-light);
+    border-radius: 100px;
+  }
+}
+
+/* ── Keypad side (hidden by default on desktop) ───────────────────────── */
+
+.pay__keypad-side {
+  display: none;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  width: 280px;
+  min-width: 280px;
+  flex-shrink: 0;
+}
+
+/* ── Amount input for desktop (visible by default) ────────────────────── */
+
+.pay__amount-desktop {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  flex-shrink: 0;
+}
+
+/* ── Flow side ────────────────────────────────────────────────────────── */
+
+.pay__flow-side {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  min-width: 0;
+  flex-shrink: 0;
+}
+
+/* ── Amount input (shared style) ──────────────────────────────────────── */
+
+.pay__amount-input {
+  width: 100%;
+  height: 52px;
+  min-height: 52px;
+  padding: 0 var(--spacing-lg);
+  border: 2px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  background: var(--surface-container-lowest);
+  color: var(--text-primary);
+  font-family: var(--font-family-sans);
+  font-size: 1.75rem;
+  font-weight: 800;
+  text-align: center;
+  letter-spacing: -0.02em;
+  outline: none;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+
+  &::placeholder {
+    color: var(--color-placeholder);
+    font-weight: var(--font-weight-regular);
+  }
+
+  &:focus {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-input-focus);
+  }
+}
+
+/* ── Bill denominations ───────────────────────────────────────────────── */
+
+.pay__bills {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--spacing-sm);
+  flex-shrink: 0;
+}
+
+.pay__bill {
+  padding: var(--spacing-md) 0;
+  min-height: 40px;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  background: var(--surface-container-lowest);
+  color: var(--color-primary);
+  font-size: var(--font-size-base);
+  font-weight: 700;
+  font-family: var(--font-family-sans);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+
+  &:hover {
+    background: var(--color-primary-subtle);
+    border-color: var(--color-primary);
+  }
+
+  &:active {
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+    transform: scale(0.95);
+  }
+}
+
+.pay__exact-btn {
+  width: 100%;
+  padding: var(--spacing-sm) 0;
+  min-height: 36px;
+  flex-shrink: 0;
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-md);
+  background: var(--color-primary-subtle);
+  color: var(--color-primary);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  font-family: var(--font-family-sans);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+
+  &:hover {
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+  }
+
+  &:active {
+    transform: scale(0.97);
+  }
+}
+
+/* ── Keypad grid ──────────────────────────────────────────────────────── */
+
+.pay__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--spacing-xs);
+  flex-shrink: 0;
+
+  &--bottom {
+    grid-template-columns: repeat(4, 1fr);
+    margin-top: var(--spacing-xs);
+  }
+}
+
+.pay__key {
+  aspect-ratio: 1.6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--surface-container-high);
+  color: var(--text-primary);
+  font-size: 1.125rem;
+  font-weight: 700;
+  font-family: var(--font-family-sans);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  user-select: none;
+
+  &:hover {
+    background: var(--surface-container-highest);
+  }
+
+  &:active {
+    background: var(--color-primary-fixed);
+    transform: scale(0.95);
+  }
+
+  &--dot {
+    font-size: 1.25rem;
+  }
+
+  &--clear {
+    color: var(--text-secondary);
+    font-weight: 800;
+
+    &:hover {
+      background: var(--surface-container-highest);
+      color: var(--text-primary);
+    }
+  }
+
+  &--backspace {
+    color: var(--color-error);
+
+    &:hover {
+      background: var(--color-error-container);
+    }
+
+    &:active {
+      background: var(--color-error);
+      color: var(--color-on-error);
+      transform: scale(0.95);
+    }
+  }
+}
+
 /* ── Payment methods ──────────────────────────────────────────────────── */
 
 .pay__methods {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: var(--spacing-sm);
+  flex-shrink: 0;
 }
 
 .pay__method {
@@ -200,7 +295,8 @@
   align-items: center;
   justify-content: center;
   gap: var(--spacing-xs);
-  padding: var(--spacing-md) var(--spacing-xs);
+  padding: var(--spacing-sm) var(--spacing-xs);
+  min-height: 48px;
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-md);
   background: var(--surface-container-lowest);
@@ -230,6 +326,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-xs);
+  flex-shrink: 0;
 }
 
 .pay__ref-label {
@@ -242,6 +339,7 @@
 
 .pay__ref-input {
   height: 40px;
+  min-height: 40px;
   padding: 0 var(--spacing-md);
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-md);
@@ -270,7 +368,9 @@
   align-items: center;
   justify-content: center;
   gap: var(--spacing-sm);
-  height: 44px;
+  height: 40px;
+  min-height: 40px;
+  flex-shrink: 0;
   border: 1px dashed var(--color-border-light);
   border-radius: var(--radius-md);
   background: transparent;
@@ -298,6 +398,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-sm);
+  flex-shrink: 0;
 }
 
 .pay__list-title {
@@ -362,17 +463,25 @@
   }
 }
 
+/* ── Footer: balance + actions (always visible, never scrolls) ───────── */
+
+.pay__footer {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
 /* ── Balance ──────────────────────────────────────────────────────────── */
 
 .pay__balance {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--spacing-lg) var(--spacing-xl);
+  padding: var(--spacing-md) var(--spacing-lg);
   border-radius: var(--radius-lg);
   background: var(--surface-container);
   border: 1px solid var(--color-border-light);
-  min-height: 56px;
 
   &--remaining {
     background: var(--color-error-container);
@@ -384,16 +493,7 @@
     }
   }
 
-  &--change {
-    background: var(--color-success-container);
-    border-color: var(--color-success);
-
-    .pay__balance-label,
-    .pay__balance-value {
-      color: var(--color-success);
-    }
-  }
-
+  &--change,
   &--exact {
     background: var(--color-success-container);
     border-color: var(--color-success);
@@ -406,13 +506,13 @@
 }
 
 .pay__balance-label {
-  font-size: var(--font-size-lg);
+  font-size: var(--font-size-base);
   font-weight: var(--font-weight-semibold);
   color: var(--text-primary);
 }
 
 .pay__balance-value {
-  font-size: var(--font-size-2xl);
+  font-size: var(--font-size-xl);
   font-weight: 800;
   color: var(--text-primary);
   display: inline-flex;
@@ -424,7 +524,6 @@
 .pay__actions {
   display: flex;
   gap: var(--spacing-md);
-  margin-top: auto;
 }
 
 .pay__cancel-btn {
@@ -457,27 +556,28 @@
   align-items: center;
   justify-content: center;
   gap: var(--spacing-sm);
-  height: 52px;
+  height: 48px;
+  min-height: 48px;
   border: none;
   border-radius: var(--radius-lg);
   background: var(--gradient-primary);
   color: var(--color-on-primary);
   font-family: var(--font-family-sans);
   font-size: var(--font-size-base);
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  font-weight: 700;
+  letter-spacing: 0.02em;
   cursor: pointer;
   transition: all var(--transition-base);
-  box-shadow: var(--shadow-lg), 0 4px 14px rgba(26, 35, 126, 0.2);
+  box-shadow: var(--shadow-md);
 
   &:hover:not(:disabled) {
-    box-shadow: var(--shadow-lg), 0 8px 24px rgba(26, 35, 126, 0.3);
-    filter: brightness(1.1);
+    box-shadow: var(--shadow-lg);
+    filter: brightness(1.05);
   }
 
   &:active:not(:disabled) {
     transform: scale(0.98);
+    box-shadow: var(--shadow-sm);
   }
 
   &:disabled {
@@ -496,21 +596,235 @@
   to { transform: rotate(360deg); }
 }
 
-/* ── Responsive ───────────────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════════════
+   TOUCH MODE — two-column layout with keypad
+   Activated by: (hover: none) media query OR .pay--touch class
+   ═══════════════════════════════════════════════════════════════════════ */
 
-@media (max-width: 768px) {
-  .pay {
-    flex-direction: column;
-    padding: var(--spacing-lg);
-    gap: var(--spacing-lg);
+@mixin touch-layout {
+  .pay__body {
+    flex-direction: row;
+    gap: var(--spacing-xl);
   }
 
   .pay__keypad-side {
+    display: flex;
+  }
+
+  // Hide the desktop amount section (it's in the keypad side now)
+  .pay__amount-desktop {
+    display: none;
+  }
+
+  .pay__amount-input {
+    caret-color: transparent;
+    cursor: default;
+  }
+}
+
+// Auto-detect touch
+@media (hover: none) {
+  .pay {
+    @include touch-layout;
+  }
+}
+
+// Manual toggle
+.pay--touch {
+  @include touch-layout;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   TABLET (768px – 1024px)
+   Two-column touch with adjusted proportions
+   ═══════════════════════════════════════════════════════════════════════ */
+
+@media (min-width: 768px) and (max-width: 1024px) {
+  .pay {
+    padding: var(--spacing-lg);
+    gap: var(--spacing-md);
+  }
+
+  .pay__keypad-side {
+    width: 240px;
+    min-width: 240px;
+  }
+
+  .pay__key {
+    aspect-ratio: 1.4;
+    font-size: 1rem;
+  }
+
+  .pay__bill {
+    padding: var(--spacing-sm) 0;
+    font-size: var(--font-size-sm);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   MOBILE (< 768px)
+   Full-height layout: fixed header, scrollable body, fixed footer
+   Native keyboard instead of custom keypad
+   ═══════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 767px) {
+  .pay {
+    padding: 0;
+    gap: 0;
+    max-height: none;
+    height: 100%; // Fill the modal body (modal is fullscreen on mobile)
+    overflow: hidden;
+  }
+
+  // ── Total bar: compact ─────────────────────────────────────────────
+  .pay__total-bar {
+    padding: var(--spacing-sm) var(--spacing-lg);
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+    border-top: none;
+  }
+
+  .pay__total-amount {
+    font-size: var(--font-size-xl);
+  }
+
+  .pay__mode-toggle {
+    display: none; // No mode toggle on mobile — always native keyboard
+  }
+
+  // ── Body: scrollable middle zone ───────────────────────────────────
+  .pay .pay__body {
+    flex-direction: column; // Override touch two-column via higher specificity
+    gap: var(--spacing-md);
+    padding: var(--spacing-md) var(--spacing-lg);
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  // ── Keypad side: show input + bills, hide numpad ───────────────────
+  .pay .pay__keypad-side {
+    display: flex; // Override desktop hidden via higher specificity
     width: 100%;
+    min-width: 0;
+    gap: var(--spacing-sm);
+  }
+
+  .pay .pay__amount-input {
+    height: 48px;
+    font-size: 1.5rem;
+    caret-color: auto; // Restore caret for native keyboard
+    cursor: text;
+  }
+
+  .pay__grid {
+    display: none; // Hide custom numpad — use native keyboard
+  }
+
+  .pay .pay__amount-desktop {
+    display: none;
+  }
+
+  // ── Bills: compact 3x2 ────────────────────────────────────────────
+  .pay__bills {
+    gap: var(--spacing-xs);
+  }
+
+  .pay__bill {
+    padding: var(--spacing-sm) 0;
+    font-size: var(--font-size-sm);
+  }
+
+  .pay__exact-btn {
+    padding: var(--spacing-xs) 0;
+    font-size: var(--font-size-xs);
+  }
+
+  // ── Methods: horizontal scroll row ────────────────────────────────
+  .pay__methods {
+    display: flex;
+    gap: var(--spacing-sm);
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding-bottom: 2px; // Prevent clipping of box-shadow
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  .pay__method {
+    flex: 0 0 auto;
+    flex-direction: row;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-sm) var(--spacing-md);
+    white-space: nowrap;
     min-width: 0;
   }
 
-  .pay__methods {
-    grid-template-columns: repeat(2, 1fr);
+  // ── Ref + add button: compact ─────────────────────────────────────
+  .pay__ref-input {
+    height: 36px;
+    font-size: var(--font-size-sm);
+  }
+
+  .pay__add-btn {
+    height: 36px;
+    font-size: var(--font-size-xs);
+  }
+
+  // ── Payment list: compact ─────────────────────────────────────────
+  .pay__list-item {
+    padding: var(--spacing-xs) var(--spacing-md);
+  }
+
+  .pay__list-method {
+    font-size: var(--font-size-xs);
+  }
+
+  .pay__list-amount {
+    font-size: var(--font-size-sm);
+  }
+
+  // ── Footer: fixed at bottom with separator ────────────────────────
+  .pay__footer {
+    padding: var(--spacing-md) var(--spacing-lg);
+    gap: var(--spacing-sm);
+    background: var(--surface-container-lowest);
+    box-shadow: 0 -1px 0 var(--color-border-light);
+  }
+
+  .pay__balance {
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-md);
+  }
+
+  .pay__balance-label {
+    font-size: var(--font-size-sm);
+  }
+
+  .pay__balance-value {
+    font-size: var(--font-size-lg);
+  }
+
+  .pay__actions {
+    flex-direction: column-reverse;
+    gap: var(--spacing-xs);
+  }
+
+  .pay__confirm-btn {
+    width: 100%;
+    height: 48px;
+  }
+
+  .pay__cancel-btn {
+    width: 100%;
+    padding: var(--spacing-sm);
+    text-align: center;
+    border: none;
+    color: var(--text-muted);
+    font-size: var(--font-size-xs);
   }
 }

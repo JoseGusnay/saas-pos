@@ -54,8 +54,15 @@ import { SaleModifierSnapshot } from '../../../../core/models/sale.models';
                   {{ group.required ? 'Requerido' : 'Opcional' }}
                 </span>
               </div>
-              <span class="modifier-dialog__group-count">
-                Selecciona {{ selectionRangeLabel(group) }}
+              <span
+                class="modifier-dialog__group-count"
+                [class.modifier-dialog__group-count--full]="isAtLimit(group)"
+              >
+                @if (isAtLimit(group)) {
+                  Máximo alcanzado
+                } @else {
+                  Selecciona {{ selectionRangeLabel(group) }}
+                }
                 <span class="modifier-dialog__group-selected">
                   ({{ selectedCountForGroup(group.id) }})
                 </span>
@@ -76,6 +83,9 @@ import { SaleModifierSnapshot } from '../../../../core/models/sale.models';
                   class="modifier-dialog__option"
                   [class.modifier-dialog__option--selected]="
                     isSelected(group.id, option.id)
+                  "
+                  [class.modifier-dialog__option--at-limit]="
+                    isAtLimit(group) && !isSelected(group.id, option.id)
                   "
                   (click)="toggleOption(group, option)"
                 >
@@ -146,6 +156,7 @@ import { SaleModifierSnapshot } from '../../../../core/models/sale.models';
 export class ModifierDialogComponent implements OnInit, OnChanges {
   @Input() modifierGroups: ModifierGroup[] = [];
   @Input() productName = '';
+  @Input() preselected: SaleModifierSnapshot[] = [];
 
   @Output() confirm = new EventEmitter<SaleModifierSnapshot[]>();
   @Output() cancel = new EventEmitter<void>();
@@ -169,18 +180,34 @@ export class ModifierDialogComponent implements OnInit, OnChanges {
     }
   }
 
-  /** Pre-select options marked as isDefault */
+  /** Pre-select from preselected input or defaults */
   private initDefaults(): void {
     const map = new Map<string, Set<string>>();
-    for (const group of this.modifierGroups) {
-      const defaults = new Set<string>();
-      for (const opt of group.options) {
-        if (opt.isDefault) {
-          defaults.add(opt.id);
+
+    if (this.preselected.length > 0) {
+      // Restore from previous selections
+      for (const group of this.modifierGroups) {
+        const selected = new Set<string>();
+        for (const snap of this.preselected) {
+          if (snap.groupId === group.id) {
+            selected.add(snap.optionId);
+          }
         }
+        map.set(group.id, selected);
       }
-      map.set(group.id, defaults);
+    } else {
+      // Use isDefault from group options
+      for (const group of this.modifierGroups) {
+        const defaults = new Set<string>();
+        for (const opt of group.options) {
+          if (opt.isDefault) {
+            defaults.add(opt.id);
+          }
+        }
+        map.set(group.id, defaults);
+      }
     }
+
     this.selections.set(map);
   }
 
@@ -225,6 +252,12 @@ export class ModifierDialogComponent implements OnInit, OnChanges {
     return this.selections().get(groupId)?.has(optionId) ?? false;
   }
 
+  /** Check if a group has reached its max selections */
+  isAtLimit(group: ModifierGroup): boolean {
+    if (group.maxSelections == null) return false;
+    return (this.selections().get(group.id)?.size ?? 0) >= group.maxSelections;
+  }
+
   /** Get selected count for a group */
   selectedCountForGroup(groupId: string): number {
     return this.selections().get(groupId)?.size ?? 0;
@@ -264,7 +297,9 @@ export class ModifierDialogComponent implements OnInit, OnChanges {
       } else {
         const max = group.maxSelections;
         if (max != null && groupSet.size >= max) {
-          return; // limit reached
+          // At limit: remove first selected (FIFO) then add new one
+          const first = groupSet.values().next().value;
+          if (first != null) groupSet.delete(first);
         }
         groupSet.add(option.id);
       }

@@ -33,7 +33,9 @@
       "Bash(grep -E \"\\\\.\\(ts\\)$\")",
       "Bash(find '/c/Users/usuario/Documents/proyects personal/netsjs/multitenant-backend/src/migrations' -type f -name *.ts)",
       "Bash(find '/c/Users/usuario/Documents/proyects personal/netsjs/multitenant-backend/src' -path */migrations/* -name *.ts -type f)",
-      "Bash(find '/c/Users/usuario/Documents/proyects personal/netsjs/multitenant-backend/src/database/migrations/tenant' -name *.ts -type f)"
+      "Bash(find '/c/Users/usuario/Documents/proyects personal/netsjs/multitenant-backend/src/database/migrations/tenant' -name *.ts -type f)",
+      "Bash(wc -l C:UsersusuarioDocumentsproyects personalangularsaas-possrcappfeaturesposcomponents/*/*.scss)",
+      "Bash(find 'C:\\\\Users\\\\usuario\\\\Documents\\\\proyects personal\\\\netsjs\\\\multitenant-backend\\\\src/modules/b2b/products' -type f -name *combo*)"
     ]
   }
 }

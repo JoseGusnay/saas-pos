@@ -29,6 +29,23 @@
   letter-spacing: -0.01em;
 }
 
+.cart-panel__item-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 100px;
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  font-size: 0.625rem;
+  font-weight: 800;
+  line-height: 1;
+  vertical-align: middle;
+  margin-left: var(--spacing-xs);
+}
+
 .cart-panel__subtitle {
   margin: var(--spacing-xs) 0 0;
   font-size: 0.6875rem;
@@ -293,6 +310,34 @@
   border-radius: 100px;
   line-height: 1.6;
   white-space: nowrap;
+}
+
+/* ── Edit options button ───────────────────────────────────────────────── */
+
+.cart-panel__edit-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-md);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  background: var(--surface-container-lowest);
+  color: var(--color-primary);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  font-family: var(--font-family-sans);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  align-self: flex-start;
+
+  &:hover {
+    background: var(--color-primary-subtle);
+    border-color: var(--color-primary);
+  }
+
+  &:active {
+    transform: scale(0.97);
+  }
 }
 
 /* ── Expanded controls (selected item) ─────────────────────────────────── */
@@ -582,7 +627,7 @@
   }
 }
 
-/* ── Expandable hint (#9 — show items are tappable) ────────────────────── */
+/* ── Expandable hint (touch devices only) ─────────────────────────────── */
 
 .cart-panel__expand-hint {
   display: none;
@@ -596,10 +641,6 @@
   @media (hover: none) {
     display: block;
   }
-}
-
-.cart-panel__item:first-child .cart-panel__expand-hint {
-  display: block;
 }
 
 /* ── Pay button ─────────────────────────────────────────────────────────── */
@@ -658,5 +699,27 @@
 
   @media (hover: hover) {
     display: inline-block;
+  }
+}
+
+// ── Mobile (< 768px) ────────────────────────────────────────────────────────
+
+@media (max-width: 767px) {
+  .cart-panel__header {
+    padding: var(--spacing-md) var(--spacing-lg);
+  }
+
+  .cart-panel__items {
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+
+  .cart-panel__item {
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+
+  .cart-panel__footer {
+    padding: var(--spacing-md) var(--spacing-lg);
+    // Account for bottom nav overlap
+    padding-bottom: var(--spacing-md);
   }
 }

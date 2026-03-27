@@ -1,5 +1,5 @@
 import { SaleModifierSnapshot } from '../../../core/models/sale.models';
-import { ComboItem, ModifierGroup } from '../../inventory/models/product.model';
+import type { ComboItem, ModifierGroup } from '../../inventory/models/product.model';
 
 // ── Cart Item ────────────────────────────────────────────────────────────────
 
@@ -28,6 +28,11 @@ export interface PosCartItem {
   chosenVariants: { comboItemId: string; variantId: string }[];
 
   stockTrackable: boolean;
+
+  /** Stored for re-editing in POS (not sent to backend) */
+  modifierGroups?: ModifierGroup[];
+  comboItems?: ComboItem[];
+  comboPriceMode?: 'FIXED' | 'CALCULATED' | null;
 }
 
 export interface PosCartItemTax {
@@ -85,6 +90,10 @@ export interface PosCatalogProduct {
   variants: PosCatalogVariant[];
   comboItems?: ComboItem[];
   modifierGroups?: ModifierGroup[];
+  /** Pre-computed stock status for template binding */
+  stockTrackable: boolean;
+  outOfStock: boolean;
+  lowStock: boolean;
 }
 
 // ── POS Catalog Category ────────────────────────────────────────────────────

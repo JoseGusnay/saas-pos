@@ -95,6 +95,11 @@
   &__group-count {
     font-size: 0.8125rem;
     color: var(--text-secondary);
+
+    &--full {
+      color: var(--color-success, #22c55e);
+      font-weight: 600;
+    }
   }
 
   &__group-selected {
@@ -143,6 +148,10 @@
       &:hover {
         background: var(--color-primary-subtle, rgba(59, 130, 246, 0.12));
       }
+    }
+
+    &--at-limit {
+      opacity: 0.6;
     }
   }
 
