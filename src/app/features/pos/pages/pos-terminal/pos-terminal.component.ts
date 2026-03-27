@@ -3,6 +3,7 @@ import {
   ChangeDetectionStrategy,
   inject,
   signal,
+  computed,
   OnDestroy,
   HostListener,
   ViewChild,
@@ -95,11 +96,94 @@ import { Warehouse } from '../../../../core/models/warehouse.models';
     <!-- ── Main POS ───────────────────────────────────────────────────── -->
     <div class="pos-terminal">
       <section class="pos-terminal__catalog" [class.pos-terminal__panel--hidden]="mobileView() === 'cart'">
+
+        <!-- Catalog (hidden when customizing, never destroyed) -->
         <app-product-catalog
           [branchId]="activeBranchId()"
           [warehouseId]="defaultWarehouseId()"
           (productSelected)="onProductSelected($event)"
+          [hidden]="isCustomizing()"
         />
+
+        <!-- Inline customization panel -->
+        @if (isCustomizing()) {
+          <div class="pos-customize">
+            <header class="pos-customize__header">
+              <button class="pos-customize__back" type="button" (click)="cancelEdit()">
+                <ng-icon name="lucideArrowLeft" size="16" />
+                <span>Catálogo</span>
+              </button>
+              <span class="pos-customize__title">{{ pendingProductName() }}</span>
+            </header>
+
+            <div class="pos-customize__body">
+              <!-- Variant selector -->
+              @if (showVariantDialog()) {
+                <div class="pos-customize__section">
+                  <p class="pos-customize__label">Selecciona una variante</p>
+                  <div class="variant-selector">
+                    @for (v of pendingVariantOptions(); track v.id) {
+                      <button
+                        class="variant-selector__option"
+                        [class.variant-selector__option--out]="v.stockTrackable && v.availableStock <= 0"
+                        [disabled]="v.stockTrackable && v.availableStock <= 0"
+                        (click)="onVariantChosen(v)"
+                      >
+                        @if (v.imageUrl) {
+                          <img class="variant-selector__image" [src]="v.imageUrl" [alt]="v.name" />
+                        }
+                        <div class="variant-selector__info">
+                          <span class="variant-selector__name">{{ v.name }}</span>
+                          @if (v.sku) {
+                            <span class="variant-selector__sku">{{ v.sku }}</span>
+                          }
+                          @if (v.stockTrackable) {
+                            <span
+                              class="variant-selector__stock"
+                              [class.variant-selector__stock--low]="v.availableStock > 0 && v.availableStock <= 5"
+                              [class.variant-selector__stock--out]="v.availableStock <= 0"
+                            >
+                              @if (v.availableStock <= 0) { Sin stock } @else { {{ v.availableStock }} en stock }
+                            </span>
+                          }
+                        </div>
+                        <span class="variant-selector__price">
+                          {{ v.salePrice | currency: 'USD':'symbol':'1.2-2' }}
+                        </span>
+                      </button>
+                    }
+                  </div>
+                </div>
+              }
+
+              <!-- Combo dialog -->
+              @if (showComboDialog()) {
+                <app-combo-dialog
+                  [comboItems]="pendingComboItems()"
+                  [productName]="pendingProductName()"
+                  [comboPriceMode]="pendingComboPriceMode()"
+                  [basePrice]="pendingComboBasePrice()"
+                  [preselectedChoices]="pendingPreselectedChoices()"
+                  [preselectedModifiers]="pendingPreselectedComboModifiers()"
+                  (confirm)="onComboConfirmed($event)"
+                  (cancel)="cancelEdit()"
+                />
+              }
+
+              <!-- Modifier dialog -->
+              @if (showModifierDialog()) {
+                <app-modifier-dialog
+                  [modifierGroups]="pendingModifierGroups()"
+                  [productName]="pendingProductName()"
+                  [preselected]="pendingPreselectedModifiers()"
+                  (confirm)="onModifiersConfirmed($event)"
+                  (cancel)="cancelEdit()"
+                />
+              }
+            </div>
+          </div>
+        }
+
       </section>
       <section class="pos-terminal__cart" [class.pos-terminal__panel--hidden]="mobileView() === 'catalog'">
         <app-cart-panel
@@ -134,98 +218,6 @@ import { Warehouse } from '../../../../core/models/warehouse.models';
         }
       </button>
     </nav>
-
-    <!-- ── Variant Selector Dialog ──────────────────────────────────────── -->
-    <app-modal
-      [isOpen]="showVariantDialog()"
-      [title]="'Seleccionar variante: ' + pendingProductName()"
-      size="sm"
-      (close)="showVariantDialog.set(false)"
-    >
-      <div modalBody>
-      @if (showVariantDialog()) {
-        <div class="variant-selector">
-          @for (v of pendingVariantOptions(); track v.id) {
-            <button
-              class="variant-selector__option"
-              [class.variant-selector__option--out]="v.stockTrackable && v.availableStock <= 0"
-              [disabled]="v.stockTrackable && v.availableStock <= 0"
-              (click)="onVariantChosen(v)"
-            >
-              @if (v.imageUrl) {
-                <img class="variant-selector__image" [src]="v.imageUrl" [alt]="v.name" />
-              }
-              <div class="variant-selector__info">
-                <span class="variant-selector__name">{{ v.name }}</span>
-                @if (v.sku) {
-                  <span class="variant-selector__sku">{{ v.sku }}</span>
-                }
-                @if (v.stockTrackable) {
-                  <span
-                    class="variant-selector__stock"
-                    [class.variant-selector__stock--low]="v.availableStock > 0 && v.availableStock <= 5"
-                    [class.variant-selector__stock--out]="v.availableStock <= 0"
-                  >
-                    @if (v.availableStock <= 0) {
-                      Sin stock
-                    } @else {
-                      {{ v.availableStock }} en stock
-                    }
-                  </span>
-                }
-              </div>
-              <span class="variant-selector__price">
-                {{ v.salePrice | currency: 'USD':'symbol':'1.2-2' }}
-              </span>
-            </button>
-          }
-        </div>
-      }
-      </div>
-    </app-modal>
-
-    <!-- ── Modifier Dialog ──────────────────────────────────────────────── -->
-    <app-modal
-      [isOpen]="showModifierDialog()"
-      [title]="'Personalizar: ' + pendingProductName()"
-      size="md"
-      (close)="showModifierDialog.set(false)"
-    >
-      <div modalBody>
-      @if (showModifierDialog()) {
-        <app-modifier-dialog
-          [modifierGroups]="pendingModifierGroups()"
-          [productName]="pendingProductName()"
-          [preselected]="pendingPreselectedModifiers()"
-          (confirm)="onModifiersConfirmed($event)"
-          (cancel)="cancelEdit()"
-        />
-      }
-      </div>
-    </app-modal>
-
-    <!-- ── Combo Dialog ─────────────────────────────────────────────────── -->
-    <app-modal
-      [isOpen]="showComboDialog()"
-      [title]="'Armar combo: ' + pendingProductName()"
-      size="md"
-      (close)="showComboDialog.set(false)"
-    >
-      <div modalBody>
-      @if (showComboDialog()) {
-        <app-combo-dialog
-          [comboItems]="pendingComboItems()"
-          [productName]="pendingProductName()"
-          [comboPriceMode]="pendingComboPriceMode()"
-          [basePrice]="pendingComboBasePrice()"
-          [preselectedChoices]="pendingPreselectedChoices()"
-          [preselectedModifiers]="pendingPreselectedComboModifiers()"
-          (confirm)="onComboConfirmed($event)"
-          (cancel)="cancelEdit()"
-        />
-      }
-      </div>
-    </app-modal>
 
     <!-- ── Payment Dialog ───────────────────────────────────────────────── -->
     <app-modal
@@ -378,6 +370,11 @@ export class PosTerminalComponent implements OnDestroy {
 
   // ── Mobile view toggle ───────────────────────────────────────────────────
   readonly mobileView = signal<'catalog' | 'cart'>('catalog');
+
+  /** True when any customization dialog is active (renders inline instead of catalog) */
+  readonly isCustomizing = computed(() =>
+    this.showVariantDialog() || this.showModifierDialog() || this.showComboDialog()
+  );
 
   // ── Header info ──────────────────────────────────────────────────────────
   readonly activeBranchName = signal('');
@@ -971,9 +968,7 @@ export class PosTerminalComponent implements OnDestroy {
         break;
       case 'Escape':
         if (this.showPaymentDialog() && !this.isProcessingSale()) this.showPaymentDialog.set(false);
-        else if (this.showVariantDialog()) this.showVariantDialog.set(false);
-        else if (this.showModifierDialog()) this.showModifierDialog.set(false);
-        else if (this.showComboDialog()) this.showComboDialog.set(false);
+        else if (this.isCustomizing()) this.cancelEdit();
         else if (this.showCustomerDialog()) this.showCustomerDialog.set(false);
         break;
     }

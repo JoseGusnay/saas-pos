@@ -138,14 +138,120 @@
   }
 }
 
+// ── Inline Customization Panel ───────────────────────────────────────────────
+
+.pos-customize {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  animation: customize-in 0.2s ease;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-lg);
+    padding-bottom: var(--spacing-lg);
+    margin-bottom: var(--spacing-lg);
+    border-bottom: 1px solid var(--color-border-light);
+    flex-shrink: 0;
+  }
+
+  &__back {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    font-family: var(--font-family-sans);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    flex-shrink: 0;
+
+    &:hover {
+      background: var(--state-hover);
+      color: var(--text-primary);
+      border-color: var(--color-border-hover);
+    }
+  }
+
+  &__title {
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.01em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+
+    // Override child dialog max-heights so they fill the space
+    app-modifier-dialog,
+    app-combo-dialog {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+  }
+
+  &__section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+  }
+
+  &__label {
+    margin: 0;
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-secondary);
+  }
+}
+
+// Override max-height on inline dialogs
+.pos-customize__body {
+  ::ng-deep .modifier-dialog,
+  ::ng-deep .combo-dialog {
+    max-height: none;
+    flex: 1;
+    min-height: 0;
+  }
+
+  ::ng-deep .modifier-dialog__header,
+  ::ng-deep .combo-dialog__header {
+    display: none;
+  }
+
+  ::ng-deep .modifier-dialog__body,
+  ::ng-deep .combo-dialog__body {
+    flex: 1;
+    min-height: 0;
+  }
+}
+
+@keyframes customize-in {
+  from { opacity: 0; transform: translateX(-8px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
 // ── Variant Selector ─────────────────────────────────────────────────────────
 
 .variant-selector {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-xs);
-  max-height: 400px;
-  overflow-y: auto;
 
   &__option {
     display: flex;
