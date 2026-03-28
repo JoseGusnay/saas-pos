@@ -397,7 +397,7 @@ export class ProductFormPageComponent implements OnInit, HasUnsavedChanges {
                 priceAdjustment: [this.round2(o.priceAdjustment) ?? 0],
                 isDefault: [o.isDefault ?? false],
                 sortOrder: [o.sortOrder ?? 0],
-                salePrice: [this.round2(o.salePrice) ?? 0],
+                salePrice: [this.round2(o.variantPrice ?? o.salePrice) ?? 0],
               }))),
             }),
           }));
@@ -409,7 +409,7 @@ export class ProductFormPageComponent implements OnInit, HasUnsavedChanges {
             variantName: [item.variantName ?? ''],
             productName: [item.productName ?? item.variantName ?? ''],
             sku: [item.sku ?? ''],
-            salePrice: [this.round2(item.salePrice) ?? 0],
+            salePrice: [this.round2(item.variantPrice ?? item.salePrice) ?? 0],
             modifierGroups: this.fb.array((item.modifierGroups ?? []).map((g: any) => this.buildModGroupFG(g))),
           }));
         }

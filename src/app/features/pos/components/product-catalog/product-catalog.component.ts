@@ -48,207 +48,137 @@ import {
   styleUrls: ['./product-catalog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="pos-catalog" [class.pos-catalog--no-sidebar]="categories().length === 0 && !categoriesLoading()">
-      <!-- ── Category sidebar ──────────────────────────────────────── -->
-      @if (categoriesLoading()) {
-        <aside class="pos-catalog__sidebar">
-          @for (i of catSkeletons; track $index) {
-            <div class="pos-catalog__cat-skeleton">
-              <div class="pos-catalog__cat-skeleton-icon"></div>
-              <div class="pos-catalog__cat-skeleton-label"></div>
-            </div>
+    <div class="pos-catalog">
+      <!-- ── Search bar ────────────────────────────────────────────── -->
+      <div class="pos-catalog__search">
+        <button
+          class="pos-catalog__search-mode"
+          [class.pos-catalog__search-mode--barcode]="searchMode() === 'barcode'"
+          type="button"
+          title="Cambiar modo de búsqueda (F5)"
+          (click)="toggleSearchMode()"
+        >
+          @if (searchMode() === 'barcode') {
+            <ng-icon name="lucideScanBarcode" size="18" />
+          } @else {
+            <ng-icon name="lucideSearch" size="18" />
           }
-        </aside>
+        </button>
+        <input
+          #searchInput
+          type="text"
+          class="pos-catalog__search-input"
+          [placeholder]="searchMode() === 'barcode' ? 'Escanear código de barras...' : 'Buscar producto...'"
+          [ngModel]="searchTerm()"
+          (ngModelChange)="onSearchChange($event)"
+          (keydown.enter)="onSearchEnter()"
+        />
+        <div class="pos-catalog__search-hints">
+          @if (searchTerm()) {
+            <button class="pos-catalog__search-clear" (click)="clearSearch()">
+              <ng-icon name="lucideX" size="16" />
+            </button>
+          } @else {
+            <kbd class="pos-catalog__kbd">F4</kbd>
+            <kbd class="pos-catalog__kbd">F5: {{ searchMode() === 'barcode' ? 'MANUAL' : 'ESCÁNER' }}</kbd>
+          }
+        </div>
+      </div>
+
+      <!-- ── Category tabs (horizontal) ────────────────────────────── -->
+      @if (categoriesLoading()) {
+        <div class="pos-catalog__tabs">
+          @for (i of catSkeletons; track $index) {
+            <div class="pos-catalog__tab-skeleton"></div>
+          }
+        </div>
       } @else if (categories().length > 0) {
-        <aside class="pos-catalog__sidebar">
+        <div class="pos-catalog__tabs">
           <button
-            class="pos-catalog__cat-btn"
-            [class.pos-catalog__cat-btn--active]="selectedCategoryId() === null"
+            class="pos-catalog__tab"
+            [class.pos-catalog__tab--active]="selectedCategoryId() === null"
             (click)="selectCategory(null)"
-          >
-            <ng-icon name="lucideLayoutGrid" class="pos-catalog__cat-icon" />
-            <span class="pos-catalog__cat-label">Todos</span>
-          </button>
+          >Todos</button>
           @for (cat of categories(); track cat.id) {
             <button
-              class="pos-catalog__cat-btn"
-              [class.pos-catalog__cat-btn--active]="selectedCategoryId() === cat.id"
+              class="pos-catalog__tab"
+              [class.pos-catalog__tab--active]="selectedCategoryId() === cat.id"
               (click)="selectCategory(cat.id)"
-            >
-              <ng-icon name="lucideTag" class="pos-catalog__cat-icon" />
-              <span class="pos-catalog__cat-label">{{ cat.name }}</span>
-            </button>
+            >{{ cat.name }}</button>
           }
-        </aside>
+        </div>
       }
 
-      <!-- ── Main content ────────────────────────────────────────────── -->
-      <div class="pos-catalog__main">
-        <!-- Search bar -->
-        <div class="pos-catalog__search">
-          <button
-            class="pos-catalog__search-mode"
-            [class.pos-catalog__search-mode--barcode]="searchMode() === 'barcode'"
-            type="button"
-            title="Cambiar modo de búsqueda (F5)"
-            (click)="toggleSearchMode()"
-          >
-            @if (searchMode() === 'barcode') {
-              <ng-icon name="lucideScanBarcode" size="20" />
-            } @else {
-              <ng-icon name="lucideSearch" size="20" />
-            }
-          </button>
-          <input
-            #searchInput
-            type="text"
-            class="pos-catalog__search-input"
-            [placeholder]="searchMode() === 'barcode' ? 'Escanear código de barras...' : 'Buscar por nombre...'"
-            [ngModel]="searchTerm()"
-            (ngModelChange)="onSearchChange($event)"
-            (keydown.enter)="onSearchEnter()"
-          />
-          <div class="pos-catalog__search-hints">
-            @if (searchTerm()) {
-              <button class="pos-catalog__search-clear" (click)="clearSearch()">
-                <ng-icon name="lucideX" size="16" />
-              </button>
-            } @else {
-              <kbd class="pos-catalog__kbd">F4</kbd>
-              <kbd class="pos-catalog__kbd">F5: {{ searchMode() === 'barcode' ? 'MANUAL' : 'ESCÁNER' }}</kbd>
-            }
-          </div>
+      <!-- ── Loading: skeleton tiles ───────────────────────────────── -->
+      @if (loading()) {
+        <div class="pos-catalog__grid">
+          @for (i of skeletons; track $index) {
+            <div class="pos-catalog__skeleton"></div>
+          }
         </div>
+      }
 
-        <!-- ── Loading: skeleton cards ─────────────────────────────────── -->
-        @if (loading()) {
-          <div class="pos-catalog__grid">
-            @for (i of skeletons; track $index) {
-              <div class="pos-catalog__skeleton">
-                <div class="pos-catalog__skeleton-image">
-                  <ng-icon name="lucidePackage" size="36" />
-                </div>
-                <div class="pos-catalog__skeleton-body">
-                  <div class="pos-catalog__skeleton-line pos-catalog__skeleton-line--sm"></div>
-                  <div class="pos-catalog__skeleton-line pos-catalog__skeleton-line--full"></div>
-                  <div class="pos-catalog__skeleton-bottom">
-                    <div class="pos-catalog__skeleton-line pos-catalog__skeleton-line--price"></div>
-                    <div class="pos-catalog__skeleton-btn"></div>
-                  </div>
+      <!-- ── Product grid ──────────────────────────────────────────── -->
+      @if (!loading() && catalogProducts().length > 0) {
+        <div class="pos-catalog__grid">
+          @for (product of catalogProducts(); track product.id) {
+            <button
+              type="button"
+              class="pos-catalog__tile"
+              [class.pos-catalog__tile--out]="product.outOfStock"
+              [disabled]="product.outOfStock"
+              (click)="onProductClick(product)"
+            >
+              <div class="pos-catalog__tile-visual" [style.--tile-accent]="categoryColor(product.categoryId)">
+                @if (product.imageUrl) {
+                  <img class="pos-catalog__tile-img" [src]="product.imageUrl" [alt]="product.name" />
+                } @else {
+                  <ng-icon name="lucidePackage" class="pos-catalog__tile-placeholder" />
+                }
+                @if (product.outOfStock) {
+                  <span class="pos-catalog__tile-badge pos-catalog__tile-badge--out">Sin stock</span>
+                } @else if (product.lowStock) {
+                  <span class="pos-catalog__tile-badge pos-catalog__tile-badge--low">Poco stock</span>
+                }
+              </div>
+              <div class="pos-catalog__tile-info">
+                <span class="pos-catalog__tile-name">{{ product.name }}</span>
+                <div class="pos-catalog__tile-footer">
+                  <span class="pos-catalog__tile-price">
+                    {{ '$' + (product.variant.salePrice | number: '1.2-2') }}
+                  </span>
+                  @if (product.variants.length > 1) {
+                    <span class="pos-catalog__tile-variants">{{ product.variants.length }} opc.</span>
+                  }
                 </div>
               </div>
+            </button>
+          }
+        </div>
+      }
+
+      <!-- Empty state -->
+      @if (!loading() && catalogProducts().length === 0) {
+        <div class="pos-catalog__empty">
+          <ng-icon name="lucideSearch" class="pos-catalog__empty-icon" />
+          <p class="pos-catalog__empty-text">
+            @if (searchTerm()) {
+              No se encontraron productos para "{{ searchTerm() }}"
+            } @else {
+              No hay productos disponibles
             }
-          </div>
-        }
+          </p>
+        </div>
+      }
 
-        <!-- ── Product grid ────────────────────────────────────────────── -->
-        @if (!loading() && catalogProducts().length > 0) {
-          <div class="pos-catalog__grid">
-            @for (product of catalogProducts(); track product.id) {
-              <button
-                type="button"
-                class="pos-catalog__card"
-                [class.pos-catalog__card--out-of-stock]="product.outOfStock"
-                [disabled]="product.outOfStock"
-                (click)="onProductClick(product)"
-              >
-                <!-- Image zone -->
-                <div class="pos-catalog__card-image">
-                  @if (product.imageUrl) {
-                    <img [src]="product.imageUrl" [alt]="product.name" />
-                  } @else {
-                    <ng-icon name="lucidePackage" class="pos-catalog__card-placeholder" />
-                  }
-
-                  <!-- Stock badge OR out-of-stock overlay -->
-                  @if (product.outOfStock) {
-                    <div class="pos-catalog__card-overlay">
-                      <span class="pos-catalog__card-overlay-label">SIN STOCK</span>
-                    </div>
-                  } @else if (product.stockTrackable) {
-                    <div class="pos-catalog__card-stock">
-                      <span
-                        class="pos-catalog__card-stock-badge"
-                        [class.pos-catalog__card-stock-badge--low]="product.lowStock"
-                      >
-                        <ng-icon [name]="product.lowStock ? 'lucideAlertTriangle' : 'lucidePackage'" size="12" />
-                        {{ product.variant.availableStock }} EN STOCK
-                      </span>
-                    </div>
-                  }
-                </div>
-
-                <!-- Body -->
-                <div class="pos-catalog__card-body">
-                  <div>
-                    <span class="pos-catalog__card-sku">
-                      SKU: {{ product.variant.sku || '—' }}
-                    </span>
-                    <h3 class="pos-catalog__card-name">{{ product.name }}</h3>
-                  </div>
-
-                  <!-- Price + action row -->
-                  <div class="pos-catalog__card-bottom">
-                    <div class="pos-catalog__card-price-block">
-                      <div class="pos-catalog__card-price">
-                        <span class="pos-catalog__card-currency">$</span>
-                        <span
-                          class="pos-catalog__card-amount"
-                          [class.pos-catalog__card-amount--muted]="product.outOfStock"
-                        >
-                          {{ product.variant.salePrice | number: '1.2-2' }}
-                        </span>
-                      </div>
-                    </div>
-
-                    @if (product.outOfStock) {
-                      <span class="pos-catalog__card-add pos-catalog__card-add--disabled">
-                        <ng-icon name="lucideBan" size="20" />
-                      </span>
-                    } @else {
-                      <span
-                        class="pos-catalog__card-add"
-                        [class.pos-catalog__card-add--primary]="!product.lowStock"
-                      >
-                        <ng-icon name="lucidePlus" size="20" />
-                      </span>
-                    }
-                  </div>
-
-                  @if (product.variants.length > 1) {
-                    <span class="pos-catalog__card-variants">
-                      {{ product.variants.length }} variantes
-                    </span>
-                  }
-                </div>
-              </button>
-            }
-          </div>
-        }
-
-        <!-- Empty state -->
-        @if (!loading() && catalogProducts().length === 0) {
-          <div class="pos-catalog__empty">
-            <ng-icon name="lucideSearch" class="pos-catalog__empty-icon" />
-            <p class="pos-catalog__empty-text">
-              @if (searchTerm()) {
-                No se encontraron productos para "{{ searchTerm() }}"
-              } @else {
-                No hay productos disponibles
-              }
-            </p>
-          </div>
-        }
-
-        <!-- Error state -->
-        @if (errorMessage()) {
-          <div class="pos-catalog__error">
-            <ng-icon name="lucideAlertTriangle" />
-            <span>{{ errorMessage() }}</span>
-            <button class="pos-catalog__error-retry" (click)="loadCatalog()">Reintentar</button>
-          </div>
-        }
-      </div>
+      <!-- Error state -->
+      @if (errorMessage()) {
+        <div class="pos-catalog__error">
+          <ng-icon name="lucideAlertTriangle" />
+          <span>{{ errorMessage() }}</span>
+          <button class="pos-catalog__error-retry" (click)="loadCatalog()">Reintentar</button>
+        </div>
+      }
     </div>
   `,
 })
@@ -462,6 +392,29 @@ export class ProductCatalogComponent implements OnDestroy, AfterViewInit {
 
   isLowStock(product: PosCatalogProduct): boolean {
     return this.isStockTrackable(product) && product.variant.availableStock > 0 && product.variant.availableStock <= 5;
+  }
+
+  // ── Category color palette ────────────────────────────────────────────────
+  private readonly palette = [
+    '#4f6d7a', '#6b8f71', '#8b6f47', '#7a5c8a', '#5a7d9a',
+    '#8a6d5c', '#5c8a7a', '#7d6b8a', '#6a8a5c', '#8a5c6d',
+    '#5c6d8a', '#7a8a5c',
+  ];
+
+  private readonly colorCache = new Map<string, string>();
+
+  categoryColor(categoryId: string): string {
+    if (!categoryId) return this.palette[0];
+    let color = this.colorCache.get(categoryId);
+    if (!color) {
+      let hash = 0;
+      for (let i = 0; i < categoryId.length; i++) {
+        hash = ((hash << 5) - hash + categoryId.charCodeAt(i)) | 0;
+      }
+      color = this.palette[Math.abs(hash) % this.palette.length];
+      this.colorCache.set(categoryId, color);
+    }
+    return color;
   }
 
   // ── Helpers ────────────────────────────────────────────────────────────────

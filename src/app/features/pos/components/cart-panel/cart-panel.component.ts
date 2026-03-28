@@ -89,131 +89,93 @@ import { ToastService } from '../../../../core/services/toast.service';
       </div>
     } @else {
       <div class="cart-panel__items">
-        @for (item of cart.items(); track item.uid; let idx = $index) {
+        @for (item of cart.items(); track item.uid) {
           <div
             class="cart-panel__item"
             [class.cart-panel__item--selected]="cart.selectedItemUid() === item.uid"
             (click)="toggleItem(item.uid)"
           >
-            <div class="cart-panel__item-top">
-              <!-- Qty badge: hidden when selected (stepper replaces it) -->
-              @if (cart.selectedItemUid() !== item.uid) {
-                <div
-                  class="cart-panel__qty-badge"
-                  [class.cart-panel__qty-badge--bounce]="bouncingUid() === item.uid"
-                >{{ item.quantity }}x</div>
-              }
-
-              <div class="cart-panel__item-info">
+            <!-- Main row: qty · name · price -->
+            <div class="cart-panel__row">
+              <span
+                class="cart-panel__qty-label"
+                [class.cart-panel__qty-label--bounce]="bouncingUid() === item.uid"
+              >{{ item.quantity }}</span>
+              <div class="cart-panel__name-col">
                 <span class="cart-panel__item-name">{{ item.productName }}</span>
                 @if (item.variantName !== item.productName) {
                   <span class="cart-panel__item-variant">{{ item.variantName }}</span>
                 }
-                @if (item.sku && cart.selectedItemUid() === item.uid) {
-                  <span class="cart-panel__item-sku">SKU: {{ item.sku }}</span>
-                }
               </div>
-
               <span class="cart-panel__line-total">
                 {{ cart.getLineTotal(item) | currency: 'USD':'symbol':'1.2-2' }}
               </span>
-
-              <button
-                class="cart-panel__remove-btn"
-                type="button"
-                title="Eliminar"
-                (click)="cart.removeItem(item.uid); $event.stopPropagation()"
-              >
-                <ng-icon name="lucideX" size="14" />
-              </button>
             </div>
 
-            <!-- Modifiers -->
+            <!-- Modifiers as indented text -->
             @if (item.selectedModifiers.length > 0) {
-              <div class="cart-panel__item-modifiers">
+              <div class="cart-panel__mods">
                 @for (mod of item.selectedModifiers; track mod.optionId) {
-                  <span class="cart-panel__modifier-badge">{{ mod.optionName }}</span>
+                  <span class="cart-panel__mod">{{ mod.optionName }}</span>
                 }
               </div>
             }
 
-            <!-- Hint (collapsed items, touch devices only via CSS) -->
-            @if (cart.selectedItemUid() !== item.uid) {
-              <span class="cart-panel__expand-hint">Pulsa para editar</span>
-            }
-
-            <!-- Expanded controls (selected) -->
+            <!-- Expanded controls -->
             @if (cart.selectedItemUid() === item.uid) {
-              <div class="cart-panel__item-expanded">
-                <!-- Edit button (only for items with modifiers or combos) -->
-                @if (item.selectedModifiers.length > 0 || item.chosenVariants.length > 0) {
-                  <button
-                    class="cart-panel__edit-btn"
-                    type="button"
-                    (click)="editItem.emit(item.uid); $event.stopPropagation()"
-                  >
-                    <ng-icon name="lucidePencil" size="14" />
-                    <span>Editar opciones</span>
-                  </button>
-                }
-
-                <!-- Row 1: Stepper + unit price -->
-                <div class="cart-panel__item-row">
-                  <div class="cart-panel__qty" (click)="$event.stopPropagation()">
-                    <button
-                      class="cart-panel__qty-btn"
-                      type="button"
-                      (click)="changeQuantity(item.uid, item.quantity - 1)"
-                    >
-                      <ng-icon name="lucideMinus" size="16" />
+              <div class="cart-panel__expanded" (click)="$event.stopPropagation()">
+                <div class="cart-panel__expanded-row">
+                  <!-- Stepper -->
+                  <div class="cart-panel__stepper">
+                    <button class="cart-panel__stepper-btn" type="button" (click)="changeQuantity(item.uid, item.quantity - 1)">
+                      <ng-icon name="lucideMinus" size="14" />
                     </button>
                     <input
-                      class="cart-panel__qty-input"
-                      type="number"
-                      min="1"
+                      class="cart-panel__stepper-input"
+                      type="number" min="1"
                       [ngModel]="item.quantity"
                       (ngModelChange)="onQuantityInput(item.uid, $event)"
                       (focus)="$any($event.target).select()"
                       aria-label="Cantidad"
                     />
-                    <button
-                      class="cart-panel__qty-btn"
-                      type="button"
-                      (click)="changeQuantity(item.uid, item.quantity + 1)"
-                    >
-                      <ng-icon name="lucidePlus" size="16" />
+                    <button class="cart-panel__stepper-btn" type="button" (click)="changeQuantity(item.uid, item.quantity + 1)">
+                      <ng-icon name="lucidePlus" size="14" />
                     </button>
                   </div>
+
                   <span class="cart-panel__unit-price">{{ item.unitPrice | currency: 'USD':'symbol':'1.2-2' }}/u</span>
+
+                  <!-- Actions -->
+                  @if (item.modifierGroups?.length || item.comboItems?.length) {
+                    <button class="cart-panel__action-btn" type="button" title="Editar opciones" (click)="editItem.emit(item.uid)">
+                      <ng-icon name="lucidePencil" size="14" />
+                    </button>
+                  }
+                  <button class="cart-panel__action-btn cart-panel__action-btn--danger" type="button" title="Eliminar" (click)="cart.removeItem(item.uid)">
+                    <ng-icon name="lucideTrash2" size="14" />
+                  </button>
                 </div>
 
-                <!-- Row 2: Discount chip toggle -->
-                <div class="cart-panel__item-row cart-panel__item-row--end" (click)="$event.stopPropagation()">
+                <!-- Discount -->
+                <div class="cart-panel__expanded-row">
                   @if (!discountOpen() && !item.discountPercent) {
-                    <button
-                      class="cart-panel__discount-chip"
-                      type="button"
-                      (click)="discountOpen.set(true)"
-                    >
+                    <button class="cart-panel__discount-toggle" type="button" (click)="discountOpen.set(true)">
                       <ng-icon name="lucidePercent" size="12" />
-                      <span>Dto.</span>
+                      Descuento
                     </button>
                   } @else {
-                    <div class="cart-panel__discount">
+                    <div class="cart-panel__discount-field">
                       <ng-icon name="lucidePercent" size="12" />
                       <input
                         class="cart-panel__discount-input"
-                        type="number"
-                        min="0"
-                        max="100"
-                        step="1"
+                        type="number" min="0" max="100" step="1"
                         aria-label="Porcentaje de descuento"
                         [ngModel]="item.discountPercent"
                         (ngModelChange)="onDiscountChange(item.uid, $event)"
                         (keydown)="blockInvalidDiscount($event)"
                         placeholder="0"
                       />
-                      <span class="cart-panel__discount-suffix">%</span>
+                      <span class="cart-panel__discount-pct">%</span>
                     </div>
                   }
                 </div>
@@ -316,6 +278,15 @@ export class CartPanelComponent {
         setTimeout(() => this.focusQtyInput(), 50);
       }
     });
+
+    // Auto-scroll to top when first item changes (new item added at top)
+    effect(() => {
+      const items = this.cart.items();
+      if (items.length === 0) return;
+      // Reading the signal is enough to track changes
+      items[0].uid;
+      setTimeout(() => this.scrollListToTop(), 30);
+    });
   }
 
   toggleItem(uid: string): void {
@@ -395,8 +366,13 @@ export class CartPanelComponent {
     }
   }
 
+  private scrollListToTop(): void {
+    const list = this.elRef.nativeElement.querySelector('.cart-panel__items') as HTMLElement;
+    if (list) list.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
   private focusQtyInput(): void {
-    const input = this.elRef.nativeElement.querySelector('.cart-panel__qty-input') as HTMLInputElement;
+    const input = this.elRef.nativeElement.querySelector('.cart-panel__stepper-input') as HTMLInputElement;
     if (input) {
       input.focus();
       input.select();

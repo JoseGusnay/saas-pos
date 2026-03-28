@@ -62,16 +62,14 @@ export class PosCartService {
     );
 
     if (existing) {
-      this._items.update(items =>
-        items.map(i => i.uid === existing.uid
-          ? { ...i, quantity: i.quantity + item.quantity }
-          : i
-        )
-      );
+      this._items.update(items => {
+        const updated = { ...existing, quantity: existing.quantity + item.quantity };
+        return [updated, ...items.filter(i => i.uid !== existing.uid)];
+      });
       this._selectedItemUid.set(existing.uid);
       return existing.uid;
     } else {
-      this._items.update(items => [...items, { ...item, uid }]);
+      this._items.update(items => [{ ...item, uid }, ...items]);
       this._selectedItemUid.set(uid);
       return uid;
     }
