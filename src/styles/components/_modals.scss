@@ -27,6 +27,7 @@
   transform: translate(-50%, -50%);
   width: 480px;
   max-width: 90vw;
+  max-height: 90vh;
   border-radius: var(--radius-lg);
   border: 1px solid var(--color-border-light);
 
@@ -95,7 +96,9 @@
   font-size: var(--font-size-sm);
   color: var(--color-text-muted);
   line-height: 1.5;
-  min-height: 0; // Allow flex children to shrink
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
 }
 
 // Full-screen bottom sheet variant for mobile (e.g., payment dialog)

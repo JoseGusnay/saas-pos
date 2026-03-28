@@ -145,7 +145,7 @@ export interface PosCatalogApiVariant {
 // ── Payment entry in the payment dialog ──────────────────────────────────────
 
 export interface PosPaymentEntry {
-  method: 'EFECTIVO' | 'TARJETA_DEBITO' | 'TARJETA_CREDITO' | 'TRANSFERENCIA';
+  method: 'EFECTIVO' | 'TARJETA_DEBITO' | 'TARJETA_CREDITO' | 'TRANSFERENCIA' | 'DINERO_ELECTRONICO' | 'TARJETA_PREPAGO';
   amount: number;
   reference?: string;
 }

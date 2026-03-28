@@ -9,8 +9,6 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-lg);
-  padding: var(--spacing-xl);
-  max-height: 85vh;
   overflow: hidden;
 }
 
@@ -227,7 +225,7 @@
 }
 
 .pay__key {
-  aspect-ratio: 1.6;
+  aspect-ratio: 1.4;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -604,11 +602,27 @@
 @mixin touch-layout {
   .pay__body {
     flex-direction: row;
-    gap: var(--spacing-xl);
+    gap: var(--spacing-lg);
+    overflow: hidden;
   }
 
   .pay__keypad-side {
     display: flex;
+    flex: 1;
+    width: auto;
+    min-width: 0;
+  }
+
+  .pay__flow-side {
+    flex: 1;
+    overflow-y: auto;
+
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-border-subtle) transparent;
+
+    &::-webkit-scrollbar { width: 3px; }
+    &::-webkit-scrollbar-track { background: transparent; }
+    &::-webkit-scrollbar-thumb { background: var(--color-border-subtle); border-radius: 100px; }
   }
 
   // Hide the desktop amount section (it's in the keypad side now)
@@ -622,12 +636,12 @@
   }
 }
 
-// Auto-detect touch
-@media (hover: none) {
-  .pay {
-    @include touch-layout;
-  }
-}
+// Auto-detect touch (disabled — using desktop mode for now)
+// @media (hover: none) {
+//   .pay {
+//     @include touch-layout;
+//   }
+// }
 
 // Manual toggle
 .pay--touch {
@@ -641,13 +655,7 @@
 
 @media (min-width: 768px) and (max-width: 1024px) {
   .pay {
-    padding: var(--spacing-lg);
     gap: var(--spacing-md);
-  }
-
-  .pay__keypad-side {
-    width: 240px;
-    min-width: 240px;
   }
 
   .pay__key {

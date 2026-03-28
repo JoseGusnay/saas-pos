@@ -57,6 +57,12 @@ export class NavigationService {
     { type: 'section', label: 'Ventas' },
     {
       type: 'item',
+      label: 'Historial de Ventas',
+      icon: 'lucideReceipt',
+      route: '/ventas'
+    },
+    {
+      type: 'item',
       label: 'Clientes',
       icon: 'lucideUsers',
       route: '/clientes'

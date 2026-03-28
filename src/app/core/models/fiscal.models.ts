@@ -19,6 +19,7 @@ export interface EmpresaFiscal {
   obligadoContabilidad: boolean;
   contribuyenteEspecial: string | null;
   regimenRimpe: RegimenRimpe | null;
+  agenteRetencion: string | null;
   ambiente: AmbienteSri;
   tipoEmision: number;
   certificadoP12: string | null;
@@ -54,6 +55,7 @@ export interface CreateEmpresaFiscalPayload {
   obligadoContabilidad?: boolean;
   contribuyenteEspecial?: string;
   regimenRimpe?: RegimenRimpe;
+  agenteRetencion?: string;
   ambiente?: AmbienteSri;
 }
 
@@ -66,4 +68,24 @@ export interface CreatePuntoEmisionPayload {
   branchId: string;
   codigoPuntoEmision: string;
   descripcion?: string;
+}
+
+// ── Comprobantes Electrónicos ─────────────────────────────────────────────────
+
+export type EdocEstado = 'GENERADO' | 'FIRMADO' | 'ENVIADO' | 'AUTORIZADO' | 'RECHAZADO';
+
+export interface ElectronicDocument {
+  id: string;
+  saleId: string;
+  tipoComprobante: TipoComprobante;
+  claveAcceso: string;
+  establecimiento: string;
+  puntoEmision: string;
+  secuencial: string;
+  estado: EdocEstado;
+  sriEstado: string | null;
+  sriMensajes: { identificador: string; mensaje: string; tipo: string; informacionAdicional: string | null }[] | null;
+  fechaAutorizacion: string | null;
+  intentos: number;
+  createdAt: string;
 }

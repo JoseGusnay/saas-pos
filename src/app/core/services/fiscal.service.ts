@@ -3,7 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
-  EmpresaFiscal, PuntoEmision,
+  EmpresaFiscal, PuntoEmision, ElectronicDocument,
   CreateEmpresaFiscalPayload, UpdateEmpresaFiscalPayload,
   CreatePuntoEmisionPayload,
 } from '../models/fiscal.models';
@@ -46,6 +46,35 @@ export class FiscalService {
 
   updatePuntoEmision(id: string, payload: Partial<CreatePuntoEmisionPayload> & { isActive?: boolean }): Observable<PuntoEmision> {
     return this.http.patch<any>(`${this.base}/puntos-emision/${id}`, payload, { withCredentials: true })
+      .pipe(map(r => r.data));
+  }
+
+  // ── Comprobantes Electrónicos ─────────────────────────────────────────────
+
+  getComprobantesBySale(saleId: string): Observable<ElectronicDocument[]> {
+    return this.http.get<any>(`${this.base}/comprobantes/sale/${saleId}`, { withCredentials: true })
+      .pipe(map(r => r.data));
+  }
+
+  downloadRide(edocId: string): Observable<Blob> {
+    return this.http.get(`${this.base}/comprobantes/${edocId}/ride`, {
+      withCredentials: true,
+      responseType: 'blob',
+    });
+  }
+
+  reenviarComprobante(edocId: string): Observable<ElectronicDocument> {
+    return this.http.post<any>(`${this.base}/comprobantes/${edocId}/enviar`, {}, { withCredentials: true })
+      .pipe(map(r => r.data));
+  }
+
+  consultarAutorizacion(edocId: string): Observable<ElectronicDocument> {
+    return this.http.post<any>(`${this.base}/comprobantes/${edocId}/consultar`, {}, { withCredentials: true })
+      .pipe(map(r => r.data));
+  }
+
+  reintentarRechazado(edocId: string): Observable<ElectronicDocument> {
+    return this.http.post<any>(`${this.base}/comprobantes/${edocId}/reintentar`, {}, { withCredentials: true })
       .pipe(map(r => r.data));
   }
 }

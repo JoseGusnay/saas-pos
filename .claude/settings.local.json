@@ -35,7 +35,14 @@
       "Bash(find '/c/Users/usuario/Documents/proyects personal/netsjs/multitenant-backend/src' -path */migrations/* -name *.ts -type f)",
       "Bash(find '/c/Users/usuario/Documents/proyects personal/netsjs/multitenant-backend/src/database/migrations/tenant' -name *.ts -type f)",
       "Bash(wc -l C:UsersusuarioDocumentsproyects personalangularsaas-possrcappfeaturesposcomponents/*/*.scss)",
-      "Bash(find 'C:\\\\Users\\\\usuario\\\\Documents\\\\proyects personal\\\\netsjs\\\\multitenant-backend\\\\src/modules/b2b/products' -type f -name *combo*)"
+      "Bash(find 'C:\\\\Users\\\\usuario\\\\Documents\\\\proyects personal\\\\netsjs\\\\multitenant-backend\\\\src/modules/b2b/products' -type f -name *combo*)",
+      "WebFetch(domain:cdn.dribbble.com)",
+      "Bash(pdftotext 'c:/Users/usuario/Downloads/FICHA TE_CNICA COMPROBANTES ELECTRO_NICOS ESQUEMA OFFLINE Versio_n 232.pdf' -)",
+      "Bash(npm install:*)",
+      "Bash(pip install:*)",
+      "Bash(python -c \":*)",
+      "Bash(where pdftotext:*)",
+      "Bash(pdftotext 'c:\\\\Users\\\\usuario\\\\Downloads\\\\FICHA TE_CNICA COMPROBANTES ELECTRO_NICOS ESQUEMA OFFLINE Versio_n 232.pdf' -)"
     ]
   }
 }

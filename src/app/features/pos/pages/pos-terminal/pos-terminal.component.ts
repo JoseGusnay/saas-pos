@@ -21,6 +21,8 @@ import {
   lucideLayoutGrid,
   lucideShoppingCart,
   lucideUserPlus,
+  lucideSun,
+  lucideMoon,
 } from '@ng-icons/lucide';
 import { Subject, debounceTime, distinctUntilChanged, filter, finalize, switchMap, takeUntil } from 'rxjs';
 
@@ -37,6 +39,7 @@ import { SaleService } from '../../../../core/services/sale.service';
 import { AuthService } from '../../../../core/services/auth.service';
 import { CustomerService } from '../../../../core/services/customer.service';
 import { ToastService } from '../../../../core/services/toast.service';
+import { LayoutService } from '../../../../core/layout/services/layout.service';
 import { WarehouseService } from '../../../../core/services/warehouse.service';
 
 import { PosCatalogProduct, PosCatalogVariant } from '../../models/pos.models';
@@ -68,7 +71,7 @@ import { Warehouse } from '../../../../core/models/warehouse.models';
     SaleCompleteDialogComponent,
     ModalComponent,
   ],
-  providers: [provideIcons({ lucideReceipt, lucideCheck, lucideArrowLeft, lucideMaximize, lucideTrash2, lucideLayoutGrid, lucideShoppingCart, lucideUserPlus })],
+  providers: [provideIcons({ lucideReceipt, lucideCheck, lucideArrowLeft, lucideMaximize, lucideTrash2, lucideLayoutGrid, lucideShoppingCart, lucideUserPlus, lucideSun, lucideMoon })],
   styleUrl: './pos-terminal.component.scss',
   template: `
     <!-- ── Top Bar ────────────────────────────────────────────────────── -->
@@ -87,6 +90,13 @@ import { Warehouse } from '../../../../core/models/warehouse.models';
       </div>
 
       <div class="pos-header__right">
+        <button class="pos-header__action" (click)="layout.toggleTheme()" title="Cambiar tema">
+          @if (layout.theme() === 'dark') {
+            <ng-icon name="lucideSun" size="16" />
+          } @else {
+            <ng-icon name="lucideMoon" size="16" />
+          }
+        </button>
         <button class="pos-header__action" (click)="toggleFullscreen()" title="Pantalla completa">
           <ng-icon name="lucideMaximize" size="16" />
         </button>
@@ -230,10 +240,58 @@ import { Warehouse } from '../../../../core/models/warehouse.models';
       <div modalBody>
       @if (showPaymentDialog()) {
         <app-payment-dialog
+          #paymentDialog
           [isProcessing]="isProcessingSale()"
           (confirm)="onPaymentConfirmed($event)"
           (cancel)="showPaymentDialog.set(false)"
         />
+      }
+      </div>
+      <div modalFooter>
+      @if (showPaymentDialog() && paymentDialog) {
+        <div class="pay__modal-footer">
+          <div
+            class="pay__balance"
+            [class.pay__balance--remaining]="paymentDialog.remaining() > 0"
+            [class.pay__balance--change]="paymentDialog.change() > 0"
+            [class.pay__balance--exact]="paymentDialog.remaining() === 0 && paymentDialog.change() === 0 && paymentDialog.totalPaid() > 0"
+          >
+            @if (paymentDialog.remaining() > 0) {
+              <span class="pay__balance-label">Falta</span>
+              <span class="pay__balance-value">{{ paymentDialog.remaining() | currency: 'USD' }}</span>
+            } @else if (paymentDialog.change() > 0) {
+              <span class="pay__balance-label">Cambio</span>
+              <span class="pay__balance-value">{{ paymentDialog.change() | currency: 'USD' }}</span>
+            } @else if (paymentDialog.totalPaid() > 0) {
+              <span class="pay__balance-label">Pago exacto</span>
+              <span class="pay__balance-value"><ng-icon name="lucideCheck" size="20" /></span>
+            }
+          </div>
+          <div class="pay__actions">
+            <button
+              type="button"
+              class="pay__cancel-btn"
+              (click)="showPaymentDialog.set(false)"
+              [disabled]="isProcessingSale()"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              class="pay__confirm-btn"
+              [disabled]="!paymentDialog.canConfirm()"
+              (click)="paymentDialog.onConfirm()"
+            >
+              @if (isProcessingSale()) {
+                <ng-icon name="lucideLoader" size="18" class="pay__spinner" />
+                Procesando...
+              } @else {
+                <ng-icon name="lucideCheck" size="18" />
+                Confirmar venta
+              }
+            </button>
+          </div>
+        </div>
       }
       </div>
     </app-modal>
@@ -253,6 +311,14 @@ import { Warehouse } from '../../../../core/models/warehouse.models';
           (printReceipt)="onPrintReceipt()"
         />
       }
+      </div>
+      <div modalFooter>
+        <div class="sale-complete__modal-footer">
+          <button class="btn btn-primary btn-lg" (click)="onNewSale()">
+            <ng-icon name="lucideReceipt" size="18" />
+            Nueva Venta
+          </button>
+        </div>
       </div>
     </app-modal>
 
@@ -323,6 +389,13 @@ import { Warehouse } from '../../../../core/models/warehouse.models';
                   (ngModelChange)="newCustomerIdNumber.set($event)"
                 />
               </div>
+              <input
+                class="customer-search__input"
+                type="email"
+                placeholder="Email (para factura electrónica)"
+                [ngModel]="newCustomerEmail()"
+                (ngModelChange)="newCustomerEmail.set($event)"
+              />
               <div class="customer-search__create-actions">
                 <button
                   class="customer-search__create-cancel"
@@ -358,8 +431,10 @@ import { Warehouse } from '../../../../core/models/warehouse.models';
 })
 export class PosTerminalComponent implements OnDestroy {
   @ViewChild(ProductCatalogComponent) catalogRef!: ProductCatalogComponent;
+  @ViewChild('paymentDialog') paymentDialog!: PaymentDialogComponent;
 
   readonly cart = inject(PosCartService);
+  readonly layout = inject(LayoutService);
   private readonly saleService = inject(SaleService);
   private readonly authService = inject(AuthService);
   private readonly customerService = inject(CustomerService);
@@ -429,6 +504,7 @@ export class PosTerminalComponent implements OnDestroy {
   readonly newCustomerName = signal('');
   readonly newCustomerIdType = signal('05'); // Cédula by default
   readonly newCustomerIdNumber = signal('');
+  readonly newCustomerEmail = signal('');
   readonly creatingCustomer = signal(false);
   readonly customerIdTypes = CUSTOMER_ID_TYPES.filter(t => t.value !== '07'); // Exclude "Consumidor Final"
 
@@ -684,6 +760,7 @@ export class PosTerminalComponent implements OnDestroy {
   }
 
   cancelEdit(): void {
+    this.showVariantDialog.set(false);
     this.showModifierDialog.set(false);
     this.showComboDialog.set(false);
     this.clearPending();
@@ -818,7 +895,7 @@ export class PosTerminalComponent implements OnDestroy {
   }
 
   onPrintReceipt(): void {
-    this.toast.info('Función de impresión próximamente');
+    this.toast.info('Use el botón "Descargar RIDE" para obtener la factura en PDF');
   }
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -832,6 +909,7 @@ export class PosTerminalComponent implements OnDestroy {
     this.newCustomerName.set('');
     this.newCustomerIdType.set('05');
     this.newCustomerIdNumber.set('');
+    this.newCustomerEmail.set('');
     this.showCustomerDialog.set(true);
   }
 
@@ -866,11 +944,14 @@ export class PosTerminalComponent implements OnDestroy {
 
     this.creatingCustomer.set(true);
 
+    const email = this.newCustomerEmail().trim() || undefined;
+
     this.customerService
       .create({
         name,
         tipoIdentificacion: this.newCustomerIdType(),
         identificacion,
+        ...(email ? { email } : {}),
       })
       .pipe(
         takeUntil(this.destroy$),

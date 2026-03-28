@@ -29,6 +29,11 @@ export const routes: Routes = [
                 data: { breadcrumb: 'Inventario' }
             },
             {
+                path: 'ventas',
+                loadChildren: () => import('./features/sales/sales.routes').then(m => m.SALES_ROUTES),
+                data: { breadcrumb: 'Ventas' }
+            },
+            {
                 path: 'clientes',
                 loadChildren: () => import('./features/customers/customers.routes').then(m => m.CUSTOMERS_ROUTES),
                 data: { breadcrumb: 'Clientes' }

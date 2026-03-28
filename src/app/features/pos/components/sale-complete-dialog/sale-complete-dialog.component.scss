@@ -7,10 +7,7 @@
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: var(--spacing-lg);
-  padding: var(--spacing-2xl);
-  max-height: 85vh;
-  overflow-y: auto;
+  gap: var(--spacing-md);
 
   // ── Success Icon ────────────────────────────────────────────────────────
 
@@ -23,7 +20,7 @@
   // ── Title ───────────────────────────────────────────────────────────────
 
   &__title {
-    font-size: var(--font-size-2xl);
+    font-size: var(--font-size-lg);
     font-weight: var(--font-weight-bold);
     color: var(--color-text-main);
     margin: 0;
@@ -32,7 +29,7 @@
   // ── Sale Number ─────────────────────────────────────────────────────────
 
   &__number {
-    font-size: var(--font-size-3xl, 1.875rem);
+    font-size: var(--font-size-xl);
     font-weight: var(--font-weight-bold);
     color: var(--color-accent-primary);
     letter-spacing: 0.02em;
@@ -41,7 +38,7 @@
   // ── Date ────────────────────────────────────────────────────────────────
 
   &__date {
-    font-size: var(--font-size-sm);
+    font-size: var(--font-size-xs);
     color: var(--color-text-muted);
   }
 
@@ -50,13 +47,12 @@
   &__summary {
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-sm);
+    gap: var(--spacing-xs);
     width: 100%;
-    max-width: 360px;
-    padding: var(--spacing-lg);
+    padding: var(--spacing-md);
     background: var(--surface-container-low);
-    border-radius: var(--radius-lg);
-    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border-subtle);
     text-align: left;
   }
 
@@ -75,10 +71,10 @@
   // ── Total ───────────────────────────────────────────────────────────────
 
   &__total {
-    margin-top: var(--spacing-sm);
-    padding-top: var(--spacing-md);
-    border-top: 1px solid var(--color-border-light);
-    font-size: var(--font-size-2xl);
+    margin-top: var(--spacing-xs);
+    padding-top: var(--spacing-sm);
+    border-top: 1px dashed var(--color-border-light);
+    font-size: var(--font-size-lg);
     font-weight: var(--font-weight-bold);
     color: var(--color-text-main);
   }
@@ -90,8 +86,7 @@
     justify-content: space-between;
     align-items: center;
     width: 100%;
-    max-width: 360px;
-    padding: var(--spacing-md) var(--spacing-lg);
+    padding: var(--spacing-sm) var(--spacing-md);
     background: var(--color-success-bg);
     border: 1px solid var(--color-success);
     border-radius: var(--radius-md);
@@ -106,13 +101,12 @@
   &__payments {
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-sm);
+    gap: var(--spacing-xs);
     width: 100%;
-    max-width: 360px;
     padding: var(--spacing-md);
     background: var(--surface-container-low);
     border-radius: var(--radius-md);
-    border: 1px solid var(--color-border-light);
+    border: 1px solid var(--color-border-subtle);
     text-align: left;
   }
 
@@ -166,6 +160,98 @@
     color: var(--color-text-main);
   }
 
+  // ── Invoice Status ─────────────────────────────────────────────────────
+
+  &__invoice {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+    width: 100%;
+    padding: var(--spacing-md);
+    background: var(--surface-container-low);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border-subtle);
+    text-align: left;
+  }
+
+  &__invoice-title {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  &__invoice-status {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--radius-sm);
+
+    &--autorizado {
+      color: var(--color-success-text);
+      background: var(--color-success-bg);
+    }
+
+    &--rechazado {
+      color: var(--color-danger-text, #dc2626);
+      background: var(--color-danger-bg, #fef2f2);
+    }
+
+    &--pendiente {
+      color: var(--color-warning-text, #d97706);
+      background: var(--color-warning-bg, #fffbeb);
+    }
+
+    &--loading {
+      color: var(--color-text-muted);
+      background: var(--surface-container);
+
+      ng-icon {
+        animation: spin 1s linear infinite;
+      }
+    }
+  }
+
+  &__invoice-number {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-main);
+    font-family: var(--font-mono, monospace);
+  }
+
+  &__invoice-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-xs);
+
+    .btn-sm {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--spacing-xs);
+      padding: var(--spacing-xs) var(--spacing-sm);
+      font-size: var(--font-size-xs);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      border: 1px solid var(--color-border-light);
+      background: var(--color-bg-surface);
+      color: var(--color-text-main);
+      transition: background 0.15s;
+
+      &:hover:not(:disabled) {
+        background: var(--surface-container);
+      }
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+    }
+  }
+
   // ── Actions ─────────────────────────────────────────────────────────────
 
   &__actions {
@@ -200,6 +286,11 @@
     opacity: 1;
     transform: scale(1);
   }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 /* =========================================================================

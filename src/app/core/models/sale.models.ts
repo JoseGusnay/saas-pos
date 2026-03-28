@@ -93,13 +93,21 @@ export interface SaleModifierSnapshot {
 
 export type SaleStatus = 'COMPLETADA' | 'ANULADA';
 
-export type PaymentMethod = 'EFECTIVO' | 'TARJETA_DEBITO' | 'TARJETA_CREDITO' | 'TRANSFERENCIA';
+export type PaymentMethod =
+  | 'EFECTIVO'
+  | 'TARJETA_DEBITO'
+  | 'TARJETA_CREDITO'
+  | 'TRANSFERENCIA'
+  | 'DINERO_ELECTRONICO'
+  | 'TARJETA_PREPAGO';
 
 export const PAYMENT_METHODS: { value: PaymentMethod; label: string; icon: string }[] = [
   { value: 'EFECTIVO', label: 'Efectivo', icon: 'lucideBanknote' },
   { value: 'TARJETA_DEBITO', label: 'Tarjeta Débito', icon: 'lucideWalletCards' },
   { value: 'TARJETA_CREDITO', label: 'Tarjeta Crédito', icon: 'lucideCreditCard' },
   { value: 'TRANSFERENCIA', label: 'Transferencia', icon: 'lucideRefreshCw' },
+  { value: 'DINERO_ELECTRONICO', label: 'Dinero Electrónico', icon: 'lucideSmartphone' },
+  { value: 'TARJETA_PREPAGO', label: 'Tarjeta Prepago', icon: 'lucideWalletCards' },
 ];
 
 // ── Create Sale Payload ──────────────────────────────────────────────────────
@@ -145,12 +153,44 @@ export interface SaleQueryFilters {
   branchId?: string;
   customerId?: string;
   status?: SaleStatus;
+  paymentMethod?: PaymentMethod;
   dateFrom?: string;
   dateTo?: string;
   filterModel?: any;
 }
 
+/** Row returned by findAll (raw query with JOINs) */
+export interface SaleListItem {
+  id: string;
+  saleNumber: string;
+  branchId: string;
+  warehouseId: string;
+  customerId: string;
+  customerName: string;
+  customerTipoIdentificacion: string;
+  customerIdentificacion: string;
+  status: SaleStatus;
+  subtotal: number;
+  totalDiscount: number;
+  subtotalAfterDiscount: number;
+  totalTaxes: number;
+  total: number;
+  change: number;
+  notes: string | null;
+  userName: string | null;
+  cancelledByName: string | null;
+  cancelledAt: string | null;
+  cancellationReason: string | null;
+  createdAt: string;
+  branchName: string;
+  warehouseName: string;
+  itemCount: number;
+  invoiceStatus: string | null;
+  invoiceClaveAcceso: string | null;
+  invoiceEdocId: string | null;
+}
+
 export interface SaleListResponse {
-  data: Sale[];
+  data: SaleListItem[];
   total: number;
 }

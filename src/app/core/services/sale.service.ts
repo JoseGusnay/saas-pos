@@ -26,6 +26,7 @@ export class SaleService {
     if (filters.branchId) params = params.set('branchId', filters.branchId);
     if (filters.customerId) params = params.set('customerId', filters.customerId);
     if (filters.status) params = params.set('status', filters.status);
+    if (filters.paymentMethod) params = params.set('paymentMethod', filters.paymentMethod);
     if (filters.dateFrom) params = params.set('dateFrom', filters.dateFrom);
     if (filters.dateTo) params = params.set('dateTo', filters.dateTo);
     if (filters.filterModel && Object.keys(filters.filterModel).length > 0) {

@@ -203,6 +203,13 @@ function rucValidator(control: AbstractControl): ValidationErrors | null {
                 ></app-segmented-toggle>
               </div>
 
+              <app-field-input
+                label="N° Agente de Retención"
+                formControlName="agenteRetencion"
+                placeholder="Nro. resolución (máx. 8 dígitos) o vacío"
+                [optional]="true"
+              ></app-field-input>
+
           </app-form-card>
 
           <!-- Cards condicionales: solo con facturación electrónica -->
@@ -492,6 +499,7 @@ export class EmpresaFiscalComponent implements OnInit {
     obligadoContabilidad: [false],
     contribuyenteEspecial: [''],
     regimenRimpe: [null as string | null],
+    agenteRetencion: [''],
     facturacionElectronica: [false],
     ambiente: [1 as number],
     claveP12: [''],
@@ -511,6 +519,7 @@ export class EmpresaFiscalComponent implements OnInit {
           obligadoContabilidad: e.obligadoContabilidad,
           contribuyenteEspecial: e.contribuyenteEspecial ?? '',
           regimenRimpe: e.regimenRimpe as any,
+          agenteRetencion: e.agenteRetencion ?? '',
           facturacionElectronica: e.facturacionElectronica,
           ambiente: e.ambiente,
         });
@@ -594,6 +603,7 @@ export class EmpresaFiscalComponent implements OnInit {
       obligadoContabilidad: v.obligadoContabilidad,
       contribuyenteEspecial: v.contribuyenteEspecial?.trim() || undefined,
       regimenRimpe: v.regimenRimpe ?? undefined,
+      agenteRetencion: v.agenteRetencion?.trim() || undefined,
       ambiente: v.ambiente,
       facturacionElectronica: v.facturacionElectronica,
     };

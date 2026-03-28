@@ -62,23 +62,11 @@ interface PaymentEntry {
   ],
   styleUrls: ['./payment-dialog.component.scss'],
   template: `
-    <div class="pay" [class.pay--touch]="forceTouch()">
-      <!-- ── Header: total + mode toggle ────────────────────────── -->
+    <div class="pay">
+      <!-- ── Header: total ─────────────────────────────────────── -->
       <div class="pay__total-bar">
         <span class="pay__total-label">Total de la venta</span>
         <span class="pay__total-amount">{{ cart.totals().total | currency: 'USD' }}</span>
-        <button
-          class="pay__mode-toggle"
-          type="button"
-          [title]="forceTouch() ? 'Cambiar a modo teclado' : 'Cambiar a modo táctil'"
-          (click)="forceTouch.set(!forceTouch())"
-        >
-          @if (forceTouch()) {
-            <ng-icon name="lucideSmartphone" size="14" />
-          } @else {
-            <ng-icon name="lucideKeyboard" size="14" />
-          }
-        </button>
       </div>
 
       <!-- ── Body: two-column in touch, single in desktop ───────── -->
@@ -211,51 +199,6 @@ interface PaymentEntry {
         </div>
       </div>
 
-      <!-- ── Footer: balance + actions (always visible) ──────────── -->
-      <div class="pay__footer">
-        <div
-          class="pay__balance"
-          [class.pay__balance--remaining]="remaining() > 0"
-          [class.pay__balance--change]="change() > 0"
-          [class.pay__balance--exact]="remaining() === 0 && change() === 0 && totalPaid() > 0"
-        >
-          @if (remaining() > 0) {
-            <span class="pay__balance-label">Falta</span>
-            <span class="pay__balance-value">{{ remaining() | currency: 'USD' }}</span>
-          } @else if (change() > 0) {
-            <span class="pay__balance-label">Cambio</span>
-            <span class="pay__balance-value">{{ change() | currency: 'USD' }}</span>
-          } @else if (totalPaid() > 0) {
-            <span class="pay__balance-label">Pago exacto</span>
-            <span class="pay__balance-value"><ng-icon name="lucideCheck" size="20" /></span>
-          }
-        </div>
-
-        <div class="pay__actions">
-          <button
-            type="button"
-            class="pay__cancel-btn"
-            (click)="cancel.emit()"
-            [disabled]="isProcessing"
-          >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            class="pay__confirm-btn"
-            [disabled]="!canConfirm()"
-            (click)="onConfirm()"
-          >
-            @if (isProcessing) {
-              <ng-icon name="lucideLoader" size="18" class="pay__spinner" />
-              Procesando...
-            } @else {
-              <ng-icon name="lucideCheck" size="18" />
-              Confirmar venta
-            }
-          </button>
-        </div>
-      </div>
     </div>
   `,
 })
@@ -307,15 +250,16 @@ export class PaymentDialogComponent {
 
   readonly referenceLabel = computed(() => {
     const m = this.selectedMethod();
-    if (m === 'TARJETA_DEBITO' || m === 'TARJETA_CREDITO') return 'Ultimos 4 digitos';
+    if (m === 'TARJETA_DEBITO' || m === 'TARJETA_CREDITO' || m === 'TARJETA_PREPAGO') return 'Ultimos 4 digitos';
     if (m === 'TRANSFERENCIA') return 'No. referencia';
+    if (m === 'DINERO_ELECTRONICO') return 'No. referencia';
     return 'Referencia';
   });
 
   readonly referencePlaceholder = computed(() => {
     const m = this.selectedMethod();
-    if (m === 'TARJETA_DEBITO' || m === 'TARJETA_CREDITO') return '1234';
-    if (m === 'TRANSFERENCIA') return 'REF-001';
+    if (m === 'TARJETA_DEBITO' || m === 'TARJETA_CREDITO' || m === 'TARJETA_PREPAGO') return '1234';
+    if (m === 'TRANSFERENCIA' || m === 'DINERO_ELECTRONICO') return 'REF-001';
     return '';
   });
 

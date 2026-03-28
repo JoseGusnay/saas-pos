@@ -447,7 +447,10 @@ export class ProductCatalogComponent implements OnDestroy, AfterViewInit {
   private mapApiProduct(p: PosCatalogApiProduct): PosCatalogProduct {
     const variants: PosCatalogVariant[] = p.variants.map((v) => this.mapApiVariant(v));
     const v0 = variants[0];
-    const trackable = v0.stockTrackable && p.productType !== 'COMBO';
+    const isCombo = p.productType === 'COMBO';
+    const trackableVariants = isCombo ? [] : variants.filter((v) => v.stockTrackable);
+    const trackable = trackableVariants.length > 0;
+    const totalAvailable = trackableVariants.reduce((sum, v) => sum + v.availableStock, 0);
 
     return {
       id: p.productId,
@@ -458,14 +461,14 @@ export class ProductCatalogComponent implements OnDestroy, AfterViewInit {
       categoryId: p.categoryId,
       categoryName: p.categoryName ?? undefined,
       hasModifiers: !!(p.modifierGroups && p.modifierGroups.length > 0),
-      isCombo: p.productType === 'COMBO',
+      isCombo,
       variant: v0,
       variants,
       comboItems: p.comboItems,
       modifierGroups: p.modifierGroups,
       stockTrackable: trackable,
-      outOfStock: trackable && v0.availableStock <= 0,
-      lowStock: trackable && v0.availableStock > 0 && v0.availableStock <= 5,
+      outOfStock: trackable && totalAvailable <= 0,
+      lowStock: trackable && totalAvailable > 0 && totalAvailable <= 5,
     };
   }
 
